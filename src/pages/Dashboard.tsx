@@ -98,21 +98,23 @@ const Dashboard = () => {
 
   return (
     <DashboardLayout>
-      <div className="p-4 md:p-6 lg:p-8 space-y-6 lg:space-y-8 bg-gradient-to-br from-background via-background to-accent/5">
+      <div className="w-full max-w-full overflow-x-hidden p-3 sm:p-4 md:p-6 lg:p-8 space-y-4 sm:space-y-6 lg:space-y-8 bg-gradient-to-br from-background via-background to-accent/5">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-in fade-in slide-in-from-top-4 duration-500">
-          <div>
-            <h1 className="text-xl md:text-2xl font-bold text-gray-900">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 animate-in fade-in slide-in-from-top-4 duration-500">
+          <div className="w-full sm:w-auto">
+            <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 truncate">
               {dashboardData.pspInfo?.companyName || psp?.companyName || "Dashboard Overview"}
             </h1>
             <p className="text-xs md:text-sm text-gray-500 mt-1">
               Welcome back! Here's your waste management PSP performance
             </p>
           </div>
-          <TimeFilter
-            selectedRange={dateRange}
-            onRangeChange={handleDateRangeChange}
-          />
+          <div className="w-full sm:w-auto">
+            <TimeFilter
+              selectedRange={dateRange}
+              onRangeChange={handleDateRangeChange}
+            />
+          </div>
         </div>
 
         {/* Financial Overview - Wallet & Invoice Combined */}
@@ -121,7 +123,7 @@ const Dashboard = () => {
         </div>
 
         {/* Hero Metrics Grid */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-200">
+        <div className="grid gap-3 sm:gap-4 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-200">
           <MetricCard
             title="Total Revenue Collected"
             subtitle="Current period"
@@ -167,7 +169,7 @@ const Dashboard = () => {
         </div>
 
         {/* Operations Metrics */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-[400ms]">
+        <div className="grid gap-3 sm:gap-4 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-[400ms]">
           <MetricCard
             title="Waste Collections"
             subtitle="This month"
@@ -207,13 +209,13 @@ const Dashboard = () => {
         </div>
 
         {/* Staff Performance & Collection Services */}
-        <div className="grid gap-6 lg:grid-cols-2 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-[500ms]">
+        <div className="grid gap-3 sm:gap-4 md:gap-6 grid-cols-1 lg:grid-cols-2 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-[500ms]">
           <StaffPerformance agentsData={topAgents} />
           <CollectionServices servicesData={collectionServices} />
         </div>
 
         {/* Customers & Transactions */}
-        <div className="grid gap-6 lg:grid-cols-2 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-[600ms]">
+        <div className="grid gap-3 sm:gap-4 md:gap-6 grid-cols-1 lg:grid-cols-2 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-[600ms]">
           <TopCustomers customersData={topCustomers} />
           <RecentTransactions transactionsData={recentTransactions} />
         </div>

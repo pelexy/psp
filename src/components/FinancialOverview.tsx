@@ -100,17 +100,17 @@ export function FinancialOverview({ comprehensiveData }: FinancialOverviewProps)
 
   return (
     <>
-      <Card className="bg-white border border-gray-200 shadow-sm animate-fade-in min-h-[400px]">
-        <div className="p-4 md:p-6 h-full flex flex-col">
+      <Card className="bg-white border border-gray-200 shadow-sm animate-fade-in min-h-[400px] w-full overflow-hidden">
+        <div className="p-3 sm:p-4 md:p-6 h-full flex flex-col">
           {/* Header */}
-          <div className="mb-4 md:mb-6">
-            <h2 className="text-lg md:text-xl font-bold text-gray-900">Financial Overview</h2>
+          <div className="mb-3 sm:mb-4 md:mb-6">
+            <h2 className="text-base sm:text-lg md:text-xl font-bold text-gray-900">Financial Overview</h2>
             <p className="text-xs md:text-sm text-gray-500 mt-1">Wallet balance and invoice summary</p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8 flex-1">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 md:gap-8 flex-1">
             {/* Left Side - Wallet Balance */}
-            <div className="space-y-6">
+            <div className="space-y-3 sm:space-y-4 md:space-y-6">
               {/* Balance Section */}
               <div>
                 <div className="flex items-center justify-between mb-2">
@@ -126,11 +126,11 @@ export function FinancialOverview({ comprehensiveData }: FinancialOverviewProps)
                 </div>
                 <div className="flex items-center gap-2 md:gap-3">
                   {showBalance ? (
-                    <p className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900">
+                    <p className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 break-all">
                       {formatCurrencyFull(walletData.balance)}
                     </p>
                   ) : (
-                    <p className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900">••••••</p>
+                    <p className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900">••••••</p>
                   )}
                   <button
                     onClick={() => setShowBalance(!showBalance)}
@@ -146,29 +146,30 @@ export function FinancialOverview({ comprehensiveData }: FinancialOverviewProps)
               </div>
 
               {/* Action Buttons */}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-2 sm:gap-3">
                 <Button
                   variant="default"
-                  className="bg-primary text-white hover:bg-primary/90 shadow-sm h-11"
+                  className="bg-primary text-white hover:bg-primary/90 shadow-sm h-9 sm:h-10 md:h-11 text-xs sm:text-sm"
                   onClick={() => setWithdrawOpen(true)}
                   disabled={walletData.isWalletLocked}
                 >
-                  <ArrowUpFromLine className="h-4 w-4 mr-2" />
-                  Withdraw
+                  <ArrowUpFromLine className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                  <span className="hidden xs:inline">Withdraw</span>
+                  <span className="xs:hidden">↑</span>
                 </Button>
                 <Button
                   variant={walletData.isWalletLocked ? "default" : "outline"}
-                  className={`h-11 ${walletData.isWalletLocked ? 'bg-green-600 hover:bg-green-700 text-white' : ''}`}
+                  className={`h-9 sm:h-10 md:h-11 text-xs sm:text-sm ${walletData.isWalletLocked ? 'bg-green-600 hover:bg-green-700 text-white' : ''}`}
                   onClick={handleToggleLock}
                 >
                   {walletData.isWalletLocked ? (
                     <>
-                      <Unlock className="h-4 w-4 mr-2" />
+                      <Unlock className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                       Unlock
                     </>
                   ) : (
                     <>
-                      <Lock className="h-4 w-4 mr-2" />
+                      <Lock className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                       Lock
                     </>
                   )}
@@ -176,8 +177,8 @@ export function FinancialOverview({ comprehensiveData }: FinancialOverviewProps)
               </div>
 
               {/* Stats Grid */}
-              <div className="pt-4 border-t border-gray-200">
-                <div className="grid grid-cols-2 gap-3">
+              <div className="pt-3 sm:pt-4 border-t border-gray-200">
+                <div className="grid grid-cols-2 gap-2 sm:gap-3">
                   <div className="text-center p-3 rounded-lg bg-green-50 border border-green-100">
                     <p className="text-xs text-gray-600 font-medium mb-1">Monthly Inflows</p>
                     <p className="text-base font-bold text-green-700">
@@ -276,7 +277,7 @@ export function FinancialOverview({ comprehensiveData }: FinancialOverviewProps)
             </div>
 
             {/* Right Side - Invoice Summary */}
-            <div className="space-y-5">
+            <div className="space-y-3 sm:space-y-4 md:space-y-5">
               {/* Invoice Chart */}
               <div>
                 <h3 className="text-base font-semibold text-gray-900 mb-3">Invoice Summary</h3>

@@ -11,21 +11,21 @@ interface CollectionServicesProps {
 export function CollectionServices({ servicesData }: CollectionServicesProps) {
   const services = servicesData?.services || [];
   return (
-    <Card className="p-5 bg-card/40 backdrop-blur-xl border-border/50 shadow-card animate-fade-in min-h-[480px]">
+    <Card className="p-4 sm:p-5 md:p-6 bg-card/40 backdrop-blur-xl border-border/50 shadow-card animate-fade-in min-h-[400px] sm:min-h-[480px] w-full overflow-hidden">
       <div className="space-y-4">
-        <div>
-          <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
-            <CalendarClock className="h-4 w-4 text-primary" />
-            Collection Services
+        <div className="flex-1 min-w-0">
+          <h3 className="text-sm sm:text-base font-semibold text-foreground flex items-center gap-2">
+            <CalendarClock className="h-4 w-4 text-primary flex-shrink-0" />
+            <span className="truncate">Collection Services</span>
           </h3>
           <p className="text-xs text-muted-foreground">Revenue by service type</p>
         </div>
 
-        <div className="space-y-2.5">
+        <div className="space-y-2 sm:space-y-2.5">
           {services.length > 0 ? services.map((service: any) => (
             <div
               key={service.serviceName}
-              className="p-3 rounded-lg bg-gradient-to-r from-accent/20 to-transparent border border-border/50 hover:border-primary/30 transition-all duration-300"
+              className="p-2.5 sm:p-3 rounded-lg bg-gradient-to-r from-accent/20 to-transparent border border-border/50 hover:border-primary/30 transition-all duration-300"
             >
               <div className="flex items-start justify-between mb-2">
                 <div>

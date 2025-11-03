@@ -10,27 +10,27 @@ interface StaffPerformanceProps {
 export function StaffPerformance({ agentsData }: StaffPerformanceProps) {
   const staff = agentsData?.topAgents || [];
   return (
-    <Card className="p-5 bg-card/40 backdrop-blur-xl border-border/50 shadow-card animate-fade-in min-h-[480px]">
+    <Card className="p-4 sm:p-5 md:p-6 bg-card/40 backdrop-blur-xl border-border/50 shadow-card animate-fade-in min-h-[400px] sm:min-h-[480px] w-full overflow-hidden">
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
-              <Trophy className="h-4 w-4 text-warning" />
-              Top Performing Agent
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex-1 min-w-0">
+            <h3 className="text-sm sm:text-base font-semibold text-foreground flex items-center gap-2">
+              <Trophy className="h-4 w-4 text-warning flex-shrink-0" />
+              <span className="truncate">Top Performing Agent</span>
             </h3>
             <p className="text-xs text-muted-foreground">Staff collection activity</p>
           </div>
-          <Badge variant="secondary" className="gap-1 h-6 text-xs">
+          <Badge variant="secondary" className="gap-1 h-6 text-xs flex-shrink-0">
             <TrendingUp className="h-3 w-3" />
-            Live
+            <span className="hidden sm:inline">Live</span>
           </Badge>
         </div>
 
-        <div className="space-y-2.5">
+        <div className="space-y-2 sm:space-y-2.5">
           {staff.length > 0 ? staff.map((member: any) => (
             <div
               key={member.staffId}
-              className="group flex items-center gap-3 p-3 rounded-lg bg-gradient-to-r from-accent/30 to-transparent hover:from-accent/50 transition-all duration-300"
+              className="group flex items-center gap-2 sm:gap-3 p-2.5 sm:p-3 rounded-lg bg-gradient-to-r from-accent/30 to-transparent hover:from-accent/50 transition-all duration-300"
             >
               <Avatar className="h-11 w-11 border-2 border-border">
                 <AvatarFallback className="bg-gradient-primary text-primary-foreground font-bold text-xs">
