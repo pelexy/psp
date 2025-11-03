@@ -9,7 +9,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Download, Printer, QrCode, Recycle, MapPin, CheckCircle2, XCircle } from "lucide-react";
+import { Printer, QrCode } from "lucide-react";
 import { toast } from "sonner";
 
 interface TrashSealPreviewProps {
@@ -18,6 +18,7 @@ interface TrashSealPreviewProps {
       fullName: string;
       customerAccountNumber: string;
       isActive: boolean;
+      address?: string;
       city?: string;
       state?: string;
       lga?: string;
@@ -93,26 +94,6 @@ export const TrashSealPreview = ({ customer }: TrashSealPreviewProps) => {
     }, 250);
 
     toast.success("Print dialog opened");
-  };
-
-  const handleDownload = () => {
-    if (!sealRef.current) return;
-
-    // Create a canvas to convert the seal to an image
-    const seal = sealRef.current;
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
-
-    if (!ctx) {
-      toast.error("Failed to generate image");
-      return;
-    }
-
-    // Set canvas size (seal dimensions)
-    canvas.width = seal.offsetWidth * 2; // 2x for better quality
-    canvas.height = seal.offsetHeight * 2;
-
-    toast.success("Use Print button for best quality output");
   };
 
   return (

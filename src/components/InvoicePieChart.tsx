@@ -1,5 +1,5 @@
 import { Card } from "@/components/ui/card";
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 
 const data = [
   { name: "Paid", value: 425000, count: 245, color: "hsl(var(--success))" },
@@ -27,7 +27,7 @@ export function InvoicePieChart() {
                 cx="50%"
                 cy="50%"
                 labelLine={false}
-                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                label={(entry: any) => `${entry.name} ${(entry.percent * 100).toFixed(0)}%`}
                 outerRadius={100}
                 innerRadius={60}
                 fill="#8884d8"

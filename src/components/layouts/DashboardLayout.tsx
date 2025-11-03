@@ -3,19 +3,14 @@ import {
   LayoutDashboard,
   FileText,
   Users,
-  Wallet,
   Trash2,
-  TrendingUp,
   Settings,
   LogOut,
   ChevronLeft,
   ChevronRight,
   Recycle,
-  CreditCard,
   UserCog,
-  BarChart3,
   Bell,
-  Activity,
   User,
   Menu,
   X,
@@ -52,7 +47,7 @@ const navigation = [
 export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { logout, user, psp } = useAuth();
+  const { logout, user } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = () => {

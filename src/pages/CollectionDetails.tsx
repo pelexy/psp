@@ -39,11 +39,7 @@ import {
   UserPlus,
   Calendar,
   DollarSign,
-  TrendingUp,
   FileText,
-  CheckCircle2,
-  XCircle,
-  Recycle,
   AlertCircle,
   MapPin,
   Phone,
@@ -55,7 +51,7 @@ import {
 import { apiService } from "@/services/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip, Legend } from "recharts";
+import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 
 interface Customer {
   id: string;
@@ -98,12 +94,6 @@ const CollectionDetails = () => {
   const [totalItems, setTotalItems] = useState(0);
   const pageSize = 20;
 
-  // Pagination for billing cycles
-  const [cyclesCurrentPage, setCyclesCurrentPage] = useState(1);
-  const [cyclesTotalPages, setCyclesTotalPages] = useState(1);
-  const [cyclesTotalItems, setCyclesTotalItems] = useState(0);
-  const cyclesPageSize = 20;
-
   // Member filters and search
   const [searchQuery, setSearchQuery] = useState("");
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
@@ -112,14 +102,6 @@ const CollectionDetails = () => {
     autoGenerateInvoices: "all",
     cycleJoined: "",
     sortBy: "enrollmentDate",
-    sortOrder: "desc" as "asc" | "desc",
-  });
-
-  // Billing cycles filters
-  const [cyclesFilterSheetOpen, setCyclesFilterSheetOpen] = useState(false);
-  const [cyclesFilters, setCyclesFilters] = useState({
-    status: "all",
-    sortBy: "cycleNumber",
     sortOrder: "desc" as "asc" | "desc",
   });
 
@@ -264,7 +246,7 @@ const CollectionDetails = () => {
 
       await apiService.enrollCustomers(accessToken, id, [enrollmentData]);
 
-      toast.success(`${customer.fullName} enrolled successfully!`);
+      toast.success(`${customer.name} enrolled successfully!`);
       setSingleDialogOpen(false);
       setSelectedCustomer("");
       setSingleAmount("");
@@ -491,25 +473,6 @@ const CollectionDetails = () => {
 
   const activeFilterCount = Object.entries(memberFilters).filter(([key, value]) => {
     if (key === "sortBy" && value === "enrollmentDate") return false;
-    if (key === "sortOrder" && value === "desc") return false;
-    return value && value !== "all" && value !== "";
-  }).length;
-
-  const handleClearCyclesFilters = () => {
-    setCyclesFilters({
-      status: "all",
-      sortBy: "cycleNumber",
-      sortOrder: "desc",
-    });
-    setCyclesCurrentPage(1);
-  };
-
-  const updateCyclesFilter = (key: keyof typeof cyclesFilters, value: any) => {
-    setCyclesFilters({ ...cyclesFilters, [key]: value });
-  };
-
-  const activeCyclesFilterCount = Object.entries(cyclesFilters).filter(([key, value]) => {
-    if (key === "sortBy" && value === "cycleNumber") return false;
     if (key === "sortOrder" && value === "desc") return false;
     return value && value !== "all" && value !== "";
   }).length;

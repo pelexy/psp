@@ -10,6 +10,7 @@ interface InvoiceFilterPanelProps {
     status?: string;
     sortBy?: string;
     sortOrder?: string;
+    source?: string;
   };
   onFiltersChange: (filters: any) => void;
   onClearFilters: () => void;

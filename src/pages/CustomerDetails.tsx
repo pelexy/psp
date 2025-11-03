@@ -23,17 +23,10 @@ import {
   Mail,
   Phone,
   MapPin,
-  Calendar,
-  DollarSign,
   FileText,
   CreditCard,
-  Package,
   AlertCircle,
-  CheckCircle2,
-  Clock,
   User,
-  Activity,
-  TrendingUp,
   Trash2,
 } from "lucide-react";
 import { apiService } from "@/services/api";

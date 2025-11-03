@@ -51,7 +51,6 @@ export function FinancialOverview({ comprehensiveData }: FinancialOverviewProps)
       lateCount: 0
     }
   });
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchWalletBalance();
@@ -67,8 +66,6 @@ export function FinancialOverview({ comprehensiveData }: FinancialOverviewProps)
     } catch (error: any) {
       console.error("Error fetching wallet balance:", error);
       toast.error(error.message || "Failed to load wallet balance");
-    } finally {
-      setLoading(false);
     }
   };
 

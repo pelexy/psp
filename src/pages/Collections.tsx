@@ -26,11 +26,8 @@ import {
   Recycle,
   Users,
   DollarSign,
-  TrendingUp,
   Calendar,
   Clock,
-  CheckCircle2,
-  AlertCircle,
 } from "lucide-react";
 import { apiService } from "@/services/api";
 import { useAuth } from "@/contexts/AuthContext";

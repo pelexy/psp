@@ -73,7 +73,7 @@ export function BulkUpload({ onCustomersAdded }: BulkUploadProps) {
   };
 
   // Validate and process customer data
-  const validateCustomer = (customer: any, rowIndex: number): { valid: boolean; data?: ParsedCustomer; error?: string } => {
+  const validateCustomer = (customer: any): { valid: boolean; data?: ParsedCustomer; error?: string } => {
     // Check required fields
     if (!customer.fullName || !customer.fullName.trim()) {
       return { valid: false, error: "Full name is required" };
@@ -136,7 +136,7 @@ export function BulkUpload({ onCustomersAdded }: BulkUploadProps) {
 
           // Validate each row
           results.data.forEach((row: any, index: number) => {
-            const validation = validateCustomer(row, index + 2); // +2 because index 0 is row 2 (after header)
+            const validation = validateCustomer(row);
 
             if (validation.valid && validation.data) {
               validCustomers.push(validation.data);
