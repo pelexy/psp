@@ -7,7 +7,7 @@ interface ProtectedRouteProps {
 }
 
 export const ProtectedRoute = ({ children, allowedRoles = ['psp'] }: ProtectedRouteProps) => {
-  const { isAuthenticated, isTemporaryPassword, isLoading, user } = useAuth();
+  const { isAuthenticated, isTemporaryPassword, isLoading, user, logout } = useAuth();
 
   console.log('[ProtectedRoute] State:', { isLoading, isAuthenticated, isTemporaryPassword, userRole: user?.role });
 
@@ -36,6 +36,12 @@ export const ProtectedRoute = ({ children, allowedRoles = ['psp'] }: ProtectedRo
   // Check if user has required role
   if (user && allowedRoles.length > 0 && !allowedRoles.includes(user.role)) {
     console.log('[ProtectedRoute] User role not authorized:', user.role, 'Allowed roles:', allowedRoles);
+
+    const handleLogout = () => {
+      logout();
+      window.location.href = '/';
+    };
+
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
         <div className="text-center p-8 max-w-md">
@@ -48,12 +54,17 @@ export const ProtectedRoute = ({ children, allowedRoles = ['psp'] }: ProtectedRo
           <p className="text-gray-600 mb-6">
             You don't have permission to access this page. This dashboard is only accessible to PSP users.
           </p>
-          <button
-            onClick={() => window.location.href = '/'}
-            className="px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
-          >
-            Go to Login
-          </button>
+          <div className="flex flex-col gap-3">
+            <button
+              onClick={handleLogout}
+              className="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
+            >
+              Logout & Go to Login
+            </button>
+            <p className="text-sm text-gray-500">
+              Click above to clear your session and return to login
+            </p>
+          </div>
         </div>
       </div>
     );
