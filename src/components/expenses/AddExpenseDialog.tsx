@@ -60,6 +60,8 @@ export function AddExpenseDialog({
       return;
     }
 
+    if (!accessToken) return;
+
     try {
       setLoading(true);
       const response = await apiService.createExpense(accessToken, {

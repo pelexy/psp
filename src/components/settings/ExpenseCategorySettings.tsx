@@ -62,6 +62,8 @@ export function ExpenseCategorySettings() {
   }, []);
 
   const loadCategories = async () => {
+    if (!accessToken) return;
+
     try {
       setLoading(true);
       const response = await apiService.getExpenseCategories(accessToken);
@@ -81,6 +83,7 @@ export function ExpenseCategorySettings() {
       toast.error("Category name is required");
       return;
     }
+    if (!accessToken) return;
 
     try {
       const response = await apiService.createExpenseCategory(accessToken, formData);
@@ -101,6 +104,7 @@ export function ExpenseCategorySettings() {
       toast.error("Category name is required");
       return;
     }
+    if (!accessToken) return;
 
     try {
       const response = await apiService.updateExpenseCategory(
@@ -121,7 +125,7 @@ export function ExpenseCategorySettings() {
   };
 
   const handleDelete = async () => {
-    if (!selectedCategory) return;
+    if (!selectedCategory || !accessToken) return;
 
     try {
       await apiService.deleteExpenseCategory(accessToken, selectedCategory._id);

@@ -94,6 +94,8 @@ export function EditExpenseDialog({
       return;
     }
 
+    if (!accessToken) return;
+
     try {
       setLoading(true);
       const response = await apiService.updateExpense(accessToken, expense._id, {

@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Filter, Edit, Trash2, Eye, Calendar } from "lucide-react";
+import { Plus, Filter, Edit, Trash2 } from "lucide-react";
 import { AddExpenseDialog } from "@/components/expenses/AddExpenseDialog";
 import { EditExpenseDialog } from "@/components/expenses/EditExpenseDialog";
 import {
@@ -98,6 +98,8 @@ export default function Expenses() {
   }, [currentPage, filters]);
 
   const loadExpenses = async () => {
+    if (!accessToken) return;
+
     try {
       setLoading(true);
 
@@ -125,6 +127,8 @@ export default function Expenses() {
   };
 
   const loadCategories = async () => {
+    if (!accessToken) return;
+
     try {
       const response = await apiService.getExpenseCategories(accessToken);
       if (response.success) {
@@ -136,6 +140,8 @@ export default function Expenses() {
   };
 
   const loadSummary = async () => {
+    if (!accessToken) return;
+
     try {
       const response = await apiService.getExpenseSummary(
         accessToken,
@@ -155,7 +161,7 @@ export default function Expenses() {
   };
 
   const handleDelete = async () => {
-    if (!selectedExpense) return;
+    if (!selectedExpense || !accessToken) return;
 
     try {
       await apiService.deleteExpense(accessToken, selectedExpense._id);
