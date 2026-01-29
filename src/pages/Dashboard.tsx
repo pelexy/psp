@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { DashboardLayout } from "@/components/DashboardLayoutAmber";
+import { DashboardLayout } from "@/components/layouts/DashboardLayout";
 import { MetricCard } from "@/components/MetricCard";
 import { RevenueChart } from "@/components/RevenueChart";
 import { FinancialOverview } from "@/components/FinancialOverview";
@@ -15,19 +15,16 @@ import type { DateRangeType } from "@/utils/dateRanges";
 import { getDateRangeParams } from "@/utils/dateRanges";
 import { formatCurrency } from "@/utils/formatCurrency";
 import {
-  DollarSign,
   FileText,
-  Users,
-  TrendingUp,
   Trash2,
   CheckCircle2,
-  Clock,
   AlertCircle,
 } from "lucide-react";
 
 const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [dateRange, setDateRange] = useState<DateRangeType>("this-month");
+  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const { psp, dashboardData, accessToken } = useAuth();
 
   // Dashboard data states
@@ -59,8 +56,8 @@ const Dashboard = () => {
           transactions,
         ] = await Promise.all([
           apiService.getComprehensiveDashboard(accessToken, dateParams.startDate, dateParams.endDate),
-          apiService.getPerformanceMetrics(accessToken),
-          apiService.getRevenuePerformance(accessToken, new Date().getFullYear()),
+          apiService.getPerformanceMetrics(accessToken, selectedYear),
+          apiService.getRevenuePerformance(accessToken, selectedYear),
           apiService.getTopPerformingAgents(accessToken, 5),
           apiService.getCollectionServicesDashboard(accessToken, 3),
           apiService.getTopCustomersDashboard(accessToken, 5),
@@ -82,10 +79,14 @@ const Dashboard = () => {
     };
 
     fetchDashboardData();
-  }, [dateRange, accessToken]); // Re-fetch when date range or token changes
+  }, [dateRange, selectedYear, accessToken]); // Re-fetch when date range, year, or token changes
 
   const handleDateRangeChange = (newRange: DateRangeType) => {
     setDateRange(newRange);
+  };
+
+  const handleYearChange = (year: number) => {
+    setSelectedYear(year);
   };
 
   if (loading) {
@@ -113,6 +114,9 @@ const Dashboard = () => {
             <TimeFilter
               selectedRange={dateRange}
               onRangeChange={handleDateRangeChange}
+              selectedYear={selectedYear}
+              onYearChange={handleYearChange}
+              showYearFilter={true}
             />
           </div>
         </div>
@@ -120,47 +124,6 @@ const Dashboard = () => {
         {/* Financial Overview - Wallet & Invoice Combined */}
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100">
           <FinancialOverview comprehensiveData={comprehensiveData} />
-        </div>
-
-        {/* Hero Metrics Grid */}
-        <div className="grid gap-3 sm:gap-4 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-200">
-          <MetricCard
-            title="Total Revenue Collected"
-            subtitle="Current period"
-            value={comprehensiveData ? formatCurrency(comprehensiveData.totalRevenue.currentPeriod.amount) : "₦0"}
-            change={comprehensiveData ? `${comprehensiveData.totalRevenue.changePercentage > 0 ? '+' : ''}${comprehensiveData.totalRevenue.changePercentage.toFixed(1)}%` : "0%"}
-            changeType={comprehensiveData?.totalRevenue.changePercentage > 0 ? "positive" : "negative"}
-            icon={DollarSign}
-            iconColor="success"
-          />
-          <MetricCard
-            title="Outstanding Balance"
-            subtitle="What customers owe"
-            value={comprehensiveData ? formatCurrency(comprehensiveData.outstandingBalance.totalAmount) : "₦0"}
-            change={comprehensiveData ? `${comprehensiveData.outstandingBalance.overdueInvoiceCount} invoices overdue` : "0 invoices"}
-            changeType="negative"
-            icon={Clock}
-            iconColor="warning"
-          />
-          <MetricCard
-            title="Active Customers"
-            subtitle={comprehensiveData ? `${comprehensiveData.activeCustomers.active} active / ${comprehensiveData.activeCustomers.inactive} inactive` : "Loading..."}
-            value={comprehensiveData ? comprehensiveData.activeCustomers.active.toString() : "0"}
-            change={comprehensiveData ? `+${comprehensiveData.activeCustomers.newInPeriod} new this period` : "0"}
-            changeType="positive"
-            icon={Users}
-            iconColor="primary"
-          />
-          <MetricCard
-            title="Collection Efficiency"
-            subtitle="Collected vs Invoiced"
-            value={comprehensiveData ? `${comprehensiveData.collectionEfficiency.currentPeriod.percentage.toFixed(1)}%` : "0%"}
-            change={comprehensiveData ? `${comprehensiveData.collectionEfficiency.improvementPercentage > 0 ? '+' : ''}${comprehensiveData.collectionEfficiency.improvementPercentage.toFixed(1)}% improvement` : "0%"}
-            changeType={comprehensiveData?.collectionEfficiency.improvementPercentage > 0 ? "positive" : "negative"}
-            icon={TrendingUp}
-            iconColor="success"
-            gradient
-          />
         </div>
 
         {/* Revenue Chart - Full Width */}
@@ -172,7 +135,7 @@ const Dashboard = () => {
         <div className="grid gap-3 sm:gap-4 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-[400ms]">
           <MetricCard
             title="Waste Collections"
-            subtitle="This month"
+            subtitle={`Year ${selectedYear}`}
             value={performanceData ? performanceData.wasteCollections.thisMonth.total.toLocaleString() : "0"}
             change={performanceData ? `Avg ${performanceData.wasteCollections.thisMonth.averagePerDay.toFixed(1)} per day` : "Loading..."}
             changeType="neutral"
@@ -181,16 +144,16 @@ const Dashboard = () => {
           />
           <MetricCard
             title="Pickup Success Rate"
-            subtitle="Confirmed pickups"
+            subtitle={`Year ${selectedYear}`}
             value={performanceData ? `${performanceData.pickupSuccessRate.percentage.toFixed(1)}%` : "0%"}
-            change={performanceData ? `${performanceData.pickupSuccessRate.changePercentage > 0 ? '+' : ''}${performanceData.pickupSuccessRate.changePercentage.toFixed(1)}%` : "0%"}
-            changeType={performanceData?.pickupSuccessRate.changePercentage > 0 ? "positive" : "negative"}
+            change={performanceData ? `${performanceData.pickupSuccessRate.confirmedPickups} of ${performanceData.pickupSuccessRate.totalPickups} confirmed` : "0 pickups"}
+            changeType={performanceData?.pickupSuccessRate.percentage >= 50 ? "positive" : "negative"}
             icon={CheckCircle2}
             iconColor="success"
           />
           <MetricCard
             title="Total Invoices"
-            subtitle="Generated this period"
+            subtitle={`Year ${selectedYear}`}
             value={performanceData ? performanceData.totalInvoices.thisMonth.toString() : "0"}
             change={performanceData ? `${formatCurrency(performanceData.totalInvoices.thisMonthValue)} total value` : "₦0"}
             changeType="neutral"

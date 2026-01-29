@@ -42,9 +42,18 @@ const Collections = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [creating, setCreating] = useState(false);
 
+  // Service type options
+  const serviceTypes = [
+    { value: "waste_collection", label: "Waste Collection" },
+    { value: "bin_sale", label: "Bin Sale" },
+    { value: "recycling", label: "Recycling" },
+    { value: "penalty", label: "Penalty" },
+  ];
+
   // Form state
   const [formData, setFormData] = useState({
     collectionName: "",
+    serviceType: "waste_collection",
     amountType: "FIXED",
     baseAmount: "",
     billingFrequency: "weekly",
@@ -115,8 +124,9 @@ const Collections = () => {
     try {
       const payload: any = {
         collectionName: formData.collectionName,
+        serviceType: formData.serviceType,
         amountType: formData.amountType,
-        baseAmount: formData.amountType === "VARIABLE" ? 0 : parseFloat(formData.baseAmount),
+        baseAmount: formData.amountType === "FIXED" ? parseFloat(formData.baseAmount) : 0,
         billingFrequency: formData.billingFrequency,
         description: formData.description,
         importAllCustomers: formData.importAllCustomers,
@@ -147,6 +157,7 @@ const Collections = () => {
       // Reset form
       setFormData({
         collectionName: "",
+        serviceType: "waste_collection",
         amountType: "FIXED",
         baseAmount: "",
         billingFrequency: "weekly",
@@ -223,6 +234,29 @@ const Collections = () => {
                   />
                 </div>
 
+                {/* Service Type */}
+                <div>
+                  <Label htmlFor="serviceType">Service Type *</Label>
+                  <Select
+                    value={formData.serviceType}
+                    onValueChange={(value) => setFormData({ ...formData, serviceType: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {serviceTypes.map((type) => (
+                        <SelectItem key={type.value} value={type.value}>
+                          {type.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Category of service for this collection
+                  </p>
+                </div>
+
                 {/* Amount Type */}
                 <div>
                   <Label htmlFor="amountType">Amount Type *</Label>
@@ -235,7 +269,8 @@ const Collections = () => {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="FIXED">Fixed Amount (Same for all customers)</SelectItem>
-                      <SelectItem value="VARIABLE">Variable Amount (Different per customer)</SelectItem>
+                      <SelectItem value="VARIABLE">Variable Amount (Set per customer)</SelectItem>
+                      <SelectItem value="CUSTOMER_PROPERTY">Customer Property Bill (From properties)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -264,6 +299,15 @@ const Collections = () => {
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                     <p className="text-sm text-blue-900">
                       <strong>Variable Amount:</strong> Each customer will have a different amount. You'll set individual amounts when enrolling customers.
+                    </p>
+                  </div>
+                )}
+
+                {/* CUSTOMER_PROPERTY amount type info */}
+                {formData.amountType === "CUSTOMER_PROPERTY" && (
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                    <p className="text-sm text-green-900">
+                      <strong>Customer Property Bill:</strong> Each customer will be billed based on their property breakdown (expected bill). Make sure customers have properties assigned in their profile.
                     </p>
                   </div>
                 )}
@@ -467,7 +511,7 @@ const Collections = () => {
               <div
                 key={collection.id}
                 className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-all duration-200 cursor-pointer relative overflow-hidden group"
-                onClick={() => navigate(`/collections/${collection.id}`)}
+                onClick={() => navigate(`/billing/plans/${collection.id}`)}
               >
                 {/* Backlog Badge */}
                 {collection.isBacklog && (
@@ -486,9 +530,14 @@ const Collections = () => {
                       <h3 className="text-lg font-bold text-gray-900 truncate group-hover:text-primary transition-colors">
                         {collection.collectionName}
                       </h3>
-                      <p className="text-xs text-gray-500 mt-1">
-                        {collection.billingFrequency.replace('_', ' ').toUpperCase()} • {collection.amountType}
-                      </p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Badge variant="outline" className="text-xs capitalize">
+                          {(collection.serviceType || 'waste_collection').replace('_', ' ')}
+                        </Badge>
+                        <span className="text-xs text-gray-500">
+                          {collection.billingFrequency.replace('_', ' ').toUpperCase()}
+                        </span>
+                      </div>
                     </div>
                   </div>
 
@@ -503,6 +552,22 @@ const Collections = () => {
                     <div className="inline-flex items-center gap-2 bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-lg text-sm font-semibold">
                       <DollarSign className="h-4 w-4" />
                       ₦{collection.baseAmount.toLocaleString()}
+                    </div>
+                  </div>
+                )}
+                {collection.amountType === "VARIABLE" && (
+                  <div className="mb-4">
+                    <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 px-3 py-1.5 rounded-lg text-sm font-semibold">
+                      <DollarSign className="h-4 w-4" />
+                      Variable Amount
+                    </div>
+                  </div>
+                )}
+                {collection.amountType === "CUSTOMER_PROPERTY" && (
+                  <div className="mb-4">
+                    <div className="inline-flex items-center gap-2 bg-purple-50 text-purple-700 px-3 py-1.5 rounded-lg text-sm font-semibold">
+                      <DollarSign className="h-4 w-4" />
+                      Customer Property Bill
                     </div>
                   </div>
                 )}

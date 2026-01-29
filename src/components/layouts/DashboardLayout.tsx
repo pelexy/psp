@@ -1,13 +1,12 @@
 import { useState } from "react";
 import {
   LayoutDashboard,
-  FileText,
   Users,
-  Trash2,
   Settings,
   LogOut,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   Recycle,
   UserCog,
   Bell,
@@ -15,8 +14,11 @@ import {
   Menu,
   X,
   Package,
+  Receipt,
+  BarChart3,
+  Wallet,
 } from "lucide-react";
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -34,25 +36,81 @@ interface DashboardLayoutProps {
   children: React.ReactNode;
 }
 
-const navigation = [
+interface NavChild {
+  name: string;
+  href: string;
+}
+
+interface NavItem {
+  name: string;
+  href?: string;
+  icon: React.ElementType;
+  children?: NavChild[];
+}
+
+const navigation: NavItem[] = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "Customers", href: "/customers", icon: Users },
-  { name: "Invoices", href: "/invoices", icon: FileText },
-  { name: "Collections", href: "/collections", icon: Trash2 },
-  { name: "Agents", href: "/agents", icon: UserCog },
-  { name: "Pickups", href: "/pickups", icon: Package },
+  {
+    name: "Billing",
+    icon: Receipt,
+    children: [
+      { name: "Plans", href: "/billing/plans" },
+      { name: "Invoices", href: "/billing/invoices" },
+      { name: "Payments", href: "/billing/payments" },
+    ],
+  },
+  {
+    name: "Agents",
+    icon: UserCog,
+    children: [
+      { name: "All Agents", href: "/agents" },
+      { name: "Pickups", href: "/agents/pickups" },
+    ],
+  },
+  { name: "Expenses", href: "/expenses", icon: Wallet },
+  {
+    name: "Reports",
+    icon: BarChart3,
+    children: [
+      { name: "Debt Aging", href: "/reports/debt-aging" },
+      { name: "Outstanding", href: "/reports/outstanding" },
+      { name: "Collection Rate", href: "/reports/collection-rate" },
+      { name: "Problem Areas", href: "/reports/problem-areas" },
+    ],
+  },
   { name: "Settings", href: "/settings", icon: Settings },
 ];
 
 export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [expandedSections, setExpandedSections] = useState<string[]>(["Billing", "Agents", "Reports"]);
   const { logout, user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleLogout = () => {
     logout();
     navigate("/");
+  };
+
+  const toggleSection = (name: string) => {
+    setExpandedSections((prev) =>
+      prev.includes(name) ? prev.filter((s) => s !== name) : [...prev, name]
+    );
+  };
+
+  const isPathActive = (path: string) => {
+    return location.pathname === path || location.pathname.startsWith(path + "/");
+  };
+
+  const isSectionActive = (item: NavItem) => {
+    if (item.href) return isPathActive(item.href);
+    if (item.children) {
+      return item.children.some((child) => isPathActive(child.href));
+    }
+    return false;
   };
 
   // Get user initials
@@ -118,31 +176,93 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 px-3 py-6 space-y-2 overflow-y-auto">
-          {navigation.map((item) => (
-            <NavLink
-              key={item.name}
-              to={item.href}
-              onClick={() => setMobileMenuOpen(false)}
-              className={({ isActive }) =>
-                cn(
-                  "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group relative border-l-[3px]",
-                  isActive
-                    ? "bg-primary/10 text-primary border-primary"
-                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 border-transparent"
-                )
-              }
-            >
-              {({ isActive }) => (
-                <>
-                  <item.icon className={`h-[18px] w-[18px] flex-shrink-0 ${isActive ? "text-primary" : ""}`} />
-                  {!collapsed && (
-                    <span className={`text-[13px] ${isActive ? "font-semibold" : "font-medium"}`}>{item.name}</span>
+        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+          {navigation.map((item) => {
+            const Icon = item.icon;
+            const isActive = isSectionActive(item);
+            const isExpanded = expandedSections.includes(item.name);
+            const hasChildren = item.children && item.children.length > 0;
+
+            // Simple nav item (no children)
+            if (!hasChildren && item.href) {
+              return (
+                <NavLink
+                  key={item.href}
+                  to={item.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={cn(
+                    "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group",
+                    isActive
+                      ? "bg-primary text-white"
+                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                   )}
-                </>
-              )}
-            </NavLink>
-          ))}
+                >
+                  <Icon className="h-[18px] w-[18px] flex-shrink-0" />
+                  {!collapsed && (
+                    <span className={cn("text-[13px]", isActive ? "font-semibold" : "font-medium")}>
+                      {item.name}
+                    </span>
+                  )}
+                </NavLink>
+              );
+            }
+
+            // Expandable nav item (with children)
+            return (
+              <div key={item.name}>
+                <button
+                  onClick={() => !collapsed && toggleSection(item.name)}
+                  className={cn(
+                    "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group",
+                    isActive && collapsed
+                      ? "bg-primary text-white"
+                      : isActive
+                      ? "bg-gray-100 text-gray-900"
+                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                  )}
+                >
+                  <Icon className="h-[18px] w-[18px] flex-shrink-0" />
+                  {!collapsed && (
+                    <>
+                      <span className={cn("text-[13px] flex-1 text-left", isActive ? "font-semibold" : "font-medium")}>
+                        {item.name}
+                      </span>
+                      <ChevronDown
+                        className={cn(
+                          "h-4 w-4 transition-transform duration-200",
+                          isExpanded ? "rotate-180" : ""
+                        )}
+                      />
+                    </>
+                  )}
+                </button>
+
+                {/* Children */}
+                {!collapsed && hasChildren && isExpanded && (
+                  <div className="mt-1 ml-4 pl-3 border-l-2 border-gray-100 space-y-1">
+                    {item.children!.map((child) => {
+                      const childActive = isPathActive(child.href);
+                      return (
+                        <NavLink
+                          key={child.href}
+                          to={child.href}
+                          onClick={() => setMobileMenuOpen(false)}
+                          className={cn(
+                            "flex items-center gap-2 px-3 py-2 rounded-lg text-[13px] transition-all duration-200",
+                            childActive
+                              ? "bg-primary/10 text-primary font-medium"
+                              : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
+                          )}
+                        >
+                          <span>{child.name}</span>
+                        </NavLink>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </nav>
 
         {/* Logout */}
@@ -204,22 +324,6 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                       <p className="text-xs text-gray-400 mt-1">Just now</p>
                     </div>
                   </div>
-                  <div className="flex items-start gap-3 p-2 hover:bg-gray-50 rounded-lg">
-                    <div className="h-2 w-2 bg-blue-500 rounded-full mt-2"></div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-900">Pickup in progress</p>
-                      <p className="text-xs text-gray-500">Agent: Jane Smith - Customer ID: 1298</p>
-                      <p className="text-xs text-gray-400 mt-1">5 minutes ago</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3 p-2 hover:bg-gray-50 rounded-lg">
-                    <div className="h-2 w-2 bg-green-500 rounded-full mt-2"></div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-900">Payment received</p>
-                      <p className="text-xs text-gray-500">Customer ID: 1245 - ₦15,000</p>
-                      <p className="text-xs text-gray-400 mt-1">12 minutes ago</p>
-                    </div>
-                  </div>
                 </div>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -257,7 +361,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                 <button className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors">
                   <div className="text-right hidden md:block">
                     <p className="text-sm font-semibold text-gray-900">
-                      {user?.firstName || user?.email.split('@')[0]} {user?.lastName || ''}
+                      {user?.firstName || user?.email?.split('@')[0]} {user?.lastName || ''}
                     </p>
                     <p className="text-xs text-gray-500 font-medium capitalize">
                       {user?.role || 'User'}
@@ -274,10 +378,9 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                 <DropdownMenuLabel>
                   <div className="flex flex-col space-y-1">
                     <p className="text-sm font-medium">
-                      {user?.firstName || user?.email.split('@')[0]} {user?.lastName || ''}
+                      {user?.firstName || user?.email?.split('@')[0]} {user?.lastName || ''}
                     </p>
                     <p className="text-xs text-gray-500">{user?.email}</p>
-                    <p className="text-xs text-gray-400 capitalize">{user?.role || 'User'}</p>
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />

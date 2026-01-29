@@ -1,10 +1,12 @@
 import { useState, useEffect, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/layouts/DashboardLayout";
 import { DataTable } from "@/components/shared";
 import type { Column } from "@/components/shared";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Search } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Search, Eye } from "lucide-react";
 import { CreateInvoiceDialog } from "@/components/invoices/CreateInvoiceDialog";
 import { InvoiceFilterPanel } from "@/components/invoices/InvoiceFilterPanel";
 import { apiService } from "@/services/api";
@@ -14,6 +16,7 @@ import { format } from "date-fns";
 
 const Invoices = () => {
   const { accessToken } = useAuth();
+  const navigate = useNavigate();
 
   // State
   const [invoices, setInvoices] = useState<any[]>([]);
@@ -183,8 +186,26 @@ const Invoices = () => {
           </span>
         ),
       },
+      {
+        key: "actions",
+        header: "Actions",
+        accessor: (invoice) => (
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 px-2 text-green-600 hover:text-green-700 hover:bg-green-50"
+              onClick={() => navigate(`/billing/invoices/${invoice.invoiceNumber}`)}
+              title="View Invoice"
+            >
+              <Eye className="h-4 w-4 mr-1" />
+              View
+            </Button>
+          </div>
+        ),
+      },
     ],
-    []
+    [navigate]
   );
 
   return (

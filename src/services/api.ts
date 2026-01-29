@@ -1,5 +1,5 @@
-// Use proxy in development to avoid CORS issues
-const API_BASE_URL = import.meta.env.DEV ? '/api' : 'https://payapi.buypowerpass.africa/api';
+// Use localhost in development
+const API_BASE_URL = import.meta.env.DEV ? 'http://localhost:3000/api' : 'https://payapi.buypowerpass.africa/api';
 
 // Response when temporary password needs to be changed
 export interface TemporaryPasswordResponse {
@@ -446,6 +446,17 @@ class ApiService {
     );
   }
 
+  async getCustomerPendingInvoices(
+    accessToken: string,
+    customerId: string
+  ): Promise<any> {
+    return this.makeAuthenticatedRequest<any>(
+      `/customers/${customerId}/pending-invoices`,
+      {},
+      accessToken
+    );
+  }
+
   async getCustomerInvoices(
     accessToken: string,
     accountNumber: string,
@@ -609,14 +620,14 @@ class ApiService {
     return this.handleResponse<any>(response);
   }
 
-  async enrollCustomers(accessToken: string, collectionId: string, customers: any[]): Promise<any> {
+  async enrollCustomers(accessToken: string, collectionId: string, customers: any[], generateImmediately: boolean = false): Promise<any> {
     const response = await fetch(`${this.baseUrl}/collections/${collectionId}/enroll`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ customers }),
+      body: JSON.stringify({ customers, generateImmediately }),
     });
 
     return this.handleResponse<any>(response);
@@ -733,6 +744,17 @@ class ApiService {
     return this.makeAuthenticatedRequest<any>(`/queue/invoice/${jobId}`, {}, accessToken);
   }
 
+  // Get public invoice details by invoice number
+  async getPublicInvoiceDetails(invoiceNumber: string): Promise<any> {
+    const response = await fetch(`${this.baseUrl}/public/invoices/${invoiceNumber}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    return this.handleResponse<any>(response);
+  }
+
   // Wallet and Stats methods
   async getWalletBalance(accessToken: string): Promise<any> {
     return this.makeAuthenticatedRequest<any>('/psp/wallet/balance', {}, accessToken);
@@ -803,8 +825,53 @@ class ApiService {
     return this.makeAuthenticatedRequest<any>('/staff', {}, accessToken);
   }
 
-  async getAllPickups(accessToken: string, limit: number = 50): Promise<any> {
-    return this.makeAuthenticatedRequest<any>(`/staff/collections?limit=${limit}`, {}, accessToken);
+  async getStaffById(accessToken: string, staffId: string): Promise<any> {
+    return this.makeAuthenticatedRequest<any>(`/staff/${staffId}`, {}, accessToken);
+  }
+
+  async updateStaff(accessToken: string, staffId: string, data: any): Promise<any> {
+    return this.makeAuthenticatedRequest<any>(
+      `/staff/${staffId}`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+      },
+      accessToken
+    );
+  }
+
+  async updateStaffTerritory(accessToken: string, staffId: string, data: { assignedWards?: string[]; assignedStreets?: string[] }): Promise<any> {
+    return this.makeAuthenticatedRequest<any>(
+      `/staff/${staffId}/territory`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+      },
+      accessToken
+    );
+  }
+
+  async getAllPickups(
+    accessToken: string,
+    options: {
+      limit?: number;
+      staffId?: string;
+      startDate?: string;
+      endDate?: string;
+    } = {}
+  ): Promise<any> {
+    const params = new URLSearchParams();
+    if (options.limit) params.append('limit', options.limit.toString());
+    if (options.staffId) params.append('staffId', options.staffId);
+    if (options.startDate) params.append('startDate', options.startDate);
+    if (options.endDate) params.append('endDate', options.endDate);
+
+    const queryString = params.toString();
+    return this.makeAuthenticatedRequest<any>(
+      `/staff/collections${queryString ? `?${queryString}` : ''}`,
+      {},
+      accessToken
+    );
   }
 
   // PSP Dashboard API Methods (from PSP_DASHBOARD_API_DOCUMENTATION.md)
@@ -836,9 +903,10 @@ class ApiService {
    * GET /api/psp/dashboard/performance
    * Performance metrics (waste, pickups, invoices)
    */
-  async getPerformanceMetrics(accessToken: string): Promise<any> {
+  async getPerformanceMetrics(accessToken: string, year?: number): Promise<any> {
+    const params = year ? `?year=${year}` : '';
     return this.makeAuthenticatedRequest<any>(
-      '/psp/dashboard/performance',
+      `/psp/dashboard/performance${params}`,
       {},
       accessToken
     );
@@ -903,6 +971,390 @@ class ApiService {
       {},
       accessToken
     );
+  }
+  // PSP Profile APIs
+  async getMyProfile(accessToken: string): Promise<any> {
+    return this.makeAuthenticatedRequest<any>('/psp/me/profile', {}, accessToken);
+  }
+
+  async updateMyProfile(accessToken: string, profileData: any): Promise<any> {
+    const response = await fetch(`${this.baseUrl}/psp/me/profile`, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(profileData),
+    });
+    return this.handleResponse<any>(response);
+  }
+
+  // Ward APIs
+  async getWards(accessToken: string): Promise<any> {
+    return this.makeAuthenticatedRequest<any>('/wards', {}, accessToken);
+  }
+
+  async getActiveWards(accessToken: string): Promise<any> {
+    return this.makeAuthenticatedRequest<any>('/wards/active', {}, accessToken);
+  }
+
+  async createWard(accessToken: string, wardData: { name: string; description?: string }): Promise<any> {
+    const response = await fetch(`${this.baseUrl}/wards`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(wardData),
+    });
+    return this.handleResponse<any>(response);
+  }
+
+  async updateWard(accessToken: string, wardId: string, wardData: { name?: string; description?: string; isActive?: boolean }): Promise<any> {
+    const response = await fetch(`${this.baseUrl}/wards/${wardId}`, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(wardData),
+    });
+    return this.handleResponse<any>(response);
+  }
+
+  async deleteWard(accessToken: string, wardId: string): Promise<any> {
+    const response = await fetch(`${this.baseUrl}/wards/${wardId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+      },
+    });
+    if (response.status === 204 || response.status === 200) {
+      return { success: true, message: 'Ward deleted successfully' };
+    }
+    return this.handleResponse<any>(response);
+  }
+
+  // Street APIs
+  async getStreets(accessToken: string, wardId?: string): Promise<any> {
+    const params = wardId ? `?wardId=${wardId}` : '';
+    return this.makeAuthenticatedRequest<any>(`/streets${params}`, {}, accessToken);
+  }
+
+  async getStreetsByWard(accessToken: string, wardId: string): Promise<any> {
+    return this.makeAuthenticatedRequest<any>(`/streets/ward/${wardId}`, {}, accessToken);
+  }
+
+  async createStreet(accessToken: string, streetData: { wardId: string; name: string; description?: string }): Promise<any> {
+    const response = await fetch(`${this.baseUrl}/streets`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(streetData),
+    });
+    return this.handleResponse<any>(response);
+  }
+
+  async updateStreet(accessToken: string, streetId: string, streetData: { name?: string; description?: string; isActive?: boolean }): Promise<any> {
+    const response = await fetch(`${this.baseUrl}/streets/${streetId}`, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(streetData),
+    });
+    return this.handleResponse<any>(response);
+  }
+
+  async deleteStreet(accessToken: string, streetId: string): Promise<any> {
+    const response = await fetch(`${this.baseUrl}/streets/${streetId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+      },
+    });
+    if (response.status === 204 || response.status === 200) {
+      return { success: true, message: 'Street deleted successfully' };
+    }
+    return this.handleResponse<any>(response);
+  }
+
+  async bulkUploadStreets(accessToken: string, wardId: string, streets: Array<{ name: string; description?: string }>): Promise<any> {
+    const response = await fetch(`${this.baseUrl}/streets/bulk-upload`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ wardId, streets }),
+    });
+    return this.handleResponse<any>(response);
+  }
+
+  // Property Type APIs
+  async getPropertyTypes(accessToken: string): Promise<any> {
+    return this.makeAuthenticatedRequest<any>('/property-types', {}, accessToken);
+  }
+
+  async getActivePropertyTypes(accessToken: string): Promise<any> {
+    return this.makeAuthenticatedRequest<any>('/property-types/active', {}, accessToken);
+  }
+
+  async createPropertyType(accessToken: string, data: { name: string; cost: number; description?: string }): Promise<any> {
+    const response = await fetch(`${this.baseUrl}/property-types`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+    return this.handleResponse<any>(response);
+  }
+
+  async updatePropertyType(accessToken: string, id: string, data: { name?: string; cost?: number; description?: string; isActive?: boolean }): Promise<any> {
+    const response = await fetch(`${this.baseUrl}/property-types/${id}`, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+    return this.handleResponse<any>(response);
+  }
+
+  async deletePropertyType(accessToken: string, id: string): Promise<any> {
+    const response = await fetch(`${this.baseUrl}/property-types/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+      },
+    });
+    if (response.status === 204 || response.status === 200) {
+      return { success: true, message: 'Property type deleted successfully' };
+    }
+    return this.handleResponse<any>(response);
+  }
+
+  // Update Customer
+  async updateCustomer(accessToken: string, customerId: string, data: any): Promise<any> {
+    const response = await fetch(`${this.baseUrl}/customers/${customerId}`, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+    return this.handleResponse<any>(response);
+  }
+
+  // ============ REPORTS ============
+
+  // Debt Aging Report
+  async getDebtAgingReport(accessToken: string): Promise<any> {
+    return this.makeAuthenticatedRequest<any>('/psp/reports/debt-aging', {}, accessToken);
+  }
+
+  // Outstanding Balances Report
+  async getOutstandingReport(accessToken: string, filters?: {
+    minAmount?: number;
+    maxAmount?: number;
+    sortBy?: string;
+    sortOrder?: string;
+  }): Promise<any> {
+    const params = new URLSearchParams();
+    if (filters?.minAmount !== undefined) params.append('minAmount', filters.minAmount.toString());
+    if (filters?.maxAmount !== undefined) params.append('maxAmount', filters.maxAmount.toString());
+    if (filters?.sortBy) params.append('sortBy', filters.sortBy);
+    if (filters?.sortOrder) params.append('sortOrder', filters.sortOrder);
+
+    const queryString = params.toString();
+    return this.makeAuthenticatedRequest<any>(`/psp/reports/outstanding${queryString ? `?${queryString}` : ''}`, {}, accessToken);
+  }
+
+  // Collection Rate Report
+  async getCollectionRateReport(accessToken: string, filters?: {
+    threshold?: number;
+    monthsWithoutPayment?: number;
+  }): Promise<any> {
+    const params = new URLSearchParams();
+    if (filters?.threshold !== undefined) params.append('threshold', filters.threshold.toString());
+    if (filters?.monthsWithoutPayment !== undefined) params.append('monthsWithoutPayment', filters.monthsWithoutPayment.toString());
+
+    const queryString = params.toString();
+    return this.makeAuthenticatedRequest<any>(`/psp/reports/collection-rate${queryString ? `?${queryString}` : ''}`, {}, accessToken);
+  }
+
+  // Problem Areas Report
+  async getProblemAreasReport(accessToken: string): Promise<any> {
+    return this.makeAuthenticatedRequest<any>('/psp/reports/problem-areas', {}, accessToken);
+  }
+
+  // ============ PAYMENTS/TRANSACTIONS ============
+
+  // Get all payments/transactions for PSP
+  async getPayments(accessToken: string, filters?: {
+    page?: number;
+    limit?: number;
+    status?: string;
+    paymentChannel?: string;
+    startDate?: string;
+    endDate?: string;
+    searchTerm?: string;
+  }): Promise<any> {
+    const params = new URLSearchParams();
+    if (filters?.page) params.append('page', filters.page.toString());
+    if (filters?.limit) params.append('limit', filters.limit.toString());
+    if (filters?.status) params.append('status', filters.status);
+    if (filters?.paymentChannel) params.append('paymentChannel', filters.paymentChannel);
+    if (filters?.startDate) params.append('startDate', filters.startDate);
+    if (filters?.endDate) params.append('endDate', filters.endDate);
+    if (filters?.searchTerm) params.append('searchTerm', filters.searchTerm);
+
+    const queryString = params.toString();
+    return this.makeAuthenticatedRequest<any>(`/transactions${queryString ? `?${queryString}` : ''}`, {}, accessToken);
+  }
+
+  // ============ EXPENSE CATEGORIES ============
+
+  async getExpenseCategories(accessToken: string): Promise<any> {
+    return this.makeAuthenticatedRequest<any>('/expense-categories', {}, accessToken);
+  }
+
+  async createExpenseCategory(accessToken: string, data: { name: string; description?: string }): Promise<any> {
+    const response = await fetch(`${this.baseUrl}/expense-categories`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+    return this.handleResponse<any>(response);
+  }
+
+  async updateExpenseCategory(accessToken: string, id: string, data: { name?: string; description?: string; isActive?: boolean }): Promise<any> {
+    const response = await fetch(`${this.baseUrl}/expense-categories/${id}`, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+    return this.handleResponse<any>(response);
+  }
+
+  async deleteExpenseCategory(accessToken: string, id: string): Promise<any> {
+    const response = await fetch(`${this.baseUrl}/expense-categories/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+      },
+    });
+    if (response.status === 204 || response.status === 200) {
+      return { success: true, message: 'Expense category deleted successfully' };
+    }
+    return this.handleResponse<any>(response);
+  }
+
+  // ============ EXPENSES ============
+
+  async getExpenses(accessToken: string, filters?: {
+    page?: number;
+    limit?: number;
+    categoryId?: string;
+    startDate?: string;
+    endDate?: string;
+    paymentMethod?: string;
+    vendor?: string;
+  }): Promise<any> {
+    const params = new URLSearchParams();
+    if (filters?.page) params.append('page', filters.page.toString());
+    if (filters?.limit) params.append('limit', filters.limit.toString());
+    if (filters?.categoryId) params.append('categoryId', filters.categoryId);
+    if (filters?.startDate) params.append('startDate', filters.startDate);
+    if (filters?.endDate) params.append('endDate', filters.endDate);
+    if (filters?.paymentMethod) params.append('paymentMethod', filters.paymentMethod);
+    if (filters?.vendor) params.append('vendor', filters.vendor);
+
+    const queryString = params.toString();
+    return this.makeAuthenticatedRequest<any>(`/expenses${queryString ? `?${queryString}` : ''}`, {}, accessToken);
+  }
+
+  async getExpenseById(accessToken: string, id: string): Promise<any> {
+    return this.makeAuthenticatedRequest<any>(`/expenses/${id}`, {}, accessToken);
+  }
+
+  async getExpenseSummary(accessToken: string, startDate?: string, endDate?: string): Promise<any> {
+    const params = new URLSearchParams();
+    if (startDate) params.append('startDate', startDate);
+    if (endDate) params.append('endDate', endDate);
+
+    const queryString = params.toString();
+    return this.makeAuthenticatedRequest<any>(`/expenses/summary/by-category${queryString ? `?${queryString}` : ''}`, {}, accessToken);
+  }
+
+  async createExpense(accessToken: string, data: {
+    title: string;
+    description?: string;
+    amount: number;
+    categoryId: string;
+    expenseDate: string;
+    paymentMethod: string;
+    paymentReference?: string;
+    vendor?: string;
+    notes?: string;
+  }): Promise<any> {
+    const response = await fetch(`${this.baseUrl}/expenses`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+    return this.handleResponse<any>(response);
+  }
+
+  async updateExpense(accessToken: string, id: string, data: {
+    title?: string;
+    description?: string;
+    amount?: number;
+    categoryId?: string;
+    expenseDate?: string;
+    paymentMethod?: string;
+    paymentReference?: string;
+    vendor?: string;
+    notes?: string;
+  }): Promise<any> {
+    const response = await fetch(`${this.baseUrl}/expenses/${id}`, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+    return this.handleResponse<any>(response);
+  }
+
+  async deleteExpense(accessToken: string, id: string): Promise<any> {
+    const response = await fetch(`${this.baseUrl}/expenses/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+      },
+    });
+    if (response.status === 204 || response.status === 200) {
+      return { success: true, message: 'Expense deleted successfully' };
+    }
+    return this.handleResponse<any>(response);
   }
 }
 

@@ -44,7 +44,7 @@ interface DataTableProps<T> {
   onRowClick?: (item: T) => void;
 }
 
-export function DataTable<T extends { _id?: string; customerId?: string }>({
+export function DataTable<T extends { _id?: string; customerId?: string | object }>({
   columns,
   data,
   pagination,
@@ -103,7 +103,7 @@ export function DataTable<T extends { _id?: string; customerId?: string }>({
               // Data rows
               data.map((item) => (
                 <TableRow
-                  key={item._id || item.customerId || Math.random()}
+                  key={item._id || (typeof item.customerId === 'string' ? item.customerId : undefined) || Math.random()}
                   className={cn(
                     onRowClick && "cursor-pointer hover:bg-gray-50",
                     rowClassName?.(item)

@@ -2,18 +2,20 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
-import { UserPlus, Loader2, Plus, Trash2 } from "lucide-react";
+import { Loader2, Plus, Trash2 } from "lucide-react";
 import { apiService } from "@/services/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { nigerianStates, getLGAsByState } from "@/lib/nigeriaData";
-import { normalizeNigerianPhone } from "@/lib/phoneUtils";
 
-interface AddCustomerDialogProps {
-  onCustomerAdded?: () => void;
+interface EditCustomerDialogProps {
+  customer: any;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onCustomerUpdated?: () => void;
 }
 
 interface Ward {
@@ -36,6 +38,7 @@ interface PropertyType {
 interface PropertyEntry {
   propertyTypeId: string;
   quantity: number;
+  costPerUnit?: number; // Custom cost override for this customer
 }
 
 const CUSTOMER_TYPES = [
@@ -44,9 +47,8 @@ const CUSTOMER_TYPES = [
   { value: "estate", label: "Estate" },
 ];
 
-export function AddCustomerDialog({ onCustomerAdded }: AddCustomerDialogProps) {
+export function EditCustomerDialog({ customer, open, onOpenChange, onCustomerUpdated }: EditCustomerDialogProps) {
   const { accessToken } = useAuth();
-  const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(false);
 
@@ -59,13 +61,11 @@ export function AddCustomerDialog({ onCustomerAdded }: AddCustomerDialogProps) {
   // Form state
   const [formData, setFormData] = useState({
     fullName: "",
-    email: "",
     phone: "",
     address: "",
     city: "",
     state: "",
     lga: "",
-    previousDebt: "",
     customerType: "standalone",
     wardId: "",
     streetId: "",
@@ -74,7 +74,43 @@ export function AddCustomerDialog({ onCustomerAdded }: AddCustomerDialogProps) {
   const [properties, setProperties] = useState<PropertyEntry[]>([]);
   const [selectedLGAs, setSelectedLGAs] = useState<string[]>([]);
 
-  // Load wards, streets, and property types when dialog opens
+  // Initialize form data when customer changes
+  useEffect(() => {
+    if (customer && open) {
+      const details = customer.customerDetails || customer;
+      setFormData({
+        fullName: details.fullName || "",
+        phone: details.phone || "",
+        address: details.address || "",
+        city: details.city || "",
+        state: details.state || "",
+        lga: details.lga || "",
+        customerType: details.customerType || "standalone",
+        wardId: details.wardId?._id || details.wardId || "",
+        streetId: details.streetId?._id || details.streetId || "",
+      });
+
+      // Initialize properties
+      if (details.properties && details.properties.length > 0) {
+        console.log('Loading properties from customer:', details.properties);
+        setProperties(details.properties.map((p: any) => ({
+          propertyTypeId: p.propertyTypeId?._id || p.propertyTypeId || "",
+          quantity: p.quantity || 1,
+          // Keep costPerUnit if it's explicitly set (even if 0), otherwise undefined
+          costPerUnit: p.costPerUnit !== undefined && p.costPerUnit !== null ? p.costPerUnit : undefined,
+        })));
+      } else {
+        setProperties([]);
+      }
+
+      // Initialize LGAs if state is set
+      if (details.state) {
+        setSelectedLGAs(getLGAsByState(details.state));
+      }
+    }
+  }, [customer, open]);
+
+  // Load dropdown data when dialog opens
   useEffect(() => {
     if (open && accessToken) {
       loadDropdownData();
@@ -83,7 +119,7 @@ export function AddCustomerDialog({ onCustomerAdded }: AddCustomerDialogProps) {
 
   // Filter streets when ward changes
   useEffect(() => {
-    if (formData.wardId) {
+    if (formData.wardId && streets.length > 0) {
       const filtered = streets.filter((street) => {
         const wardId = typeof street.wardId === "object" ? street.wardId._id : street.wardId;
         return wardId === formData.wardId;
@@ -92,8 +128,6 @@ export function AddCustomerDialog({ onCustomerAdded }: AddCustomerDialogProps) {
     } else {
       setFilteredStreets([]);
     }
-    // Reset street selection when ward changes
-    setFormData((prev) => ({ ...prev, streetId: "" }));
   }, [formData.wardId, streets]);
 
   const loadDropdownData = async () => {
@@ -132,7 +166,7 @@ export function AddCustomerDialog({ onCustomerAdded }: AddCustomerDialogProps) {
       toast.error("No property types available. Please add property types in Settings first.");
       return;
     }
-    setProperties([...properties, { propertyTypeId: "", quantity: 1 }]);
+    setProperties([...properties, { propertyTypeId: "", quantity: 1, costPerUnit: undefined }]);
   };
 
   const updateProperty = (index: number, field: keyof PropertyEntry, value: string | number) => {
@@ -150,7 +184,9 @@ export function AddCustomerDialog({ onCustomerAdded }: AddCustomerDialogProps) {
     return properties.reduce((total, prop) => {
       const propertyType = propertyTypes.find((pt) => pt._id === prop.propertyTypeId);
       if (propertyType && prop.quantity > 0) {
-        return total + propertyType.cost * prop.quantity;
+        // Use custom costPerUnit if set, otherwise use default property type cost
+        const cost = prop.costPerUnit !== undefined ? prop.costPerUnit : propertyType.cost;
+        return total + cost * prop.quantity;
       }
       return total;
     }, 0);
@@ -167,7 +203,13 @@ export function AddCustomerDialog({ onCustomerAdded }: AddCustomerDialogProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!accessToken) return;
+    if (!accessToken || !customer) return;
+
+    const customerId = customer.customerDetails?.customerId || customer._id;
+    if (!customerId) {
+      toast.error("Customer ID not found");
+      return;
+    }
 
     // Validation
     if (!formData.fullName || !formData.phone) {
@@ -175,97 +217,63 @@ export function AddCustomerDialog({ onCustomerAdded }: AddCustomerDialogProps) {
       return;
     }
 
-    // Validate properties - required for ALL customer types
+    // Validate properties for compound/estate
     const validProperties = properties.filter((p) => p.propertyTypeId && p.quantity > 0);
-    if (validProperties.length === 0) {
-      toast.error("Please add at least one property type");
+    console.log('Properties before save:', properties);
+    console.log('Valid properties to save:', validProperties);
+
+    if (formData.customerType !== "standalone" && validProperties.length === 0) {
+      toast.error("Please add at least one property type for Compound/Estate customers");
       return;
     }
 
     setLoading(true);
     try {
-      // Prepare data with previousDebt as number and normalized phone
-      const customerData: any = {
+      const updateData: any = {
         fullName: formData.fullName,
-        email: formData.email,
-        phone: normalizeNigerianPhone(formData.phone),
+        phone: formData.phone,
         address: formData.address,
         city: formData.city,
         state: formData.state,
         lga: formData.lga,
-        previousDebt: formData.previousDebt ? parseFloat(formData.previousDebt) : 0,
-        customerType: formData.customerType,
+        customerType: formData.customerType || "standalone",
+        // Always send wardId and streetId (can be empty string to clear)
+        wardId: formData.wardId || null,
+        streetId: formData.streetId || null,
+        // Always send properties array with costPerUnit
+        properties: validProperties.map(p => ({
+          propertyTypeId: p.propertyTypeId,
+          quantity: p.quantity,
+          costPerUnit: p.costPerUnit, // Include costPerUnit even if undefined
+        })),
       };
 
-      // Add ward and street if selected
-      if (formData.wardId) {
-        customerData.wardId = formData.wardId;
-      }
-      if (formData.streetId) {
-        customerData.streetId = formData.streetId;
-      }
+      console.log("Updating customer ID:", customerId);
+      console.log("Updating customer with data:", JSON.stringify(updateData, null, 2));
 
-      // Add properties if any
-      if (validProperties.length > 0) {
-        customerData.properties = validProperties;
-      }
+      const response = await apiService.updateCustomer(accessToken, customerId, updateData);
+      console.log("Update response:", response);
 
-      const response = await apiService.makeAuthenticatedRequest(
-        "/customers",
-        {
-          method: "POST",
-          body: JSON.stringify(customerData),
-        },
-        accessToken
-      );
-
-      console.log("Add customer response:", response);
-      toast.success("Customer added successfully");
-      setOpen(false);
-      resetForm();
-      onCustomerAdded?.();
+      toast.success("Customer updated successfully");
+      onOpenChange(false);
+      onCustomerUpdated?.();
     } catch (error: any) {
-      console.error("Error adding customer:", error);
-      toast.error(error.message || "Failed to add customer");
+      console.error("Error updating customer:", error);
+      toast.error(error.message || "Failed to update customer");
     } finally {
       setLoading(false);
     }
   };
 
-  const resetForm = () => {
-    setFormData({
-      fullName: "",
-      email: "",
-      phone: "",
-      address: "",
-      city: "",
-      state: "",
-      lga: "",
-      previousDebt: "",
-      customerType: "standalone",
-      wardId: "",
-      streetId: "",
-    });
-    setProperties([]);
-    setSelectedLGAs([]);
-    setFilteredStreets([]);
-  };
-
   const expectedBill = calculateExpectedBill();
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button size="sm" className="gap-2">
-          <UserPlus className="h-4 w-4" />
-          Add Customer
-        </Button>
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Add New Customer</DialogTitle>
+          <DialogTitle>Edit Customer</DialogTitle>
           <DialogDescription>
-            Enter customer details to add them to your system
+            Update customer details
           </DialogDescription>
         </DialogHeader>
 
@@ -279,7 +287,7 @@ export function AddCustomerDialog({ onCustomerAdded }: AddCustomerDialogProps) {
             <div className="space-y-2">
               <Label>Customer Type *</Label>
               <Select
-                value={formData.customerType}
+                value={formData.customerType || "standalone"}
                 onValueChange={(value) => setFormData({ ...formData, customerType: value })}
               >
                 <SelectTrigger>
@@ -301,7 +309,6 @@ export function AddCustomerDialog({ onCustomerAdded }: AddCustomerDialogProps) {
                 {formData.customerType === "standalone" ? "Customer Information" : "Contact Person Information"}
               </h3>
               <div className="grid grid-cols-2 gap-4">
-                {/* Full Name */}
                 <div className="col-span-2 sm:col-span-1">
                   <Label htmlFor="fullName">Full Name *</Label>
                   <Input
@@ -313,7 +320,6 @@ export function AddCustomerDialog({ onCustomerAdded }: AddCustomerDialogProps) {
                   />
                 </div>
 
-                {/* Phone */}
                 <div className="col-span-2 sm:col-span-1">
                   <Label htmlFor="phone">Phone Number *</Label>
                   <Input
@@ -324,18 +330,6 @@ export function AddCustomerDialog({ onCustomerAdded }: AddCustomerDialogProps) {
                     required
                   />
                 </div>
-
-                {/* Email */}
-                <div className="col-span-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    placeholder="john@example.com"
-                  />
-                </div>
               </div>
             </div>
 
@@ -343,14 +337,17 @@ export function AddCustomerDialog({ onCustomerAdded }: AddCustomerDialogProps) {
             <div className="space-y-4">
               <h3 className="font-medium text-sm text-gray-700">Location Information</h3>
               <div className="grid grid-cols-2 gap-4">
-                {/* Ward */}
                 <div>
                   <Label htmlFor="ward">Ward</Label>
-                  <Select value={formData.wardId} onValueChange={handleWardChange}>
+                  <Select
+                    value={formData.wardId || "none"}
+                    onValueChange={(value) => handleWardChange(value === "none" ? "" : value)}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Select ward" />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="none">None</SelectItem>
                       {wards.map((ward) => (
                         <SelectItem key={ward._id} value={ward._id}>
                           {ward.name}
@@ -360,18 +357,18 @@ export function AddCustomerDialog({ onCustomerAdded }: AddCustomerDialogProps) {
                   </Select>
                 </div>
 
-                {/* Street */}
                 <div>
                   <Label htmlFor="street">Street</Label>
                   <Select
-                    value={formData.streetId}
-                    onValueChange={(value) => setFormData({ ...formData, streetId: value })}
+                    value={formData.streetId || "none"}
+                    onValueChange={(value) => setFormData({ ...formData, streetId: value === "none" ? "" : value })}
                     disabled={!formData.wardId || filteredStreets.length === 0}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select street" />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="none">None</SelectItem>
                       {filteredStreets.map((street) => (
                         <SelectItem key={street._id} value={street._id}>
                           {street.name}
@@ -381,7 +378,6 @@ export function AddCustomerDialog({ onCustomerAdded }: AddCustomerDialogProps) {
                   </Select>
                 </div>
 
-                {/* Address */}
                 <div className="col-span-2">
                   <Label htmlFor="address">Address</Label>
                   <Input
@@ -392,7 +388,6 @@ export function AddCustomerDialog({ onCustomerAdded }: AddCustomerDialogProps) {
                   />
                 </div>
 
-                {/* State */}
                 <div>
                   <Label htmlFor="state">State</Label>
                   <Select value={formData.state} onValueChange={handleStateChange}>
@@ -409,7 +404,6 @@ export function AddCustomerDialog({ onCustomerAdded }: AddCustomerDialogProps) {
                   </Select>
                 </div>
 
-                {/* LGA */}
                 <div>
                   <Label htmlFor="lga">LGA</Label>
                   <Select
@@ -430,7 +424,6 @@ export function AddCustomerDialog({ onCustomerAdded }: AddCustomerDialogProps) {
                   </Select>
                 </div>
 
-                {/* City */}
                 <div className="col-span-2">
                   <Label htmlFor="city">City/Area</Label>
                   <Input
@@ -459,52 +452,108 @@ export function AddCustomerDialog({ onCustomerAdded }: AddCustomerDialogProps) {
                 </p>
               ) : (
                 <div className="space-y-3">
-                  {properties.map((prop, index) => (
-                    <div key={index} className="flex items-center gap-3">
-                      <div className="flex-1">
-                        <Select
-                          value={prop.propertyTypeId}
-                          onValueChange={(value) => updateProperty(index, "propertyTypeId", value)}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select property type" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {propertyTypes.map((pt) => (
-                              <SelectItem key={pt._id} value={pt._id}>
-                                {pt.name} - {formatCurrency(pt.cost)}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                  {/* Header row */}
+                  <div className="grid grid-cols-12 gap-2 text-xs font-medium text-gray-500 px-1">
+                    <div className="col-span-4">Property Type</div>
+                    <div className="col-span-2">Qty</div>
+                    <div className="col-span-3">Cost/Unit</div>
+                    <div className="col-span-2 text-right">Subtotal</div>
+                    <div className="col-span-1"></div>
+                  </div>
+
+                  {properties.map((prop, index) => {
+                    const propertyType = propertyTypes.find((pt) => pt._id === prop.propertyTypeId);
+                    const defaultCost = propertyType?.cost || 0;
+                    const effectiveCost = prop.costPerUnit !== undefined ? prop.costPerUnit : defaultCost;
+                    const hasCustomCost = prop.costPerUnit !== undefined && prop.costPerUnit !== defaultCost;
+
+                    return (
+                      <div key={index} className="grid grid-cols-12 gap-2 items-center">
+                        <div className="col-span-4">
+                          <Select
+                            value={prop.propertyTypeId}
+                            onValueChange={(value) => {
+                              // When property type changes, reset custom cost
+                              const updated = [...properties];
+                              updated[index] = { ...updated[index], propertyTypeId: value, costPerUnit: undefined };
+                              setProperties(updated);
+                            }}
+                          >
+                            <SelectTrigger className="h-9">
+                              <SelectValue placeholder="Select type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {propertyTypes.map((pt) => (
+                                <SelectItem key={pt._id} value={pt._id}>
+                                  {pt.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="col-span-2">
+                          <Input
+                            type="number"
+                            min="1"
+                            className="h-9"
+                            value={prop.quantity}
+                            onChange={(e) => updateProperty(index, "quantity", parseInt(e.target.value) || 1)}
+                            placeholder="Qty"
+                          />
+                        </div>
+                        <div className="col-span-3">
+                          <div className="relative">
+                            <Input
+                              type="number"
+                              min="0"
+                              className={`h-9 pr-8 ${hasCustomCost ? 'border-amber-400 bg-amber-50' : ''}`}
+                              value={prop.costPerUnit !== undefined ? prop.costPerUnit : defaultCost}
+                              onChange={(e) => {
+                                const value = parseFloat(e.target.value);
+                                if (!isNaN(value)) {
+                                  updateProperty(index, "costPerUnit", value);
+                                }
+                              }}
+                              placeholder="Cost"
+                            />
+                            {hasCustomCost && (
+                              <button
+                                type="button"
+                                className="absolute right-1 top-1/2 -translate-y-1/2 text-amber-600 hover:text-amber-800 text-xs px-1"
+                                onClick={() => {
+                                  const updated = [...properties];
+                                  updated[index] = { ...updated[index], costPerUnit: undefined };
+                                  setProperties(updated);
+                                }}
+                                title={`Reset to default (${formatCurrency(defaultCost)})`}
+                              >
+                                Reset
+                              </button>
+                            )}
+                          </div>
+                          {hasCustomCost && (
+                            <p className="text-xs text-amber-600 mt-0.5">
+                              Default: {formatCurrency(defaultCost)}
+                            </p>
+                          )}
+                        </div>
+                        <div className="col-span-2 text-right text-sm font-medium">
+                          {prop.propertyTypeId && formatCurrency(effectiveCost * prop.quantity)}
+                        </div>
+                        <div className="col-span-1 text-right">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                            onClick={() => removeProperty(index)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
-                      <div className="w-24">
-                        <Input
-                          type="number"
-                          min="1"
-                          value={prop.quantity}
-                          onChange={(e) => updateProperty(index, "quantity", parseInt(e.target.value) || 1)}
-                          placeholder="Qty"
-                        />
-                      </div>
-                      <div className="w-28 text-right text-sm font-medium">
-                        {prop.propertyTypeId && (
-                          formatCurrency(
-                            (propertyTypes.find((pt) => pt._id === prop.propertyTypeId)?.cost || 0) * prop.quantity
-                          )
-                        )}
-                      </div>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                        onClick={() => removeProperty(index)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
+                    );
+                  })}
 
                   {/* Estimated Bill */}
                   <Card className="bg-green-50 border-green-200">
@@ -513,44 +562,27 @@ export function AddCustomerDialog({ onCustomerAdded }: AddCustomerDialogProps) {
                         <span className="font-medium text-green-800">Estimated Monthly Bill</span>
                         <span className="text-xl font-bold text-green-700">{formatCurrency(expectedBill)}</span>
                       </div>
+                      {properties.some(p => p.costPerUnit !== undefined && p.costPerUnit !== (propertyTypes.find(pt => pt._id === p.propertyTypeId)?.cost || 0)) && (
+                        <p className="text-xs text-amber-600 mt-1">* Includes custom pricing</p>
+                      )}
                     </CardContent>
                   </Card>
                 </div>
               )}
             </div>
 
-            {/* Previous Debt */}
-            <div className="space-y-2">
-              <Label htmlFor="previousDebt">Previous Debt (₦)</Label>
-              <Input
-                id="previousDebt"
-                type="number"
-                min="0"
-                step="0.01"
-                value={formData.previousDebt}
-                onChange={(e) => setFormData({ ...formData, previousDebt: e.target.value })}
-                placeholder="0.00"
-              />
-              <p className="text-xs text-gray-500">
-                Any outstanding balance from previous billing periods
-              </p>
-            </div>
-
             <div className="flex justify-end gap-2 pt-4 border-t">
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => {
-                  setOpen(false);
-                  resetForm();
-                }}
+                onClick={() => onOpenChange(false)}
                 disabled={loading}
               >
                 Cancel
               </Button>
               <Button type="submit" disabled={loading}>
                 {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                Add Customer
+                Save Changes
               </Button>
             </div>
           </form>

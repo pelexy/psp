@@ -73,6 +73,7 @@ const CollectionDetails = () => {
   const [collection, setCollection] = useState<any>(null);
   const [members, setMembers] = useState<any[]>([]);
   const [billingCycles, setBillingCycles] = useState<any[]>([]);
+  const [collectionLoading, setCollectionLoading] = useState(true);
   const [loading, setLoading] = useState(true);
   const [cyclesLoading, setCyclesLoading] = useState(true);
   const [customersDropdown, setCustomersDropdown] = useState<Customer[]>([]);
@@ -82,11 +83,19 @@ const CollectionDetails = () => {
   const [selectedCustomer, setSelectedCustomer] = useState("");
   const [singleAmount, setSingleAmount] = useState("");
   const [enrollingSingle, setEnrollingSingle] = useState(false);
+  const [generateImmediately, setGenerateImmediately] = useState(true); // Default to true
 
   // Bulk enrollment state
   const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
   const [uploadingBulk, setUploadingBulk] = useState(false);
   const [bulkFile, setBulkFile] = useState<File | null>(null);
+  const [bulkGenerateImmediately, setBulkGenerateImmediately] = useState(true); // Default to true
+  const [bulkPreviewData, setBulkPreviewData] = useState<any[]>([]);
+  const [showBulkConfirmation, setShowBulkConfirmation] = useState(false);
+
+  // Single enrollment confirmation
+  const [showSingleConfirmation, setShowSingleConfirmation] = useState(false);
+  const [singlePreviewData, setSinglePreviewData] = useState<any>(null);
 
   // Pagination for members
   const [currentPage, setCurrentPage] = useState(1);
@@ -127,12 +136,19 @@ const CollectionDetails = () => {
   const fetchCollectionDetails = async () => {
     if (!accessToken || !id) return;
 
+    setCollectionLoading(true);
     try {
       const response = await apiService.getCollection(accessToken, id);
-      setCollection(response);
+      console.log("Collection response:", response);
+
+      // Handle response format: {status, message, data: {...}}
+      const collectionData = response.data || response;
+      setCollection(collectionData);
     } catch (error: any) {
       console.error("Error fetching collection:", error);
       toast.error(error.message || "Failed to load collection details");
+    } finally {
+      setCollectionLoading(false);
     }
   };
 
@@ -227,29 +243,55 @@ const CollectionDetails = () => {
     }
   };
 
-  const handleSingleEnrollment = async (e: React.FormEvent) => {
+  // Show preview before enrolling single customer
+  const handleSinglePreview = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!accessToken || !id) return;
+
+    const customer = customersDropdown.find(c => c.accountNumber === selectedCustomer);
+    if (!customer) {
+      toast.error("Please select a customer");
+      return;
+    }
+
+    const amount = collection.amountType === "FIXED" ? collection.baseAmount :
+                   collection.amountType === "CUSTOMER_PROPERTY" ? (customer as any).expectedBill || 0 :
+                   parseFloat(singleAmount) || 0;
+
+    // Calculate commission (assuming 5% paid by customer - this should match backend)
+    const commissionRate = 0.05; // This should ideally come from PSP settings
+    const commissionAmount = amount * commissionRate;
+    const totalAmount = amount + commissionAmount;
+
+    setSinglePreviewData({
+      customer,
+      amount,
+      commissionAmount,
+      totalAmount,
+      generateImmediately,
+    });
+    setShowSingleConfirmation(true);
+  };
+
+  // Actually enroll single customer after confirmation
+  const handleSingleEnrollment = async () => {
+    if (!accessToken || !id || !singlePreviewData) return;
 
     setEnrollingSingle(true);
     try {
-      const customer = customersDropdown.find(c => c.accountNumber === selectedCustomer);
-      if (!customer) {
-        toast.error("Please select a customer");
-        return;
-      }
-
       const enrollmentData = {
-        accountNumber: customer.accountNumber,
-        amount: collection.amountType === "FIXED" ? collection.baseAmount : parseFloat(singleAmount),
+        accountNumber: singlePreviewData.customer.accountNumber,
+        amount: singlePreviewData.amount,
       };
 
-      await apiService.enrollCustomers(accessToken, id, [enrollmentData]);
+      await apiService.enrollCustomers(accessToken, id, [enrollmentData], generateImmediately);
 
-      toast.success(`${customer.name} enrolled successfully!`);
+      toast.success(`${singlePreviewData.customer.name} enrolled successfully!${generateImmediately ? ' Invoice generated.' : ''}`);
       setSingleDialogOpen(false);
+      setShowSingleConfirmation(false);
       setSelectedCustomer("");
       setSingleAmount("");
+      setSinglePreviewData(null);
+      setGenerateImmediately(true);
 
       // Refresh data
       fetchCollectionDetails();
@@ -477,11 +519,11 @@ const CollectionDetails = () => {
     return value && value !== "all" && value !== "";
   }).length;
 
-  const handleBulkUpload = async (e: React.FormEvent) => {
+  // Show preview before bulk enrolling
+  const handleBulkPreview = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!accessToken || !id || !bulkFile) return;
+    if (!bulkFile) return;
 
-    setUploadingBulk(true);
     try {
       const fileContent = await bulkFile.text();
       const lines = fileContent.split("\n").filter(line => line.trim());
@@ -493,11 +535,20 @@ const CollectionDetails = () => {
         // CSV format: accountNumber,name,phone,email,address,city,state,lga,amount
         const columns = line.split(",");
         const accountNumber = columns[0]?.trim();
-        const amount = columns[8]?.trim(); // 9th column (index 8) is amount
+        const name = columns[1]?.trim();
+        const amount = parseFloat(columns[8]?.trim()) || 0;
+
+        // Calculate commission (5% paid by customer)
+        const commissionRate = 0.05;
+        const commissionAmount = amount * commissionRate;
+        const totalAmount = amount + commissionAmount;
 
         return {
           accountNumber: accountNumber || "",
-          amount: parseFloat(amount) || 0,
+          name: name || accountNumber,
+          amount,
+          commissionAmount,
+          totalAmount,
         };
       }).filter(item => item.accountNumber && item.amount > 0);
 
@@ -506,13 +557,33 @@ const CollectionDetails = () => {
         return;
       }
 
-      console.log("Enrolling customers:", enrollmentData);
+      setBulkPreviewData(enrollmentData);
+      setShowBulkConfirmation(true);
+    } catch (error: any) {
+      console.error("Error parsing file:", error);
+      toast.error("Failed to parse file");
+    }
+  };
 
-      await apiService.enrollCustomers(accessToken, id, enrollmentData);
+  // Actually enroll bulk customers after confirmation
+  const handleBulkUpload = async () => {
+    if (!accessToken || !id || bulkPreviewData.length === 0) return;
 
-      toast.success(`${enrollmentData.length} customer(s) enrolled successfully!`);
+    setUploadingBulk(true);
+    try {
+      const enrollmentData = bulkPreviewData.map(item => ({
+        accountNumber: item.accountNumber,
+        amount: item.amount,
+      }));
+
+      await apiService.enrollCustomers(accessToken, id, enrollmentData, bulkGenerateImmediately);
+
+      toast.success(`${enrollmentData.length} customer(s) enrolled successfully!${bulkGenerateImmediately ? ' Invoices generated.' : ''}`);
       setBulkDialogOpen(false);
+      setShowBulkConfirmation(false);
       setBulkFile(null);
+      setBulkPreviewData([]);
+      setBulkGenerateImmediately(true);
 
       // Refresh data
       fetchCollectionDetails();
@@ -525,7 +596,7 @@ const CollectionDetails = () => {
     }
   };
 
-  if (loading && !collection) {
+  if (collectionLoading) {
     return (
       <DashboardLayout>
         <div className="p-4 md:p-6 lg:p-8">
@@ -600,7 +671,7 @@ const CollectionDetails = () => {
                   </DialogDescription>
                 </DialogHeader>
 
-                <form onSubmit={handleSingleEnrollment} className="space-y-4">
+                <form onSubmit={handleSinglePreview} className="space-y-4">
                   <div>
                     <Label htmlFor="customer">Select Customer *</Label>
                     <Select value={selectedCustomer} onValueChange={setSelectedCustomer}>
@@ -669,6 +740,19 @@ const CollectionDetails = () => {
                     </div>
                   )}
 
+                  <div className="flex items-center space-x-2 pt-2">
+                    <input
+                      type="checkbox"
+                      id="generateImmediately"
+                      checked={generateImmediately}
+                      onChange={(e) => setGenerateImmediately(e.target.checked)}
+                      className="h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500"
+                    />
+                    <label htmlFor="generateImmediately" className="text-sm text-gray-700">
+                      Generate invoice for this billing cycle
+                    </label>
+                  </div>
+
                   <div className="flex justify-end gap-2 pt-4">
                     <Button
                       type="button"
@@ -677,11 +761,74 @@ const CollectionDetails = () => {
                     >
                       Cancel
                     </Button>
-                    <Button type="submit" disabled={enrollingSingle}>
-                      {enrollingSingle ? "Enrolling..." : "Enroll Customer"}
+                    <Button type="submit">
+                      Preview & Confirm
                     </Button>
                   </div>
                 </form>
+              </DialogContent>
+            </Dialog>
+
+            {/* Single Enrollment Confirmation Dialog */}
+            <Dialog open={showSingleConfirmation} onOpenChange={setShowSingleConfirmation}>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Confirm Enrollment</DialogTitle>
+                  <DialogDescription>
+                    Review the details below before confirming
+                  </DialogDescription>
+                </DialogHeader>
+
+                {singlePreviewData && (
+                  <div className="space-y-4">
+                    <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                      <h4 className="font-semibold text-gray-900 mb-2">{singlePreviewData.customer.name}</h4>
+                      <p className="text-sm text-gray-600">{singlePreviewData.customer.accountNumber}</p>
+                      <p className="text-sm text-gray-600">{singlePreviewData.customer.phone}</p>
+                    </div>
+
+                    {generateImmediately && (
+                      <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+                        <h4 className="font-semibold text-green-900 mb-3">Invoice to be Generated</h4>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Base Amount:</span>
+                            <span className="font-medium">₦{singlePreviewData.amount.toLocaleString()}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Commission (5%):</span>
+                            <span className="font-medium">₦{singlePreviewData.commissionAmount.toLocaleString()}</span>
+                          </div>
+                          <div className="flex justify-between border-t pt-2 mt-2">
+                            <span className="font-semibold text-gray-900">Total Amount:</span>
+                            <span className="font-bold text-green-700">₦{singlePreviewData.totalAmount.toLocaleString()}</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {!generateImmediately && (
+                      <div className="bg-yellow-50 rounded-lg p-4 border border-yellow-200">
+                        <p className="text-sm text-yellow-800">
+                          No invoice will be generated now. Invoice will be created on the next billing cycle.
+                        </p>
+                      </div>
+                    )}
+
+                    <div className="flex justify-end gap-2 pt-4">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setShowSingleConfirmation(false)}
+                      >
+                        Back
+                      </Button>
+                      <Button onClick={handleSingleEnrollment} disabled={enrollingSingle}>
+                        {enrollingSingle ? "Enrolling..." : "Confirm & Enroll"}
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </DialogContent>
             </Dialog>
 
@@ -721,7 +868,7 @@ const CollectionDetails = () => {
                   </div>
 
                   {/* Upload File */}
-                  <form onSubmit={handleBulkUpload} className="space-y-4">
+                  <form onSubmit={handleBulkPreview} className="space-y-4">
                     <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
                       <h4 className="font-semibold text-sm mb-2">Step 2: Fill & Upload</h4>
                       <p className="text-xs text-gray-600 mb-3">
@@ -742,6 +889,19 @@ const CollectionDetails = () => {
                       )}
                     </div>
 
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id="bulkGenerateImmediately"
+                        checked={bulkGenerateImmediately}
+                        onChange={(e) => setBulkGenerateImmediately(e.target.checked)}
+                        className="h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500"
+                      />
+                      <label htmlFor="bulkGenerateImmediately" className="text-sm text-gray-700">
+                        Generate invoices for this billing cycle
+                      </label>
+                    </div>
+
                     <div className="flex justify-end gap-2 pt-4">
                       <Button
                         type="button"
@@ -750,11 +910,95 @@ const CollectionDetails = () => {
                       >
                         Cancel
                       </Button>
-                      <Button type="submit" disabled={uploadingBulk || !bulkFile}>
-                        {uploadingBulk ? "Uploading..." : "Upload & Enroll"}
+                      <Button type="submit" disabled={!bulkFile}>
+                        Preview & Confirm
                       </Button>
                     </div>
                   </form>
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            {/* Bulk Enrollment Confirmation Dialog */}
+            <Dialog open={showBulkConfirmation} onOpenChange={setShowBulkConfirmation}>
+              <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Confirm Bulk Enrollment</DialogTitle>
+                  <DialogDescription>
+                    Review all {bulkPreviewData.length} customer(s) before confirming
+                  </DialogDescription>
+                </DialogHeader>
+
+                <div className="space-y-4">
+                  {bulkGenerateImmediately && (
+                    <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+                      <h4 className="font-semibold text-green-900 mb-2">Invoices to be Generated</h4>
+                      <div className="max-h-[300px] overflow-y-auto">
+                        <table className="w-full text-sm">
+                          <thead className="bg-green-100 sticky top-0">
+                            <tr>
+                              <th className="text-left p-2">Customer</th>
+                              <th className="text-right p-2">Amount</th>
+                              <th className="text-right p-2">Commission</th>
+                              <th className="text-right p-2">Total</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {bulkPreviewData.map((item, index) => (
+                              <tr key={index} className="border-b border-green-100">
+                                <td className="p-2">
+                                  <div className="font-medium">{item.name}</div>
+                                  <div className="text-xs text-gray-500">{item.accountNumber}</div>
+                                </td>
+                                <td className="text-right p-2">₦{item.amount.toLocaleString()}</td>
+                                <td className="text-right p-2">₦{item.commissionAmount.toLocaleString()}</td>
+                                <td className="text-right p-2 font-semibold">₦{item.totalAmount.toLocaleString()}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                          <tfoot className="bg-green-100 font-bold">
+                            <tr>
+                              <td className="p-2">Total ({bulkPreviewData.length} customers)</td>
+                              <td className="text-right p-2">₦{bulkPreviewData.reduce((sum, item) => sum + item.amount, 0).toLocaleString()}</td>
+                              <td className="text-right p-2">₦{bulkPreviewData.reduce((sum, item) => sum + item.commissionAmount, 0).toLocaleString()}</td>
+                              <td className="text-right p-2 text-green-700">₦{bulkPreviewData.reduce((sum, item) => sum + item.totalAmount, 0).toLocaleString()}</td>
+                            </tr>
+                          </tfoot>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+
+                  {!bulkGenerateImmediately && (
+                    <div className="bg-yellow-50 rounded-lg p-4 border border-yellow-200">
+                      <p className="text-sm text-yellow-800 mb-2">
+                        No invoices will be generated now. {bulkPreviewData.length} customer(s) will be enrolled and invoices will be created on the next billing cycle.
+                      </p>
+                      <div className="max-h-[200px] overflow-y-auto">
+                        <ul className="text-sm space-y-1">
+                          {bulkPreviewData.map((item, index) => (
+                            <li key={index} className="flex justify-between">
+                              <span>{item.name}</span>
+                              <span className="text-gray-500">{item.accountNumber}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex justify-end gap-2 pt-4">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setShowBulkConfirmation(false)}
+                    >
+                      Back
+                    </Button>
+                    <Button onClick={handleBulkUpload} disabled={uploadingBulk}>
+                      {uploadingBulk ? "Enrolling..." : `Confirm & Enroll ${bulkPreviewData.length} Customer(s)`}
+                    </Button>
+                  </div>
                 </div>
               </DialogContent>
             </Dialog>

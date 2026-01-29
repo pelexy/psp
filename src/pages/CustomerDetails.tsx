@@ -28,6 +28,11 @@ import {
   AlertCircle,
   User,
   Trash2,
+  Pencil,
+  Building2,
+  Home,
+  Navigation,
+  Printer,
 } from "lucide-react";
 import { apiService } from "@/services/api";
 import { useAuth } from "@/contexts/AuthContext";
@@ -35,6 +40,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
 import { TrashSealPreview } from "@/components/customers/TrashSealPreview";
+import { EditCustomerDialog } from "@/components/customers/EditCustomerDialog";
 import { QRCodeSVG } from "qrcode.react";
 
 const CustomerDetails = () => {
@@ -57,27 +63,28 @@ const CustomerDetails = () => {
   const [transactionTotal, setTransactionTotal] = useState(0);
   const [transactionTotalPages, setTransactionTotalPages] = useState(1);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [togglingService, setTogglingService] = useState<string | null>(null);
 
   // Fetch customer details
+  const fetchCustomerDetails = async () => {
+    if (!accountNumber || !accessToken) return;
+
+    setLoading(true);
+    try {
+      const response = await apiService.getCustomerDetails(accessToken, accountNumber);
+      console.log("Customer details response:", response);
+      setCustomer(response);
+    } catch (error) {
+      console.error("Error fetching customer details:", error);
+      toast.error("Failed to load customer details");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchCustomerDetails = async () => {
-      if (!accountNumber || !accessToken) return;
-
-      setLoading(true);
-      try {
-        const response = await apiService.getCustomerDetails(accessToken, accountNumber);
-        console.log("Customer details response:", response);
-        setCustomer(response);
-      } catch (error) {
-        console.error("Error fetching customer details:", error);
-        toast.error("Failed to load customer details");
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchCustomerDetails();
   }, [accountNumber, accessToken]);
 
@@ -395,6 +402,16 @@ const CustomerDetails = () => {
           <div className="flex gap-2 justify-end">
             <TrashSealPreview customer={customer} />
             <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowEditDialog(true)}
+              className="gap-2"
+            >
+              <Pencil className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">Edit Customer</span>
+              <span className="sm:hidden">Edit</span>
+            </Button>
+            <Button
               variant="destructive"
               size="sm"
               onClick={() => setShowDeleteDialog(true)}
@@ -406,6 +423,14 @@ const CustomerDetails = () => {
             </Button>
           </div>
         </div>
+
+        {/* Edit Customer Dialog */}
+        <EditCustomerDialog
+          customer={customer}
+          open={showEditDialog}
+          onOpenChange={setShowEditDialog}
+          onCustomerUpdated={fetchCustomerDetails}
+        />
 
         {/* Delete Confirmation Dialog */}
         <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
@@ -522,6 +547,19 @@ const CustomerDetails = () => {
                     <p className="text-xs text-gray-500">Payment Efficiency</p>
                   </div>
                 </div>
+
+                {/* Print Statement Button - only show if there's outstanding balance */}
+                {financial.currentBalance > 0 && (
+                  <div className="mt-4 flex justify-end">
+                    <Button
+                      onClick={() => navigate(`/billing/customer-statement/${details.customerId}`)}
+                      className="bg-green-600 hover:bg-green-700 gap-2"
+                    >
+                      <Printer className="h-4 w-4" />
+                      Print Statement (₦{(financial.currentBalance || 0).toLocaleString()} owed)
+                    </Button>
+                  </div>
+                )}
               </div>
 
               {/* Invoice Summary & Customer Info */}
@@ -535,10 +573,10 @@ const CustomerDetails = () => {
                       <PieChart>
                         <Pie
                           data={[
-                            { name: 'Paid', value: invoiceSummary.paid || 0 },
-                            { name: 'Pending', value: invoiceSummary.pending || 0 },
-                            { name: 'Overdue', value: invoiceSummary.overdue || 0 },
-                            ...(invoiceSummary.partiallyPaid > 0 ? [{ name: 'Partially Paid', value: invoiceSummary.partiallyPaid }] : [])
+                            { name: 'Paid', value: invoiceSummary.paid || 0, color: '#10b981' },
+                            { name: 'Pending', value: invoiceSummary.pending || 0, color: '#f59e0b' },
+                            { name: 'Overdue', value: invoiceSummary.overdue || 0, color: '#ef4444' },
+                            ...(invoiceSummary.partiallyPaid > 0 ? [{ name: 'Partially Paid', value: invoiceSummary.partiallyPaid, color: '#3b82f6' }] : [])
                           ].filter(item => item.value > 0)}
                           cx="50%"
                           cy="50%"
@@ -547,10 +585,14 @@ const CustomerDetails = () => {
                           paddingAngle={2}
                           dataKey="value"
                         >
-                          <Cell fill="#10b981" />
-                          <Cell fill="#f59e0b" />
-                          <Cell fill="#ef4444" />
-                          <Cell fill="#3b82f6" />
+                          {[
+                            { name: 'Paid', value: invoiceSummary.paid || 0, color: '#10b981' },
+                            { name: 'Pending', value: invoiceSummary.pending || 0, color: '#f59e0b' },
+                            { name: 'Overdue', value: invoiceSummary.overdue || 0, color: '#ef4444' },
+                            ...(invoiceSummary.partiallyPaid > 0 ? [{ name: 'Partially Paid', value: invoiceSummary.partiallyPaid, color: '#3b82f6' }] : [])
+                          ].filter(item => item.value > 0).map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
                         </Pie>
                         <Tooltip />
                         <Legend />
@@ -622,6 +664,17 @@ const CustomerDetails = () => {
                       </div>
                     </div>
 
+                    {/* Customer Type */}
+                    <div className="flex items-start gap-3">
+                      <Building2 className="h-5 w-5 text-gray-400 mt-0.5" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-gray-500 mb-1">Customer Type</p>
+                        <Badge variant="outline" className="capitalize">
+                          {details.customerType || 'standalone'}
+                        </Badge>
+                      </div>
+                    </div>
+
                     <div className="flex items-start gap-3">
                       <Mail className="h-5 w-5 text-gray-400 mt-0.5" />
                       <div className="flex-1 min-w-0">
@@ -635,6 +688,20 @@ const CustomerDetails = () => {
                       <div className="flex-1 min-w-0">
                         <p className="text-xs text-gray-500 mb-1">Phone Number</p>
                         <p className="text-sm font-medium text-gray-900">{details.phone || 'N/A'}</p>
+                      </div>
+                    </div>
+
+                    {/* Ward & Street */}
+                    <div className="flex items-start gap-3">
+                      <Navigation className="h-5 w-5 text-gray-400 mt-0.5" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-gray-500 mb-1">Ward / Street</p>
+                        <p className="text-sm font-medium text-gray-900">
+                          {details.wardId?.name || details.ward?.name || 'Not set'}
+                          {(details.streetId?.name || details.street?.name) && (
+                            <span className="text-gray-600"> / {details.streetId?.name || details.street?.name}</span>
+                          )}
+                        </p>
                       </div>
                     </div>
 
@@ -653,6 +720,61 @@ const CustomerDetails = () => {
 
                   </div>
                 </div>
+              </div>
+
+              {/* Property Breakdown */}
+              <div className="p-4 sm:p-6 lg:p-8 border-b">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-semibold text-gray-900">Property Breakdown</h3>
+                  <div className="text-right">
+                    <p className="text-xs text-gray-500">Estimated Monthly Bill</p>
+                    <p className="text-lg font-bold text-green-600">
+                      ₦{(details.expectedBill || 0).toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+
+                {details.properties && details.properties.length > 0 ? (
+                  <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                    <table className="w-full">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Property Type</th>
+                          <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
+                          <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Rate</th>
+                          <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Subtotal</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200">
+                        {details.properties.map((prop: any, index: number) => (
+                          <tr key={index}>
+                            <td className="px-4 py-3">
+                              <div className="flex items-center gap-2">
+                                <Home className="h-4 w-4 text-gray-400" />
+                                <span className="text-sm font-medium text-gray-900">{prop.propertyTypeName}</span>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3 text-center text-sm text-gray-600">{prop.quantity}</td>
+                            <td className="px-4 py-3 text-right text-sm text-gray-600">₦{(prop.costPerUnit || 0).toLocaleString()}</td>
+                            <td className="px-4 py-3 text-right text-sm font-semibold text-gray-900">₦{(prop.subtotal || 0).toLocaleString()}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                      <tfoot className="bg-green-50">
+                        <tr>
+                          <td colSpan={3} className="px-4 py-3 text-right text-sm font-semibold text-green-800">Total Estimated Bill</td>
+                          <td className="px-4 py-3 text-right text-lg font-bold text-green-700">₦{(details.expectedBill || 0).toLocaleString()}</td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+                ) : (
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 text-center">
+                    <Home className="h-8 w-8 text-gray-300 mx-auto mb-2" />
+                    <p className="text-sm text-gray-500">No properties configured</p>
+                    <p className="text-xs text-gray-400 mt-1">Click "Edit Customer" to add property types</p>
+                  </div>
+                )}
               </div>
 
               {/* Services Enrolled */}
