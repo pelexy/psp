@@ -1,4 +1,5 @@
 // Nigerian States and LGAs
+//kdf
 export const nigerianStates = [
   { value: "abia", label: "Abia" },
   { value: "adamawa", label: "Adamawa" },
@@ -40,10 +41,26 @@ export const nigerianStates = [
 ];
 
 export const lagosLGAs = [
-  "Agege", "Ajeromi-Ifelodun", "Alimosho", "Amuwo-Odofin", "Apapa",
-  "Badagry", "Epe", "Eti-Osa", "Ibeju-Lekki", "Ifako-Ijaiye",
-  "Ikeja", "Ikorodu", "Kosofe", "Lagos Island", "Lagos Mainland",
-  "Mushin", "Ojo", "Oshodi-Isolo", "Shomolu", "Surulere"
+  "Agege",
+  "Ajeromi-Ifelodun",
+  "Alimosho",
+  "Amuwo-Odofin",
+  "Apapa",
+  "Badagry",
+  "Epe",
+  "Eti-Osa",
+  "Ibeju-Lekki",
+  "Ifako-Ijaiye",
+  "Ikeja",
+  "Ikorodu",
+  "Kosofe",
+  "Lagos Island",
+  "Lagos Mainland",
+  "Mushin",
+  "Ojo",
+  "Oshodi-Isolo",
+  "Shomolu",
+  "Surulere",
 ];
 
 export const getLGAsByState = (state: string): string[] => {
