@@ -1,5 +1,7 @@
 // Production API (auto-switches between dev and prod)
-const API_BASE_URL = import.meta.env.DEV ? 'http://localhost:3005/api' : 'https://payapi.buypowerpass.africa/api';
+const API_BASE_URL = import.meta.env.DEV
+  ? "https://payapi.buypowerpass.africa/api"
+  : "https://payapi.buypowerpass.africa/api";
 
 // Response when temporary password needs to be changed
 export interface TemporaryPasswordResponse {
@@ -219,15 +221,11 @@ export class ApiError extends Error {
   statusCode: number;
   error?: string;
 
-  constructor(
-    statusCode: number,
-    message: string,
-    error?: string
-  ) {
+  constructor(statusCode: number, message: string, error?: string) {
     super(message);
     this.statusCode = statusCode;
     this.error = error;
-    this.name = 'ApiError';
+    this.name = "ApiError";
   }
 }
 
@@ -255,7 +253,7 @@ class ApiService {
       throw new ApiError(
         errorData.statusCode || response.status,
         errorData.message || `Request failed with status ${response.status}`,
-        errorData.error || response.statusText
+        errorData.error || response.statusText,
       );
     }
 
@@ -264,39 +262,39 @@ class ApiService {
     } catch (e) {
       throw new ApiError(
         500,
-        'Failed to parse server response',
-        'Invalid JSON'
+        "Failed to parse server response",
+        "Invalid JSON",
       );
     }
   }
 
   async login(email: string, password: string): Promise<LoginResponse> {
     const url = `${this.baseUrl}/auth/login`;
-    console.log('Login request to:', url);
-    console.log('Request body:', { email, password: '***' });
+    console.log("Login request to:", url);
+    console.log("Request body:", { email, password: "***" });
 
     const response = await fetch(url, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({ email, password }),
     });
 
-    console.log('Login response status:', response.status);
+    console.log("Login response status:", response.status);
     return this.handleResponse<LoginResponse>(response);
   }
 
   async changePassword(
     oldPassword: string,
     newPassword: string,
-    accessToken: string
+    accessToken: string,
   ): Promise<ChangePasswordResponse> {
     const response = await fetch(`${this.baseUrl}/auth/change-password`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
       },
       body: JSON.stringify({ oldPassword, newPassword }),
     });
@@ -306,9 +304,9 @@ class ApiService {
 
   async forgotPassword(email: string): Promise<ForgotPasswordResponse> {
     const response = await fetch(`${this.baseUrl}/auth/forgot-password`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({ email }),
     });
@@ -318,12 +316,12 @@ class ApiService {
 
   async resetPassword(
     token: string,
-    newPassword: string
+    newPassword: string,
   ): Promise<ChangePasswordResponse> {
     const response = await fetch(`${this.baseUrl}/auth/reset-password`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({ token, newPassword }),
     });
@@ -335,14 +333,14 @@ class ApiService {
   async makeAuthenticatedRequest<T>(
     endpoint: string,
     options: RequestInit = {},
-    accessToken: string
+    accessToken: string,
   ): Promise<T> {
     const response = await fetch(`${this.baseUrl}${endpoint}`, {
       ...options,
       headers: {
         ...options.headers,
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
       },
     });
 
@@ -351,49 +349,70 @@ class ApiService {
 
   // Dashboard API methods
   async getPSPDashboard(accessToken: string): Promise<PSPDashboardResponse> {
-    return this.makeAuthenticatedRequest<PSPDashboardResponse>('/psp/dashboard', {}, accessToken);
-  }
-
-  async getDashboardStats(accessToken: string, startDate?: string, endDate?: string): Promise<DashboardStatsResponse> {
-    const params = new URLSearchParams();
-    if (startDate) params.append('startDate', startDate);
-    if (endDate) params.append('endDate', endDate);
-
-    const queryString = params.toString();
-    const endpoint = `/psp/dashboard/stats${queryString ? `?${queryString}` : ''}`;
-
-    return this.makeAuthenticatedRequest<DashboardStatsResponse>(endpoint, {}, accessToken);
-  }
-
-  async getRecentTransactions(accessToken: string): Promise<RecentTransactionsResponse> {
-    return this.makeAuthenticatedRequest<RecentTransactionsResponse>(
-      '/psp/dashboard/recent-transactions',
+    return this.makeAuthenticatedRequest<PSPDashboardResponse>(
+      "/psp/dashboard",
       {},
-      accessToken
+      accessToken,
     );
   }
 
-  async getMonthlyRevenue(accessToken: string, months: number = 6): Promise<MonthlyRevenueResponse> {
+  async getDashboardStats(
+    accessToken: string,
+    startDate?: string,
+    endDate?: string,
+  ): Promise<DashboardStatsResponse> {
+    const params = new URLSearchParams();
+    if (startDate) params.append("startDate", startDate);
+    if (endDate) params.append("endDate", endDate);
+
+    const queryString = params.toString();
+    const endpoint = `/psp/dashboard/stats${queryString ? `?${queryString}` : ""}`;
+
+    return this.makeAuthenticatedRequest<DashboardStatsResponse>(
+      endpoint,
+      {},
+      accessToken,
+    );
+  }
+
+  async getRecentTransactions(
+    accessToken: string,
+  ): Promise<RecentTransactionsResponse> {
+    return this.makeAuthenticatedRequest<RecentTransactionsResponse>(
+      "/psp/dashboard/recent-transactions",
+      {},
+      accessToken,
+    );
+  }
+
+  async getMonthlyRevenue(
+    accessToken: string,
+    months: number = 6,
+  ): Promise<MonthlyRevenueResponse> {
     return this.makeAuthenticatedRequest<MonthlyRevenueResponse>(
       `/psp/dashboard/monthly-revenue?months=${months}`,
       {},
-      accessToken
+      accessToken,
     );
   }
 
-  async getHighestDebtCustomers(accessToken: string): Promise<HighestDebtCustomersResponse> {
+  async getHighestDebtCustomers(
+    accessToken: string,
+  ): Promise<HighestDebtCustomersResponse> {
     return this.makeAuthenticatedRequest<HighestDebtCustomersResponse>(
-      '/psp/dashboard/highest-debt-customers',
+      "/psp/dashboard/highest-debt-customers",
       {},
-      accessToken
+      accessToken,
     );
   }
 
-  async getBestPayingCustomers(accessToken: string): Promise<BestPayingCustomersResponse> {
+  async getBestPayingCustomers(
+    accessToken: string,
+  ): Promise<BestPayingCustomersResponse> {
     return this.makeAuthenticatedRequest<BestPayingCustomersResponse>(
-      '/psp/dashboard/best-paying-customers',
+      "/psp/dashboard/best-paying-customers",
       {},
-      accessToken
+      accessToken,
     );
   }
 
@@ -407,53 +426,52 @@ class ApiService {
       isActive?: boolean;
       state?: string;
       sortBy?: string;
-      sortOrder?: 'asc' | 'desc';
-    }
-  ): Promise<import('@/types/customer').CustomerListResponse> {
+      sortOrder?: "asc" | "desc";
+    },
+  ): Promise<import("@/types/customer").CustomerListResponse> {
     const params = new URLSearchParams();
-    params.append('page', page.toString());
-    params.append('limit', limit.toString());
+    params.append("page", page.toString());
+    params.append("limit", limit.toString());
 
     if (filters) {
-      if (filters.searchTerm) params.append('searchTerm', filters.searchTerm);
-      if (filters.isActive !== undefined) params.append('isActive', filters.isActive.toString());
-      if (filters.state) params.append('state', filters.state);
-      if (filters.sortBy) params.append('sortBy', filters.sortBy);
-      if (filters.sortOrder) params.append('sortOrder', filters.sortOrder);
+      if (filters.searchTerm) params.append("searchTerm", filters.searchTerm);
+      if (filters.isActive !== undefined)
+        params.append("isActive", filters.isActive.toString());
+      if (filters.state) params.append("state", filters.state);
+      if (filters.sortBy) params.append("sortBy", filters.sortBy);
+      if (filters.sortOrder) params.append("sortOrder", filters.sortOrder);
     }
 
     const queryString = params.toString();
-    const endpoint = `/psp/customers${queryString ? `?${queryString}` : ''}`;
+    const endpoint = `/psp/customers${queryString ? `?${queryString}` : ""}`;
 
-    console.log('API Request URL:', `${this.baseUrl}${endpoint}`);
-    console.log('Query parameters:', queryString);
+    console.log("API Request URL:", `${this.baseUrl}${endpoint}`);
+    console.log("Query parameters:", queryString);
 
-    return this.makeAuthenticatedRequest<import('@/types/customer').CustomerListResponse>(
-      endpoint,
-      {},
-      accessToken
-    );
+    return this.makeAuthenticatedRequest<
+      import("@/types/customer").CustomerListResponse
+    >(endpoint, {}, accessToken);
   }
 
   async getCustomerDetails(
     accessToken: string,
-    accountNumber: string
+    accountNumber: string,
   ): Promise<any> {
     return this.makeAuthenticatedRequest<any>(
       `/psp/customers/${accountNumber}`,
       {},
-      accessToken
+      accessToken,
     );
   }
 
   async getCustomerPendingInvoices(
     accessToken: string,
-    customerId: string
+    customerId: string,
   ): Promise<any> {
     return this.makeAuthenticatedRequest<any>(
       `/customers/${customerId}/pending-invoices`,
       {},
-      accessToken
+      accessToken,
     );
   }
 
@@ -476,32 +494,39 @@ class ApiService {
       minAmount?: number;
       maxAmount?: number;
       sortBy?: string;
-      sortOrder?: 'asc' | 'desc';
-    }
+      sortOrder?: "asc" | "desc";
+    },
   ): Promise<any> {
     const params = new URLSearchParams();
-    params.append('page', page.toString());
-    params.append('limit', limit.toString());
+    params.append("page", page.toString());
+    params.append("limit", limit.toString());
 
     if (filters) {
-      if (filters.status) params.append('status', filters.status);
-      if (filters.collectionId) params.append('collectionId', filters.collectionId);
-      if (filters.isBacklog !== undefined) params.append('isBacklog', filters.isBacklog.toString());
-      if (filters.invoiceNumber) params.append('invoiceNumber', filters.invoiceNumber);
-      if (filters.startDate) params.append('startDate', filters.startDate);
-      if (filters.endDate) params.append('endDate', filters.endDate);
-      if (filters.dueDateFrom) params.append('dueDateFrom', filters.dueDateFrom);
-      if (filters.dueDateTo) params.append('dueDateTo', filters.dueDateTo);
-      if (filters.paidDateFrom) params.append('paidDateFrom', filters.paidDateFrom);
-      if (filters.paidDateTo) params.append('paidDateTo', filters.paidDateTo);
-      if (filters.minAmount !== undefined) params.append('minAmount', filters.minAmount.toString());
-      if (filters.maxAmount !== undefined) params.append('maxAmount', filters.maxAmount.toString());
-      if (filters.sortBy) params.append('sortBy', filters.sortBy);
-      if (filters.sortOrder) params.append('sortOrder', filters.sortOrder);
+      if (filters.status) params.append("status", filters.status);
+      if (filters.collectionId)
+        params.append("collectionId", filters.collectionId);
+      if (filters.isBacklog !== undefined)
+        params.append("isBacklog", filters.isBacklog.toString());
+      if (filters.invoiceNumber)
+        params.append("invoiceNumber", filters.invoiceNumber);
+      if (filters.startDate) params.append("startDate", filters.startDate);
+      if (filters.endDate) params.append("endDate", filters.endDate);
+      if (filters.dueDateFrom)
+        params.append("dueDateFrom", filters.dueDateFrom);
+      if (filters.dueDateTo) params.append("dueDateTo", filters.dueDateTo);
+      if (filters.paidDateFrom)
+        params.append("paidDateFrom", filters.paidDateFrom);
+      if (filters.paidDateTo) params.append("paidDateTo", filters.paidDateTo);
+      if (filters.minAmount !== undefined)
+        params.append("minAmount", filters.minAmount.toString());
+      if (filters.maxAmount !== undefined)
+        params.append("maxAmount", filters.maxAmount.toString());
+      if (filters.sortBy) params.append("sortBy", filters.sortBy);
+      if (filters.sortOrder) params.append("sortOrder", filters.sortOrder);
     }
 
     const queryString = params.toString();
-    const endpoint = `/psp/customers/${accountNumber}/invoices${queryString ? `?${queryString}` : ''}`;
+    const endpoint = `/psp/customers/${accountNumber}/invoices${queryString ? `?${queryString}` : ""}`;
 
     return this.makeAuthenticatedRequest<any>(endpoint, {}, accessToken);
   }
@@ -525,39 +550,45 @@ class ApiService {
       minAmount?: number;
       maxAmount?: number;
       sortBy?: string;
-      sortOrder?: 'asc' | 'desc';
-    }
+      sortOrder?: "asc" | "desc";
+    },
   ): Promise<any> {
     const params = new URLSearchParams();
-    params.append('page', page.toString());
-    params.append('limit', limit.toString());
+    params.append("page", page.toString());
+    params.append("limit", limit.toString());
 
     if (filters) {
-      if (filters.status) params.append('status', filters.status);
-      if (filters.type) params.append('type', filters.type);
-      if (filters.invoiceId) params.append('invoiceId', filters.invoiceId);
-      if (filters.invoiceNumber) params.append('invoiceNumber', filters.invoiceNumber);
-      if (filters.transactionReference) params.append('transactionReference', filters.transactionReference);
-      if (filters.paymentMethod) params.append('paymentMethod', filters.paymentMethod);
-      if (filters.startDate) params.append('startDate', filters.startDate);
-      if (filters.endDate) params.append('endDate', filters.endDate);
-      if (filters.paidDateFrom) params.append('paidDateFrom', filters.paidDateFrom);
-      if (filters.paidDateTo) params.append('paidDateTo', filters.paidDateTo);
-      if (filters.minAmount !== undefined) params.append('minAmount', filters.minAmount.toString());
-      if (filters.maxAmount !== undefined) params.append('maxAmount', filters.maxAmount.toString());
-      if (filters.sortBy) params.append('sortBy', filters.sortBy);
-      if (filters.sortOrder) params.append('sortOrder', filters.sortOrder);
+      if (filters.status) params.append("status", filters.status);
+      if (filters.type) params.append("type", filters.type);
+      if (filters.invoiceId) params.append("invoiceId", filters.invoiceId);
+      if (filters.invoiceNumber)
+        params.append("invoiceNumber", filters.invoiceNumber);
+      if (filters.transactionReference)
+        params.append("transactionReference", filters.transactionReference);
+      if (filters.paymentMethod)
+        params.append("paymentMethod", filters.paymentMethod);
+      if (filters.startDate) params.append("startDate", filters.startDate);
+      if (filters.endDate) params.append("endDate", filters.endDate);
+      if (filters.paidDateFrom)
+        params.append("paidDateFrom", filters.paidDateFrom);
+      if (filters.paidDateTo) params.append("paidDateTo", filters.paidDateTo);
+      if (filters.minAmount !== undefined)
+        params.append("minAmount", filters.minAmount.toString());
+      if (filters.maxAmount !== undefined)
+        params.append("maxAmount", filters.maxAmount.toString());
+      if (filters.sortBy) params.append("sortBy", filters.sortBy);
+      if (filters.sortOrder) params.append("sortOrder", filters.sortOrder);
     }
 
     const queryString = params.toString();
-    const endpoint = `/psp/customers/${accountNumber}/transactions${queryString ? `?${queryString}` : ''}`;
+    const endpoint = `/psp/customers/${accountNumber}/transactions${queryString ? `?${queryString}` : ""}`;
 
     return this.makeAuthenticatedRequest<any>(endpoint, {}, accessToken);
   }
 
   async searchCustomerByAccountNumber(
     accessToken: string,
-    accountNumber: string
+    accountNumber: string,
   ): Promise<any> {
     // Use the same endpoint as getCustomerDetails
     return this.getCustomerDetails(accessToken, accountNumber);
@@ -565,34 +596,33 @@ class ApiService {
 
   async bulkUploadCustomers(
     accessToken: string,
-    customers: any[]
-  ): Promise<import('@/types/customer').BulkUploadResponse> {
+    customers: any[],
+  ): Promise<import("@/types/customer").BulkUploadResponse> {
     const response = await fetch(`${this.baseUrl}/customers/bulk-upload`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({ customers }),
     });
 
-    return this.handleResponse<import('@/types/customer').BulkUploadResponse>(response);
+    return this.handleResponse<import("@/types/customer").BulkUploadResponse>(
+      response,
+    );
   }
 
-  async deleteCustomer(
-    accessToken: string,
-    customerId: string
-  ): Promise<any> {
+  async deleteCustomer(accessToken: string, customerId: string): Promise<any> {
     const response = await fetch(`${this.baseUrl}/customers/${customerId}`, {
-      method: 'DELETE',
+      method: "DELETE",
       headers: {
-        'Authorization': `Bearer ${accessToken}`,
+        Authorization: `Bearer ${accessToken}`,
       },
     });
 
     // DELETE might return 204 No Content, handle it specially
     if (response.status === 204 || response.status === 200) {
-      return { success: true, message: 'Customer deleted successfully' };
+      return { success: true, message: "Customer deleted successfully" };
     }
 
     return this.handleResponse<any>(response);
@@ -600,19 +630,23 @@ class ApiService {
 
   // Collection APIs
   async getCollections(accessToken: string): Promise<any> {
-    return this.makeAuthenticatedRequest<any>('/collections', {}, accessToken);
+    return this.makeAuthenticatedRequest<any>("/collections", {}, accessToken);
   }
 
   async getCollection(accessToken: string, collectionId: string): Promise<any> {
-    return this.makeAuthenticatedRequest<any>(`/collections/${collectionId}`, {}, accessToken);
+    return this.makeAuthenticatedRequest<any>(
+      `/collections/${collectionId}`,
+      {},
+      accessToken,
+    );
   }
 
   async createCollection(accessToken: string, data: any): Promise<any> {
     const response = await fetch(`${this.baseUrl}/collections`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
       },
       body: JSON.stringify(data),
     });
@@ -620,15 +654,23 @@ class ApiService {
     return this.handleResponse<any>(response);
   }
 
-  async enrollCustomers(accessToken: string, collectionId: string, customers: any[], generateImmediately: boolean = false): Promise<any> {
-    const response = await fetch(`${this.baseUrl}/collections/${collectionId}/enroll`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
+  async enrollCustomers(
+    accessToken: string,
+    collectionId: string,
+    customers: any[],
+    generateImmediately: boolean = false,
+  ): Promise<any> {
+    const response = await fetch(
+      `${this.baseUrl}/collections/${collectionId}/enroll`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ customers, generateImmediately }),
       },
-      body: JSON.stringify({ customers, generateImmediately }),
-    });
+    );
 
     return this.handleResponse<any>(response);
   }
@@ -638,90 +680,126 @@ class ApiService {
     collectionId: string,
     page: number = 1,
     limit: number = 20,
-    filters?: any
+    filters?: any,
   ): Promise<any> {
     const params = new URLSearchParams();
-    params.append('page', page.toString());
-    params.append('limit', limit.toString());
+    params.append("page", page.toString());
+    params.append("limit", limit.toString());
 
     if (filters) {
-      Object.keys(filters).forEach(key => {
-        if (filters[key] !== undefined && filters[key] !== '') {
+      Object.keys(filters).forEach((key) => {
+        if (filters[key] !== undefined && filters[key] !== "") {
           params.append(key, filters[key].toString());
         }
       });
     }
 
     const queryString = params.toString();
-    const endpoint = `/collections/${collectionId}/members${queryString ? `?${queryString}` : ''}`;
+    const endpoint = `/collections/${collectionId}/members${queryString ? `?${queryString}` : ""}`;
 
     return this.makeAuthenticatedRequest<any>(endpoint, {}, accessToken);
   }
 
-  async getCollectionCycles(accessToken: string, collectionId: string, cycleNumber?: number): Promise<any> {
-    const params = cycleNumber ? `?cycleNumber=${cycleNumber}` : '';
-    return this.makeAuthenticatedRequest<any>(`/collections/${collectionId}/cycles${params}`, {}, accessToken);
+  async getCollectionCycles(
+    accessToken: string,
+    collectionId: string,
+    cycleNumber?: number,
+  ): Promise<any> {
+    const params = cycleNumber ? `?cycleNumber=${cycleNumber}` : "";
+    return this.makeAuthenticatedRequest<any>(
+      `/collections/${collectionId}/cycles${params}`,
+      {},
+      accessToken,
+    );
   }
 
   async getCollectionBillingCycles(
     accessToken: string,
     collectionId: string,
-    cycleNumber?: number
+    cycleNumber?: number,
   ): Promise<any> {
-    const params = cycleNumber ? `?cycleNumber=${cycleNumber}` : '';
-    return this.makeAuthenticatedRequest<any>(`/collections/${collectionId}/cycles${params}`, {}, accessToken);
+    const params = cycleNumber ? `?cycleNumber=${cycleNumber}` : "";
+    return this.makeAuthenticatedRequest<any>(
+      `/collections/${collectionId}/cycles${params}`,
+      {},
+      accessToken,
+    );
   }
 
   async toggleAutoGenerate(
     accessToken: string,
     collectionId: string,
-    accountNumber: string
+    accountNumber: string,
   ): Promise<any> {
     const response = await fetch(
       `${this.baseUrl}/collections/${collectionId}/customers/${accountNumber}/toggle-auto-generate`,
       {
-        method: 'PATCH',
+        method: "PATCH",
         headers: {
-          'Authorization': `Bearer ${accessToken}`,
+          Authorization: `Bearer ${accessToken}`,
         },
-      }
+      },
     );
 
     return this.handleResponse<any>(response);
   }
 
   async getCollectionsDropdown(accessToken: string): Promise<any> {
-    return this.makeAuthenticatedRequest<any>('/collections/dropdown', {}, accessToken);
+    return this.makeAuthenticatedRequest<any>(
+      "/collections/dropdown",
+      {},
+      accessToken,
+    );
   }
 
   async getCustomersDropdown(accessToken: string): Promise<any> {
-    return this.makeAuthenticatedRequest<any>('/psp/customers/dropdown', {}, accessToken);
+    return this.makeAuthenticatedRequest<any>(
+      "/psp/customers/dropdown",
+      {},
+      accessToken,
+    );
   }
 
   // Invoice methods
-  async getInvoices(accessToken: string, page: number = 1, limit: number = 20, filters?: any): Promise<any> {
+  async getInvoices(
+    accessToken: string,
+    page: number = 1,
+    limit: number = 20,
+    filters?: any,
+  ): Promise<any> {
     const params = new URLSearchParams();
-    params.append('page', page.toString());
-    params.append('limit', limit.toString());
+    params.append("page", page.toString());
+    params.append("limit", limit.toString());
 
     if (filters) {
       Object.keys(filters).forEach((key) => {
-        if (filters[key] !== undefined && filters[key] !== null && filters[key] !== '') {
+        if (
+          filters[key] !== undefined &&
+          filters[key] !== null &&
+          filters[key] !== ""
+        ) {
           params.append(key, filters[key].toString());
         }
       });
     }
 
     const queryString = params.toString();
-    return this.makeAuthenticatedRequest<any>(`/psp/invoices${queryString ? `?${queryString}` : ''}`, {}, accessToken);
+    return this.makeAuthenticatedRequest<any>(
+      `/psp/invoices${queryString ? `?${queryString}` : ""}`,
+      {},
+      accessToken,
+    );
   }
 
-  async createSingleInvoice(accessToken: string, invoiceData: any): Promise<any> {
+  async createSingleInvoice(
+    accessToken: string,
+    invoiceData: any,
+  ): Promise<any> {
     const response = await fetch(`${this.baseUrl}/psp/invoices`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
       },
       body: JSON.stringify(invoiceData),
     });
@@ -730,10 +808,10 @@ class ApiService {
 
   async createBulkInvoices(accessToken: string, invoices: any[]): Promise<any> {
     const response = await fetch(`${this.baseUrl}/psp/invoices/bulk`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({ invoices }),
     });
@@ -741,44 +819,59 @@ class ApiService {
   }
 
   async getJobStatus(accessToken: string, jobId: string): Promise<any> {
-    return this.makeAuthenticatedRequest<any>(`/queue/invoice/${jobId}`, {}, accessToken);
+    return this.makeAuthenticatedRequest<any>(
+      `/queue/invoice/${jobId}`,
+      {},
+      accessToken,
+    );
   }
 
   // Get public invoice details by invoice number
   async getPublicInvoiceDetails(invoiceNumber: string): Promise<any> {
-    const response = await fetch(`${this.baseUrl}/public/invoices/${invoiceNumber}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
+    const response = await fetch(
+      `${this.baseUrl}/public/invoices/${invoiceNumber}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
       },
-    });
+    );
     return this.handleResponse<any>(response);
   }
 
   // Wallet and Stats methods
   async getWalletBalance(accessToken: string): Promise<any> {
-    return this.makeAuthenticatedRequest<any>('/psp/wallet/balance', {}, accessToken);
+    return this.makeAuthenticatedRequest<any>(
+      "/psp/wallet/balance",
+      {},
+      accessToken,
+    );
   }
 
-  async getCollectionStats(accessToken: string, startDate?: string, endDate?: string): Promise<any> {
+  async getCollectionStats(
+    accessToken: string,
+    startDate?: string,
+    endDate?: string,
+  ): Promise<any> {
     const params = new URLSearchParams();
-    if (startDate) params.append('startDate', startDate);
-    if (endDate) params.append('endDate', endDate);
+    if (startDate) params.append("startDate", startDate);
+    if (endDate) params.append("endDate", endDate);
 
     const queryString = params.toString();
     return this.makeAuthenticatedRequest<any>(
-      `/psp/dashboard/collection-stats${queryString ? `?${queryString}` : ''}`,
+      `/psp/dashboard/collection-stats${queryString ? `?${queryString}` : ""}`,
       {},
-      accessToken
+      accessToken,
     );
   }
 
   async lockWallet(accessToken: string): Promise<any> {
     const response = await fetch(`${this.baseUrl}/psp/wallet/lock`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
       },
     });
     return this.handleResponse<any>(response);
@@ -786,22 +879,25 @@ class ApiService {
 
   async initiateWalletUnlock(accessToken: string, email: string): Promise<any> {
     const response = await fetch(`${this.baseUrl}/psp/wallet/unlock/initiate`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({ email }),
     });
     return this.handleResponse<any>(response);
   }
 
-  async confirmWalletUnlock(accessToken: string, otpCode: string): Promise<any> {
+  async confirmWalletUnlock(
+    accessToken: string,
+    otpCode: string,
+  ): Promise<any> {
     const response = await fetch(`${this.baseUrl}/psp/wallet/unlock/confirm`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({ otpCode }),
     });
@@ -811,10 +907,10 @@ class ApiService {
   // Staff/Agent methods
   async createStaff(accessToken: string, staffData: any): Promise<any> {
     const response = await fetch(`${this.baseUrl}/staff`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
       },
       body: JSON.stringify(staffData),
     });
@@ -822,32 +918,44 @@ class ApiService {
   }
 
   async getAllStaff(accessToken: string): Promise<any> {
-    return this.makeAuthenticatedRequest<any>('/staff', {}, accessToken);
+    return this.makeAuthenticatedRequest<any>("/staff", {}, accessToken);
   }
 
   async getStaffById(accessToken: string, staffId: string): Promise<any> {
-    return this.makeAuthenticatedRequest<any>(`/staff/${staffId}`, {}, accessToken);
-  }
-
-  async updateStaff(accessToken: string, staffId: string, data: any): Promise<any> {
     return this.makeAuthenticatedRequest<any>(
       `/staff/${staffId}`,
-      {
-        method: 'PATCH',
-        body: JSON.stringify(data),
-      },
-      accessToken
+      {},
+      accessToken,
     );
   }
 
-  async updateStaffTerritory(accessToken: string, staffId: string, data: { assignedWards?: string[]; assignedStreets?: string[] }): Promise<any> {
+  async updateStaff(
+    accessToken: string,
+    staffId: string,
+    data: any,
+  ): Promise<any> {
+    return this.makeAuthenticatedRequest<any>(
+      `/staff/${staffId}`,
+      {
+        method: "PATCH",
+        body: JSON.stringify(data),
+      },
+      accessToken,
+    );
+  }
+
+  async updateStaffTerritory(
+    accessToken: string,
+    staffId: string,
+    data: { assignedWards?: string[]; assignedStreets?: string[] },
+  ): Promise<any> {
     return this.makeAuthenticatedRequest<any>(
       `/staff/${staffId}/territory`,
       {
-        method: 'PATCH',
+        method: "PATCH",
         body: JSON.stringify(data),
       },
-      accessToken
+      accessToken,
     );
   }
 
@@ -858,19 +966,19 @@ class ApiService {
       staffId?: string;
       startDate?: string;
       endDate?: string;
-    } = {}
+    } = {},
   ): Promise<any> {
     const params = new URLSearchParams();
-    if (options.limit) params.append('limit', options.limit.toString());
-    if (options.staffId) params.append('staffId', options.staffId);
-    if (options.startDate) params.append('startDate', options.startDate);
-    if (options.endDate) params.append('endDate', options.endDate);
+    if (options.limit) params.append("limit", options.limit.toString());
+    if (options.staffId) params.append("staffId", options.staffId);
+    if (options.startDate) params.append("startDate", options.startDate);
+    if (options.endDate) params.append("endDate", options.endDate);
 
     const queryString = params.toString();
     return this.makeAuthenticatedRequest<any>(
-      `/staff/collections${queryString ? `?${queryString}` : ''}`,
+      `/staff/collections${queryString ? `?${queryString}` : ""}`,
       {},
-      accessToken
+      accessToken,
     );
   }
 
@@ -884,18 +992,18 @@ class ApiService {
     accessToken: string,
     startDate?: string,
     endDate?: string,
-    days?: number
+    days?: number,
   ): Promise<any> {
     const params = new URLSearchParams();
-    if (startDate) params.append('startDate', startDate);
-    if (endDate) params.append('endDate', endDate);
-    if (days) params.append('days', days.toString());
+    if (startDate) params.append("startDate", startDate);
+    if (endDate) params.append("endDate", endDate);
+    if (days) params.append("days", days.toString());
 
     const queryString = params.toString();
     return this.makeAuthenticatedRequest<any>(
-      `/psp/dashboard/comprehensive${queryString ? `?${queryString}` : ''}`,
+      `/psp/dashboard/comprehensive${queryString ? `?${queryString}` : ""}`,
       {},
-      accessToken
+      accessToken,
     );
   }
 
@@ -903,12 +1011,15 @@ class ApiService {
    * GET /api/psp/dashboard/performance
    * Performance metrics (waste, pickups, invoices)
    */
-  async getPerformanceMetrics(accessToken: string, year?: number): Promise<any> {
-    const params = year ? `?year=${year}` : '';
+  async getPerformanceMetrics(
+    accessToken: string,
+    year?: number,
+  ): Promise<any> {
+    const params = year ? `?year=${year}` : "";
     return this.makeAuthenticatedRequest<any>(
       `/psp/dashboard/performance${params}`,
       {},
-      accessToken
+      accessToken,
     );
   }
 
@@ -916,12 +1027,15 @@ class ApiService {
    * GET /api/psp/dashboard/revenue-performance
    * Monthly revenue chart (Jan-Dec for year)
    */
-  async getRevenuePerformance(accessToken: string, year?: number): Promise<any> {
-    const params = year ? `?year=${year}` : '';
+  async getRevenuePerformance(
+    accessToken: string,
+    year?: number,
+  ): Promise<any> {
+    const params = year ? `?year=${year}` : "";
     return this.makeAuthenticatedRequest<any>(
       `/psp/dashboard/revenue-performance${params}`,
       {},
-      accessToken
+      accessToken,
     );
   }
 
@@ -929,11 +1043,14 @@ class ApiService {
    * GET /api/psp/dashboard/top-performing-agents
    * Top performing agents with PSP-wide summary
    */
-  async getTopPerformingAgents(accessToken: string, limit: number = 5): Promise<any> {
+  async getTopPerformingAgents(
+    accessToken: string,
+    limit: number = 5,
+  ): Promise<any> {
     return this.makeAuthenticatedRequest<any>(
       `/psp/dashboard/top-performing-agents?limit=${limit}`,
       {},
-      accessToken
+      accessToken,
     );
   }
 
@@ -941,11 +1058,14 @@ class ApiService {
    * GET /api/psp/dashboard/collection-services
    * Top revenue-generating collection services
    */
-  async getCollectionServicesDashboard(accessToken: string, limit: number = 3): Promise<any> {
+  async getCollectionServicesDashboard(
+    accessToken: string,
+    limit: number = 3,
+  ): Promise<any> {
     return this.makeAuthenticatedRequest<any>(
       `/psp/dashboard/collection-services?limit=${limit}`,
       {},
-      accessToken
+      accessToken,
     );
   }
 
@@ -953,11 +1073,14 @@ class ApiService {
    * GET /api/psp/dashboard/top-customers
    * Top customers by total amount paid
    */
-  async getTopCustomersDashboard(accessToken: string, limit: number = 5): Promise<any> {
+  async getTopCustomersDashboard(
+    accessToken: string,
+    limit: number = 5,
+  ): Promise<any> {
     return this.makeAuthenticatedRequest<any>(
       `/psp/dashboard/top-customers?limit=${limit}`,
       {},
-      accessToken
+      accessToken,
     );
   }
 
@@ -965,24 +1088,31 @@ class ApiService {
    * GET /api/psp/dashboard/recent-transactions-psp
    * Last 5 wallet transactions
    */
-  async getRecentTransactionsPSP(accessToken: string, limit: number = 5): Promise<any> {
+  async getRecentTransactionsPSP(
+    accessToken: string,
+    limit: number = 5,
+  ): Promise<any> {
     return this.makeAuthenticatedRequest<any>(
       `/psp/dashboard/recent-transactions-psp?limit=${limit}`,
       {},
-      accessToken
+      accessToken,
     );
   }
   // PSP Profile APIs
   async getMyProfile(accessToken: string): Promise<any> {
-    return this.makeAuthenticatedRequest<any>('/psp/me/profile', {}, accessToken);
+    return this.makeAuthenticatedRequest<any>(
+      "/psp/me/profile",
+      {},
+      accessToken,
+    );
   }
 
   async updateMyProfile(accessToken: string, profileData: any): Promise<any> {
     const response = await fetch(`${this.baseUrl}/psp/me/profile`, {
-      method: 'PATCH',
+      method: "PATCH",
       headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
       },
       body: JSON.stringify(profileData),
     });
@@ -991,31 +1121,38 @@ class ApiService {
 
   // Ward APIs
   async getWards(accessToken: string): Promise<any> {
-    return this.makeAuthenticatedRequest<any>('/wards', {}, accessToken);
+    return this.makeAuthenticatedRequest<any>("/wards", {}, accessToken);
   }
 
   async getActiveWards(accessToken: string): Promise<any> {
-    return this.makeAuthenticatedRequest<any>('/wards/active', {}, accessToken);
+    return this.makeAuthenticatedRequest<any>("/wards/active", {}, accessToken);
   }
 
-  async createWard(accessToken: string, wardData: { name: string; description?: string }): Promise<any> {
+  async createWard(
+    accessToken: string,
+    wardData: { name: string; description?: string },
+  ): Promise<any> {
     const response = await fetch(`${this.baseUrl}/wards`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
       },
       body: JSON.stringify(wardData),
     });
     return this.handleResponse<any>(response);
   }
 
-  async updateWard(accessToken: string, wardId: string, wardData: { name?: string; description?: string; isActive?: boolean }): Promise<any> {
+  async updateWard(
+    accessToken: string,
+    wardId: string,
+    wardData: { name?: string; description?: string; isActive?: boolean },
+  ): Promise<any> {
     const response = await fetch(`${this.baseUrl}/wards/${wardId}`, {
-      method: 'PATCH',
+      method: "PATCH",
       headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
       },
       body: JSON.stringify(wardData),
     });
@@ -1024,45 +1161,60 @@ class ApiService {
 
   async deleteWard(accessToken: string, wardId: string): Promise<any> {
     const response = await fetch(`${this.baseUrl}/wards/${wardId}`, {
-      method: 'DELETE',
+      method: "DELETE",
       headers: {
-        'Authorization': `Bearer ${accessToken}`,
+        Authorization: `Bearer ${accessToken}`,
       },
     });
     if (response.status === 204 || response.status === 200) {
-      return { success: true, message: 'Ward deleted successfully' };
+      return { success: true, message: "Ward deleted successfully" };
     }
     return this.handleResponse<any>(response);
   }
 
   // Street APIs
   async getStreets(accessToken: string, wardId?: string): Promise<any> {
-    const params = wardId ? `?wardId=${wardId}` : '';
-    return this.makeAuthenticatedRequest<any>(`/streets${params}`, {}, accessToken);
+    const params = wardId ? `?wardId=${wardId}` : "";
+    return this.makeAuthenticatedRequest<any>(
+      `/streets${params}`,
+      {},
+      accessToken,
+    );
   }
 
   async getStreetsByWard(accessToken: string, wardId: string): Promise<any> {
-    return this.makeAuthenticatedRequest<any>(`/streets/ward/${wardId}`, {}, accessToken);
+    return this.makeAuthenticatedRequest<any>(
+      `/streets/ward/${wardId}`,
+      {},
+      accessToken,
+    );
   }
 
-  async createStreet(accessToken: string, streetData: { wardId: string; name: string; description?: string }): Promise<any> {
+  async createStreet(
+    accessToken: string,
+    streetData: { wardId: string; name: string; description?: string },
+  ): Promise<any> {
     const response = await fetch(`${this.baseUrl}/streets`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
       },
       body: JSON.stringify(streetData),
     });
     return this.handleResponse<any>(response);
   }
 
-  async updateStreet(accessToken: string, streetId: string, streetData: { name?: string; description?: string; isActive?: boolean }): Promise<any> {
+  async updateStreet(
+    accessToken: string,
+    streetId: string,
+    streetData: { name?: string; description?: string; isActive?: boolean },
+  ): Promise<any> {
     const response = await fetch(`${this.baseUrl}/streets/${streetId}`, {
-      method: 'PATCH',
+      method: "PATCH",
       headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
       },
       body: JSON.stringify(streetData),
     });
@@ -1071,23 +1223,27 @@ class ApiService {
 
   async deleteStreet(accessToken: string, streetId: string): Promise<any> {
     const response = await fetch(`${this.baseUrl}/streets/${streetId}`, {
-      method: 'DELETE',
+      method: "DELETE",
       headers: {
-        'Authorization': `Bearer ${accessToken}`,
+        Authorization: `Bearer ${accessToken}`,
       },
     });
     if (response.status === 204 || response.status === 200) {
-      return { success: true, message: 'Street deleted successfully' };
+      return { success: true, message: "Street deleted successfully" };
     }
     return this.handleResponse<any>(response);
   }
 
-  async bulkUploadStreets(accessToken: string, wardId: string, streets: Array<{ name: string; description?: string }>): Promise<any> {
+  async bulkUploadStreets(
+    accessToken: string,
+    wardId: string,
+    streets: Array<{ name: string; description?: string }>,
+  ): Promise<any> {
     const response = await fetch(`${this.baseUrl}/streets/bulk-upload`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({ wardId, streets }),
     });
@@ -1096,31 +1252,51 @@ class ApiService {
 
   // Property Type APIs
   async getPropertyTypes(accessToken: string): Promise<any> {
-    return this.makeAuthenticatedRequest<any>('/property-types', {}, accessToken);
+    return this.makeAuthenticatedRequest<any>(
+      "/property-types",
+      {},
+      accessToken,
+    );
   }
 
   async getActivePropertyTypes(accessToken: string): Promise<any> {
-    return this.makeAuthenticatedRequest<any>('/property-types/active', {}, accessToken);
+    return this.makeAuthenticatedRequest<any>(
+      "/property-types/active",
+      {},
+      accessToken,
+    );
   }
 
-  async createPropertyType(accessToken: string, data: { name: string; cost: number; description?: string }): Promise<any> {
+  async createPropertyType(
+    accessToken: string,
+    data: { name: string; cost: number; description?: string },
+  ): Promise<any> {
     const response = await fetch(`${this.baseUrl}/property-types`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
       },
       body: JSON.stringify(data),
     });
     return this.handleResponse<any>(response);
   }
 
-  async updatePropertyType(accessToken: string, id: string, data: { name?: string; cost?: number; description?: string; isActive?: boolean }): Promise<any> {
+  async updatePropertyType(
+    accessToken: string,
+    id: string,
+    data: {
+      name?: string;
+      cost?: number;
+      description?: string;
+      isActive?: boolean;
+    },
+  ): Promise<any> {
     const response = await fetch(`${this.baseUrl}/property-types/${id}`, {
-      method: 'PATCH',
+      method: "PATCH",
       headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
       },
       body: JSON.stringify(data),
     });
@@ -1129,24 +1305,28 @@ class ApiService {
 
   async deletePropertyType(accessToken: string, id: string): Promise<any> {
     const response = await fetch(`${this.baseUrl}/property-types/${id}`, {
-      method: 'DELETE',
+      method: "DELETE",
       headers: {
-        'Authorization': `Bearer ${accessToken}`,
+        Authorization: `Bearer ${accessToken}`,
       },
     });
     if (response.status === 204 || response.status === 200) {
-      return { success: true, message: 'Property type deleted successfully' };
+      return { success: true, message: "Property type deleted successfully" };
     }
     return this.handleResponse<any>(response);
   }
 
   // Update Customer
-  async updateCustomer(accessToken: string, customerId: string, data: any): Promise<any> {
+  async updateCustomer(
+    accessToken: string,
+    customerId: string,
+    data: any,
+  ): Promise<any> {
     const response = await fetch(`${this.baseUrl}/customers/${customerId}`, {
-      method: 'PATCH',
+      method: "PATCH",
       headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
       },
       body: JSON.stringify(data),
     });
@@ -1159,126 +1339,180 @@ class ApiService {
   // wardId, streetId, agentId can be passed to any report
 
   // Debt Aging Report
-  async getDebtAgingReport(accessToken: string, filters?: {
-    wardId?: string;
-    streetId?: string;
-    agentId?: string;
-  }): Promise<any> {
+  async getDebtAgingReport(
+    accessToken: string,
+    filters?: {
+      wardId?: string;
+      streetId?: string;
+      agentId?: string;
+    },
+  ): Promise<any> {
     const params = new URLSearchParams();
-    if (filters?.wardId) params.append('wardId', filters.wardId);
-    if (filters?.streetId) params.append('streetId', filters.streetId);
-    if (filters?.agentId) params.append('agentId', filters.agentId);
+    if (filters?.wardId) params.append("wardId", filters.wardId);
+    if (filters?.streetId) params.append("streetId", filters.streetId);
+    if (filters?.agentId) params.append("agentId", filters.agentId);
 
     const queryString = params.toString();
-    return this.makeAuthenticatedRequest<any>(`/psp/reports/debt-aging${queryString ? `?${queryString}` : ''}`, {}, accessToken);
+    return this.makeAuthenticatedRequest<any>(
+      `/psp/reports/debt-aging${queryString ? `?${queryString}` : ""}`,
+      {},
+      accessToken,
+    );
   }
 
   // Outstanding Balances Report
-  async getOutstandingReport(accessToken: string, filters?: {
-    minAmount?: number;
-    maxAmount?: number;
-    sortBy?: string;
-    sortOrder?: string;
-    wardId?: string;
-    streetId?: string;
-    agentId?: string;
-  }): Promise<any> {
+  async getOutstandingReport(
+    accessToken: string,
+    filters?: {
+      minAmount?: number;
+      maxAmount?: number;
+      sortBy?: string;
+      sortOrder?: string;
+      wardId?: string;
+      streetId?: string;
+      agentId?: string;
+    },
+  ): Promise<any> {
     const params = new URLSearchParams();
-    if (filters?.minAmount !== undefined) params.append('minAmount', filters.minAmount.toString());
-    if (filters?.maxAmount !== undefined) params.append('maxAmount', filters.maxAmount.toString());
-    if (filters?.sortBy) params.append('sortBy', filters.sortBy);
-    if (filters?.sortOrder) params.append('sortOrder', filters.sortOrder);
-    if (filters?.wardId) params.append('wardId', filters.wardId);
-    if (filters?.streetId) params.append('streetId', filters.streetId);
-    if (filters?.agentId) params.append('agentId', filters.agentId);
+    if (filters?.minAmount !== undefined)
+      params.append("minAmount", filters.minAmount.toString());
+    if (filters?.maxAmount !== undefined)
+      params.append("maxAmount", filters.maxAmount.toString());
+    if (filters?.sortBy) params.append("sortBy", filters.sortBy);
+    if (filters?.sortOrder) params.append("sortOrder", filters.sortOrder);
+    if (filters?.wardId) params.append("wardId", filters.wardId);
+    if (filters?.streetId) params.append("streetId", filters.streetId);
+    if (filters?.agentId) params.append("agentId", filters.agentId);
 
     const queryString = params.toString();
-    return this.makeAuthenticatedRequest<any>(`/psp/reports/outstanding${queryString ? `?${queryString}` : ''}`, {}, accessToken);
+    return this.makeAuthenticatedRequest<any>(
+      `/psp/reports/outstanding${queryString ? `?${queryString}` : ""}`,
+      {},
+      accessToken,
+    );
   }
 
   // Collection Rate Report
-  async getCollectionRateReport(accessToken: string, filters?: {
-    threshold?: number;
-    monthsWithoutPayment?: number;
-    wardId?: string;
-    streetId?: string;
-    agentId?: string;
-  }): Promise<any> {
+  async getCollectionRateReport(
+    accessToken: string,
+    filters?: {
+      threshold?: number;
+      monthsWithoutPayment?: number;
+      wardId?: string;
+      streetId?: string;
+      agentId?: string;
+    },
+  ): Promise<any> {
     const params = new URLSearchParams();
-    if (filters?.threshold !== undefined) params.append('threshold', filters.threshold.toString());
-    if (filters?.monthsWithoutPayment !== undefined) params.append('monthsWithoutPayment', filters.monthsWithoutPayment.toString());
-    if (filters?.wardId) params.append('wardId', filters.wardId);
-    if (filters?.streetId) params.append('streetId', filters.streetId);
-    if (filters?.agentId) params.append('agentId', filters.agentId);
+    if (filters?.threshold !== undefined)
+      params.append("threshold", filters.threshold.toString());
+    if (filters?.monthsWithoutPayment !== undefined)
+      params.append(
+        "monthsWithoutPayment",
+        filters.monthsWithoutPayment.toString(),
+      );
+    if (filters?.wardId) params.append("wardId", filters.wardId);
+    if (filters?.streetId) params.append("streetId", filters.streetId);
+    if (filters?.agentId) params.append("agentId", filters.agentId);
 
     const queryString = params.toString();
-    return this.makeAuthenticatedRequest<any>(`/psp/reports/collection-rate${queryString ? `?${queryString}` : ''}`, {}, accessToken);
+    return this.makeAuthenticatedRequest<any>(
+      `/psp/reports/collection-rate${queryString ? `?${queryString}` : ""}`,
+      {},
+      accessToken,
+    );
   }
 
   // Problem Areas Report
-  async getProblemAreasReport(accessToken: string, filters?: {
-    wardId?: string;
-    streetId?: string;
-    agentId?: string;
-  }): Promise<any> {
+  async getProblemAreasReport(
+    accessToken: string,
+    filters?: {
+      wardId?: string;
+      streetId?: string;
+      agentId?: string;
+    },
+  ): Promise<any> {
     const params = new URLSearchParams();
-    if (filters?.wardId) params.append('wardId', filters.wardId);
-    if (filters?.streetId) params.append('streetId', filters.streetId);
-    if (filters?.agentId) params.append('agentId', filters.agentId);
+    if (filters?.wardId) params.append("wardId", filters.wardId);
+    if (filters?.streetId) params.append("streetId", filters.streetId);
+    if (filters?.agentId) params.append("agentId", filters.agentId);
 
     const queryString = params.toString();
-    return this.makeAuthenticatedRequest<any>(`/psp/reports/problem-areas${queryString ? `?${queryString}` : ''}`, {}, accessToken);
+    return this.makeAuthenticatedRequest<any>(
+      `/psp/reports/problem-areas${queryString ? `?${queryString}` : ""}`,
+      {},
+      accessToken,
+    );
   }
 
   // ============ PAYMENTS/TRANSACTIONS ============
 
   // Get all payments/transactions for PSP
-  async getPayments(accessToken: string, filters?: {
-    page?: number;
-    limit?: number;
-    status?: string;
-    paymentChannel?: string;
-    startDate?: string;
-    endDate?: string;
-    searchTerm?: string;
-  }): Promise<any> {
+  async getPayments(
+    accessToken: string,
+    filters?: {
+      page?: number;
+      limit?: number;
+      status?: string;
+      paymentChannel?: string;
+      startDate?: string;
+      endDate?: string;
+      searchTerm?: string;
+    },
+  ): Promise<any> {
     const params = new URLSearchParams();
-    if (filters?.page) params.append('page', filters.page.toString());
-    if (filters?.limit) params.append('limit', filters.limit.toString());
-    if (filters?.status) params.append('status', filters.status);
-    if (filters?.paymentChannel) params.append('paymentChannel', filters.paymentChannel);
-    if (filters?.startDate) params.append('startDate', filters.startDate);
-    if (filters?.endDate) params.append('endDate', filters.endDate);
-    if (filters?.searchTerm) params.append('searchTerm', filters.searchTerm);
+    if (filters?.page) params.append("page", filters.page.toString());
+    if (filters?.limit) params.append("limit", filters.limit.toString());
+    if (filters?.status) params.append("status", filters.status);
+    if (filters?.paymentChannel)
+      params.append("paymentChannel", filters.paymentChannel);
+    if (filters?.startDate) params.append("startDate", filters.startDate);
+    if (filters?.endDate) params.append("endDate", filters.endDate);
+    if (filters?.searchTerm) params.append("searchTerm", filters.searchTerm);
 
     const queryString = params.toString();
-    return this.makeAuthenticatedRequest<any>(`/transactions${queryString ? `?${queryString}` : ''}`, {}, accessToken);
+    return this.makeAuthenticatedRequest<any>(
+      `/transactions${queryString ? `?${queryString}` : ""}`,
+      {},
+      accessToken,
+    );
   }
 
   // ============ EXPENSE CATEGORIES ============
 
   async getExpenseCategories(accessToken: string): Promise<any> {
-    return this.makeAuthenticatedRequest<any>('/expense-categories', {}, accessToken);
+    return this.makeAuthenticatedRequest<any>(
+      "/expense-categories",
+      {},
+      accessToken,
+    );
   }
 
-  async createExpenseCategory(accessToken: string, data: { name: string; description?: string }): Promise<any> {
+  async createExpenseCategory(
+    accessToken: string,
+    data: { name: string; description?: string },
+  ): Promise<any> {
     const response = await fetch(`${this.baseUrl}/expense-categories`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
       },
       body: JSON.stringify(data),
     });
     return this.handleResponse<any>(response);
   }
 
-  async updateExpenseCategory(accessToken: string, id: string, data: { name?: string; description?: string; isActive?: boolean }): Promise<any> {
+  async updateExpenseCategory(
+    accessToken: string,
+    id: string,
+    data: { name?: string; description?: string; isActive?: boolean },
+  ): Promise<any> {
     const response = await fetch(`${this.baseUrl}/expense-categories/${id}`, {
-      method: 'PATCH',
+      method: "PATCH",
       headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
       },
       body: JSON.stringify(data),
     });
@@ -1287,92 +1521,122 @@ class ApiService {
 
   async deleteExpenseCategory(accessToken: string, id: string): Promise<any> {
     const response = await fetch(`${this.baseUrl}/expense-categories/${id}`, {
-      method: 'DELETE',
+      method: "DELETE",
       headers: {
-        'Authorization': `Bearer ${accessToken}`,
+        Authorization: `Bearer ${accessToken}`,
       },
     });
     if (response.status === 204 || response.status === 200) {
-      return { success: true, message: 'Expense category deleted successfully' };
+      return {
+        success: true,
+        message: "Expense category deleted successfully",
+      };
     }
     return this.handleResponse<any>(response);
   }
 
   // ============ EXPENSES ============
 
-  async getExpenses(accessToken: string, filters?: {
-    page?: number;
-    limit?: number;
-    categoryId?: string;
-    startDate?: string;
-    endDate?: string;
-    paymentMethod?: string;
-    vendor?: string;
-  }): Promise<any> {
+  async getExpenses(
+    accessToken: string,
+    filters?: {
+      page?: number;
+      limit?: number;
+      categoryId?: string;
+      startDate?: string;
+      endDate?: string;
+      paymentMethod?: string;
+      vendor?: string;
+    },
+  ): Promise<any> {
     const params = new URLSearchParams();
-    if (filters?.page) params.append('page', filters.page.toString());
-    if (filters?.limit) params.append('limit', filters.limit.toString());
-    if (filters?.categoryId) params.append('categoryId', filters.categoryId);
-    if (filters?.startDate) params.append('startDate', filters.startDate);
-    if (filters?.endDate) params.append('endDate', filters.endDate);
-    if (filters?.paymentMethod) params.append('paymentMethod', filters.paymentMethod);
-    if (filters?.vendor) params.append('vendor', filters.vendor);
+    if (filters?.page) params.append("page", filters.page.toString());
+    if (filters?.limit) params.append("limit", filters.limit.toString());
+    if (filters?.categoryId) params.append("categoryId", filters.categoryId);
+    if (filters?.startDate) params.append("startDate", filters.startDate);
+    if (filters?.endDate) params.append("endDate", filters.endDate);
+    if (filters?.paymentMethod)
+      params.append("paymentMethod", filters.paymentMethod);
+    if (filters?.vendor) params.append("vendor", filters.vendor);
 
     const queryString = params.toString();
-    return this.makeAuthenticatedRequest<any>(`/expenses${queryString ? `?${queryString}` : ''}`, {}, accessToken);
+    return this.makeAuthenticatedRequest<any>(
+      `/expenses${queryString ? `?${queryString}` : ""}`,
+      {},
+      accessToken,
+    );
   }
 
   async getExpenseById(accessToken: string, id: string): Promise<any> {
-    return this.makeAuthenticatedRequest<any>(`/expenses/${id}`, {}, accessToken);
+    return this.makeAuthenticatedRequest<any>(
+      `/expenses/${id}`,
+      {},
+      accessToken,
+    );
   }
 
-  async getExpenseSummary(accessToken: string, startDate?: string, endDate?: string): Promise<any> {
+  async getExpenseSummary(
+    accessToken: string,
+    startDate?: string,
+    endDate?: string,
+  ): Promise<any> {
     const params = new URLSearchParams();
-    if (startDate) params.append('startDate', startDate);
-    if (endDate) params.append('endDate', endDate);
+    if (startDate) params.append("startDate", startDate);
+    if (endDate) params.append("endDate", endDate);
 
     const queryString = params.toString();
-    return this.makeAuthenticatedRequest<any>(`/expenses/summary/by-category${queryString ? `?${queryString}` : ''}`, {}, accessToken);
+    return this.makeAuthenticatedRequest<any>(
+      `/expenses/summary/by-category${queryString ? `?${queryString}` : ""}`,
+      {},
+      accessToken,
+    );
   }
 
-  async createExpense(accessToken: string, data: {
-    title: string;
-    description?: string;
-    amount: number;
-    categoryId: string;
-    expenseDate: string;
-    paymentMethod: string;
-    paymentReference?: string;
-    vendor?: string;
-    notes?: string;
-  }): Promise<any> {
+  async createExpense(
+    accessToken: string,
+    data: {
+      title: string;
+      description?: string;
+      amount: number;
+      categoryId: string;
+      expenseDate: string;
+      paymentMethod: string;
+      paymentReference?: string;
+      vendor?: string;
+      notes?: string;
+    },
+  ): Promise<any> {
     const response = await fetch(`${this.baseUrl}/expenses`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
       },
       body: JSON.stringify(data),
     });
     return this.handleResponse<any>(response);
   }
 
-  async updateExpense(accessToken: string, id: string, data: {
-    title?: string;
-    description?: string;
-    amount?: number;
-    categoryId?: string;
-    expenseDate?: string;
-    paymentMethod?: string;
-    paymentReference?: string;
-    vendor?: string;
-    notes?: string;
-  }): Promise<any> {
+  async updateExpense(
+    accessToken: string,
+    id: string,
+    data: {
+      title?: string;
+      description?: string;
+      amount?: number;
+      categoryId?: string;
+      expenseDate?: string;
+      paymentMethod?: string;
+      paymentReference?: string;
+      vendor?: string;
+      notes?: string;
+    },
+  ): Promise<any> {
     const response = await fetch(`${this.baseUrl}/expenses/${id}`, {
-      method: 'PATCH',
+      method: "PATCH",
       headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
       },
       body: JSON.stringify(data),
     });
@@ -1381,13 +1645,13 @@ class ApiService {
 
   async deleteExpense(accessToken: string, id: string): Promise<any> {
     const response = await fetch(`${this.baseUrl}/expenses/${id}`, {
-      method: 'DELETE',
+      method: "DELETE",
       headers: {
-        'Authorization': `Bearer ${accessToken}`,
+        Authorization: `Bearer ${accessToken}`,
       },
     });
     if (response.status === 204 || response.status === 200) {
-      return { success: true, message: 'Expense deleted successfully' };
+      return { success: true, message: "Expense deleted successfully" };
     }
     return this.handleResponse<any>(response);
   }
