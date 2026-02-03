@@ -1,8 +1,5 @@
-// Use localhost in development
-// Production API - uncomment to restore:
-// const API_BASE_URL = import.meta.env.DEV ? 'http://localhost:3000/api' : 'https://payapi.buypowerpass.africa/api';
-// Localhost API:
-const API_BASE_URL = 'http://localhost:3005/api';
+// Production API (auto-switches between dev and prod)
+const API_BASE_URL = import.meta.env.DEV ? 'http://localhost:3005/api' : 'https://payapi.buypowerpass.africa/api';
 
 // Response when temporary password needs to be changed
 export interface TemporaryPasswordResponse {
