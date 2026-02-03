@@ -69,8 +69,8 @@ const OutstandingReport = () => {
   // Filters
   const [searchQuery, setSearchQuery] = useState("");
   const [minAmount, setMinAmount] = useState<string>("0");
-  const [sortBy, setSortBy] = useState("currentBalance");
-  const [sortOrder, setSortOrder] = useState("desc");
+  const [sortBy] = useState("currentBalance");
+  const [sortOrder] = useState("desc");
   const [wardId, setWardId] = useState<string>("");
   const [streetId, setStreetId] = useState<string>("");
   const [agentId, setAgentId] = useState<string>("");
