@@ -11,9 +11,13 @@ export default defineConfig({
     },
   },
   server: {
+    port: 3006,
     proxy: {
       '/api': {
-        target: 'https://payapi.buypowerpass.africa',
+        // Production API - uncomment to restore
+        // target: 'https://payapi.buypowerpass.africa',
+        // Localhost API
+        target: 'http://localhost:3005',
         changeOrigin: true,
         secure: false,
         rewrite: (path) => path.replace(/^\/api/, '/api'),

@@ -139,7 +139,7 @@ const InvoiceDetail = () => {
           data-print-content
           style={{
             fontFamily: "Arial, sans-serif",
-            backgroundColor: "#e8e8e8", /* Light gray like LAWMA bill paper */
+            backgroundColor: "#f0ebe3", /* Warm cream/beige like LAWMA government paper */
             maxWidth: "850px",
             margin: "0 auto",
             padding: "15px",

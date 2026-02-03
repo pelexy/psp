@@ -1,5 +1,8 @@
 // Use localhost in development
-const API_BASE_URL = import.meta.env.DEV ? 'http://localhost:3000/api' : 'https://payapi.buypowerpass.africa/api';
+// Production API - uncomment to restore:
+// const API_BASE_URL = import.meta.env.DEV ? 'http://localhost:3000/api' : 'https://payapi.buypowerpass.africa/api';
+// Localhost API:
+const API_BASE_URL = 'http://localhost:3005/api';
 
 // Response when temporary password needs to be changed
 export interface TemporaryPasswordResponse {
@@ -1155,9 +1158,22 @@ class ApiService {
 
   // ============ REPORTS ============
 
+  // Common report filters type
+  // wardId, streetId, agentId can be passed to any report
+
   // Debt Aging Report
-  async getDebtAgingReport(accessToken: string): Promise<any> {
-    return this.makeAuthenticatedRequest<any>('/psp/reports/debt-aging', {}, accessToken);
+  async getDebtAgingReport(accessToken: string, filters?: {
+    wardId?: string;
+    streetId?: string;
+    agentId?: string;
+  }): Promise<any> {
+    const params = new URLSearchParams();
+    if (filters?.wardId) params.append('wardId', filters.wardId);
+    if (filters?.streetId) params.append('streetId', filters.streetId);
+    if (filters?.agentId) params.append('agentId', filters.agentId);
+
+    const queryString = params.toString();
+    return this.makeAuthenticatedRequest<any>(`/psp/reports/debt-aging${queryString ? `?${queryString}` : ''}`, {}, accessToken);
   }
 
   // Outstanding Balances Report
@@ -1166,12 +1182,18 @@ class ApiService {
     maxAmount?: number;
     sortBy?: string;
     sortOrder?: string;
+    wardId?: string;
+    streetId?: string;
+    agentId?: string;
   }): Promise<any> {
     const params = new URLSearchParams();
     if (filters?.minAmount !== undefined) params.append('minAmount', filters.minAmount.toString());
     if (filters?.maxAmount !== undefined) params.append('maxAmount', filters.maxAmount.toString());
     if (filters?.sortBy) params.append('sortBy', filters.sortBy);
     if (filters?.sortOrder) params.append('sortOrder', filters.sortOrder);
+    if (filters?.wardId) params.append('wardId', filters.wardId);
+    if (filters?.streetId) params.append('streetId', filters.streetId);
+    if (filters?.agentId) params.append('agentId', filters.agentId);
 
     const queryString = params.toString();
     return this.makeAuthenticatedRequest<any>(`/psp/reports/outstanding${queryString ? `?${queryString}` : ''}`, {}, accessToken);
@@ -1181,18 +1203,34 @@ class ApiService {
   async getCollectionRateReport(accessToken: string, filters?: {
     threshold?: number;
     monthsWithoutPayment?: number;
+    wardId?: string;
+    streetId?: string;
+    agentId?: string;
   }): Promise<any> {
     const params = new URLSearchParams();
     if (filters?.threshold !== undefined) params.append('threshold', filters.threshold.toString());
     if (filters?.monthsWithoutPayment !== undefined) params.append('monthsWithoutPayment', filters.monthsWithoutPayment.toString());
+    if (filters?.wardId) params.append('wardId', filters.wardId);
+    if (filters?.streetId) params.append('streetId', filters.streetId);
+    if (filters?.agentId) params.append('agentId', filters.agentId);
 
     const queryString = params.toString();
     return this.makeAuthenticatedRequest<any>(`/psp/reports/collection-rate${queryString ? `?${queryString}` : ''}`, {}, accessToken);
   }
 
   // Problem Areas Report
-  async getProblemAreasReport(accessToken: string): Promise<any> {
-    return this.makeAuthenticatedRequest<any>('/psp/reports/problem-areas', {}, accessToken);
+  async getProblemAreasReport(accessToken: string, filters?: {
+    wardId?: string;
+    streetId?: string;
+    agentId?: string;
+  }): Promise<any> {
+    const params = new URLSearchParams();
+    if (filters?.wardId) params.append('wardId', filters.wardId);
+    if (filters?.streetId) params.append('streetId', filters.streetId);
+    if (filters?.agentId) params.append('agentId', filters.agentId);
+
+    const queryString = params.toString();
+    return this.makeAuthenticatedRequest<any>(`/psp/reports/problem-areas${queryString ? `?${queryString}` : ''}`, {}, accessToken);
   }
 
   // ============ PAYMENTS/TRANSACTIONS ============
