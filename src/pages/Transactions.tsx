@@ -27,6 +27,7 @@ interface Transaction {
   status: string;
   paymentChannel: string;
   description?: string;
+  serviceName?: string;
   customerId: {
     _id: string;
     fullName: string;
@@ -36,6 +37,8 @@ interface Transaction {
   invoiceId?: {
     _id: string;
     invoiceNumber: string;
+    serviceName?: string;
+    collectionName?: string;
   };
   paidAt?: string;
   createdAt: string;
@@ -213,11 +216,16 @@ const Transactions = () => {
       },
       {
         key: "invoice",
-        header: "Invoice",
+        header: "Service / Invoice",
         accessor: (tx) => (
-          <span className="text-sm text-gray-600 font-mono">
-            {tx.invoiceId?.invoiceNumber || "-"}
-          </span>
+          <div>
+            <p className="text-sm font-medium text-gray-900">
+              {tx.serviceName || tx.invoiceId?.serviceName || tx.invoiceId?.collectionName || tx.description || "N/A"}
+            </p>
+            <p className="text-xs text-gray-500 font-mono">
+              {tx.invoiceId?.invoiceNumber || "-"}
+            </p>
+          </div>
         ),
       },
       {
