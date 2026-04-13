@@ -639,6 +639,18 @@ const CustomerDetails = () => {
                         <p className="text-xs text-gray-500">₦{(invoiceSummary.overdueAmount || 0).toLocaleString()}</p>
                       </div>
                     </div>
+                    {(invoiceSummary.partiallyPaid || 0) > 0 && (
+                      <div className="flex items-center justify-between py-2">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                          <span className="text-sm text-gray-600">Partially Paid</span>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm font-semibold text-gray-900">{invoiceSummary.partiallyPaid || 0} invoices</p>
+                          <p className="text-xs text-gray-500">₦{(invoiceSummary.partiallyPaidAmount || 0).toLocaleString()}</p>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
 
