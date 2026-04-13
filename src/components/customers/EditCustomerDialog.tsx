@@ -19,21 +19,26 @@ interface EditCustomerDialogProps {
 }
 
 interface Ward {
-  _id: string;
+  id: string;
+  _id?: string; // For backward compatibility
   name: string;
 }
 
 interface Street {
-  _id: string;
+  id: string;
+  _id?: string; // For backward compatibility
   name: string;
-  wardId: string | { _id: string; name: string };
+  wardId: string | { id: string; _id?: string; name: string };
 }
 
 interface PropertyType {
-  _id: string;
+  id: string;
+  _id?: string; // For backward compatibility
   name: string;
   cost: number;
 }
+
+const getId = (item: { id?: string; _id?: string }): string => item.id || item._id || "";
 
 interface PropertyEntry {
   propertyTypeId: string;
@@ -121,7 +126,7 @@ export function EditCustomerDialog({ customer, open, onOpenChange, onCustomerUpd
   useEffect(() => {
     if (formData.wardId && streets.length > 0) {
       const filtered = streets.filter((street) => {
-        const wardId = typeof street.wardId === "object" ? street.wardId._id : street.wardId;
+        const wardId = typeof street.wardId === "object" ? getId(street.wardId) : street.wardId;
         return wardId === formData.wardId;
       });
       setFilteredStreets(filtered);
@@ -182,7 +187,7 @@ export function EditCustomerDialog({ customer, open, onOpenChange, onCustomerUpd
   // Calculate expected bill
   const calculateExpectedBill = (): number => {
     return properties.reduce((total, prop) => {
-      const propertyType = propertyTypes.find((pt) => pt._id === prop.propertyTypeId);
+      const propertyType = propertyTypes.find((pt) => getId(pt) === prop.propertyTypeId);
       if (propertyType && prop.quantity > 0) {
         // Use custom costPerUnit if set, otherwise use default property type cost
         const cost = prop.costPerUnit !== undefined ? prop.costPerUnit : propertyType.cost;
@@ -349,7 +354,7 @@ export function EditCustomerDialog({ customer, open, onOpenChange, onCustomerUpd
                     <SelectContent>
                       <SelectItem value="none">None</SelectItem>
                       {wards.map((ward) => (
-                        <SelectItem key={ward._id} value={ward._id}>
+                        <SelectItem key={getId(ward)} value={getId(ward)}>
                           {ward.name}
                         </SelectItem>
                       ))}
@@ -370,7 +375,7 @@ export function EditCustomerDialog({ customer, open, onOpenChange, onCustomerUpd
                     <SelectContent>
                       <SelectItem value="none">None</SelectItem>
                       {filteredStreets.map((street) => (
-                        <SelectItem key={street._id} value={street._id}>
+                        <SelectItem key={getId(street)} value={getId(street)}>
                           {street.name}
                         </SelectItem>
                       ))}
@@ -462,7 +467,7 @@ export function EditCustomerDialog({ customer, open, onOpenChange, onCustomerUpd
                   </div>
 
                   {properties.map((prop, index) => {
-                    const propertyType = propertyTypes.find((pt) => pt._id === prop.propertyTypeId);
+                    const propertyType = propertyTypes.find((pt) => getId(pt) === prop.propertyTypeId);
                     const defaultCost = propertyType?.cost || 0;
                     const effectiveCost = prop.costPerUnit !== undefined ? prop.costPerUnit : defaultCost;
                     const hasCustomCost = prop.costPerUnit !== undefined && prop.costPerUnit !== defaultCost;
@@ -484,7 +489,7 @@ export function EditCustomerDialog({ customer, open, onOpenChange, onCustomerUpd
                             </SelectTrigger>
                             <SelectContent>
                               {propertyTypes.map((pt) => (
-                                <SelectItem key={pt._id} value={pt._id}>
+                                <SelectItem key={getId(pt)} value={getId(pt)}>
                                   {pt.name}
                                 </SelectItem>
                               ))}
@@ -562,7 +567,7 @@ export function EditCustomerDialog({ customer, open, onOpenChange, onCustomerUpd
                         <span className="font-medium text-green-800">Estimated Monthly Bill</span>
                         <span className="text-xl font-bold text-green-700">{formatCurrency(expectedBill)}</span>
                       </div>
-                      {properties.some(p => p.costPerUnit !== undefined && p.costPerUnit !== (propertyTypes.find(pt => pt._id === p.propertyTypeId)?.cost || 0)) && (
+                      {properties.some(p => p.costPerUnit !== undefined && p.costPerUnit !== (propertyTypes.find(pt => getId(pt) === p.propertyTypeId)?.cost || 0)) && (
                         <p className="text-xs text-amber-600 mt-1">* Includes custom pricing</p>
                       )}
                     </CardContent>

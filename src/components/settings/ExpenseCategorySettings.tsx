@@ -36,12 +36,15 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Edit, Trash2 } from "lucide-react";
 
 interface ExpenseCategory {
-  _id: string;
+  id: string;
+  _id?: string; // For backward compatibility
   name: string;
   description?: string;
   isActive: boolean;
   createdAt: string;
 }
+
+const getId = (item: { id?: string; _id?: string }): string => item.id || item._id || "";
 
 export function ExpenseCategorySettings() {
   const { accessToken } = useAuth();
@@ -109,7 +112,7 @@ export function ExpenseCategorySettings() {
     try {
       const response = await apiService.updateExpenseCategory(
         accessToken,
-        selectedCategory._id,
+        getId(selectedCategory),
         formData
       );
       if (response.success) {
@@ -128,7 +131,7 @@ export function ExpenseCategorySettings() {
     if (!selectedCategory || !accessToken) return;
 
     try {
-      await apiService.deleteExpenseCategory(accessToken, selectedCategory._id);
+      await apiService.deleteExpenseCategory(accessToken, getId(selectedCategory));
       toast.success("Expense category deleted successfully");
       loadCategories();
       setShowDeleteDialog(false);
@@ -183,7 +186,7 @@ export function ExpenseCategorySettings() {
               </TableHeader>
               <TableBody>
                 {categories.map((category) => (
-                  <TableRow key={category._id}>
+                  <TableRow key={getId(category)}>
                     <TableCell className="font-medium">{category.name}</TableCell>
                     <TableCell>{category.description || "-"}</TableCell>
                     <TableCell>

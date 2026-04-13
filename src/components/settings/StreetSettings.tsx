@@ -56,17 +56,20 @@ import { toast } from "sonner";
 import Papa from "papaparse";
 
 interface Ward {
-  _id: string;
+  id: string;
+  _id?: string; // For backward compatibility
   name: string;
   isActive: boolean;
 }
 
 interface Street {
-  _id: string;
+  id: string;
+  _id?: string; // For backward compatibility
   name: string;
   description?: string;
   wardId: {
-    _id: string;
+    id: string;
+    _id?: string;
     name: string;
   } | string;
   isActive: boolean;
@@ -147,22 +150,25 @@ export function StreetSettings() {
     loadStreets(wardId);
   };
 
+  const getWardId = (ward: Ward): string => ward.id || ward._id || "";
+  const getStreetId = (street: Street): string => street.id || street._id || "";
+
   const getWardName = (street: Street): string => {
     if (typeof street.wardId === "object" && street.wardId !== null) {
       return street.wardId.name;
     }
-    const ward = wards.find(w => w._id === street.wardId);
+    const ward = wards.find(w => getWardId(w) === street.wardId);
     return ward?.name || "Unknown";
   };
 
   const handleAdd = () => {
-    setFormData({ wardId: wards[0]?._id || "", name: "", description: "" });
+    setFormData({ wardId: getWardId(wards[0]) || "", name: "", description: "" });
     setShowAddDialog(true);
   };
 
   const handleEdit = (street: Street) => {
     setSelectedStreet(street);
-    const wardId = typeof street.wardId === "object" ? street.wardId._id : street.wardId;
+    const wardId = typeof street.wardId === "object" ? (street.wardId.id || street.wardId._id || "") : street.wardId;
     setFormData({
       wardId,
       name: street.name,
@@ -180,9 +186,9 @@ export function StreetSettings() {
     if (!accessToken) return;
 
     try {
-      await apiService.updateStreet(accessToken, street._id, { isActive: !street.isActive });
+      await apiService.updateStreet(accessToken, getStreetId(street), { isActive: !street.isActive });
       setStreets(prev =>
-        prev.map(s => (s._id === street._id ? { ...s, isActive: !s.isActive } : s))
+        prev.map(s => (getStreetId(s) === getStreetId(street) ? { ...s, isActive: !s.isActive } : s))
       );
       toast.success(`Street ${!street.isActive ? "activated" : "deactivated"} successfully`);
     } catch (error: any) {
@@ -232,7 +238,7 @@ export function StreetSettings() {
 
     setSaving(true);
     try {
-      await apiService.updateStreet(accessToken, selectedStreet._id, {
+      await apiService.updateStreet(accessToken, getStreetId(selectedStreet), {
         name: formData.name.trim(),
         description: formData.description.trim() || undefined,
       });
@@ -254,8 +260,8 @@ export function StreetSettings() {
 
     setSaving(true);
     try {
-      await apiService.deleteStreet(accessToken, selectedStreet._id);
-      setStreets(prev => prev.filter(s => s._id !== selectedStreet._id));
+      await apiService.deleteStreet(accessToken, getStreetId(selectedStreet));
+      setStreets(prev => prev.filter(s => getStreetId(s) !== getStreetId(selectedStreet)));
       setShowDeleteDialog(false);
       setSelectedStreet(null);
       toast.success("Street deleted successfully");
@@ -269,7 +275,7 @@ export function StreetSettings() {
 
   // Bulk Upload Functions
   const handleBulkUploadClick = () => {
-    setBulkWardId(wards[0]?._id || "");
+    setBulkWardId(getWardId(wards[0]) || "");
     setParsedStreets([]);
     setShowBulkUploadDialog(true);
   };
@@ -362,7 +368,7 @@ export function StreetSettings() {
   const filteredStreets = selectedWardFilter === "all"
     ? streets
     : streets.filter(s => {
-        const wardId = typeof s.wardId === "object" ? s.wardId._id : s.wardId;
+        const wardId = typeof s.wardId === "object" ? (s.wardId.id || s.wardId._id) : s.wardId;
         return wardId === selectedWardFilter;
       });
 
@@ -406,7 +412,7 @@ export function StreetSettings() {
               <SelectContent>
                 <SelectItem value="all">All Wards</SelectItem>
                 {wards.map((ward) => (
-                  <SelectItem key={ward._id} value={ward._id}>
+                  <SelectItem key={getWardId(ward)} value={getWardId(ward)}>
                     {ward.name}
                   </SelectItem>
                 ))}
@@ -457,7 +463,7 @@ export function StreetSettings() {
                 </TableHeader>
                 <TableBody>
                   {filteredStreets.map((street) => (
-                    <TableRow key={street._id}>
+                    <TableRow key={getStreetId(street)}>
                       <TableCell className="font-medium">{street.name}</TableCell>
                       <TableCell>
                         <Badge variant="outline">{getWardName(street)}</Badge>
@@ -523,7 +529,7 @@ export function StreetSettings() {
                 </SelectTrigger>
                 <SelectContent>
                   {wards.map((ward) => (
-                    <SelectItem key={ward._id} value={ward._id}>
+                    <SelectItem key={getWardId(ward)} value={getWardId(ward)}>
                       {ward.name}
                     </SelectItem>
                   ))}
@@ -578,7 +584,7 @@ export function StreetSettings() {
             <div className="space-y-2">
               <Label>Ward</Label>
               <Input
-                value={wards.find(w => w._id === formData.wardId)?.name || ""}
+                value={wards.find(w => getWardId(w) === formData.wardId)?.name || ""}
                 disabled
                 className="bg-gray-50"
               />
@@ -668,7 +674,7 @@ export function StreetSettings() {
                 </SelectTrigger>
                 <SelectContent>
                   {wards.map((ward) => (
-                    <SelectItem key={ward._id} value={ward._id}>
+                    <SelectItem key={getWardId(ward)} value={getWardId(ward)}>
                       {ward.name}
                     </SelectItem>
                   ))}

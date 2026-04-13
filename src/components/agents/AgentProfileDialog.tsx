@@ -172,12 +172,12 @@ export function AgentProfileDialog({
                 {agent.assignedWards?.length > 0 || agent.assignedStreets?.length > 0 ? (
                   <>
                     {agent.assignedWards?.slice(0, 3).map((w: any) => (
-                      <Badge key={w._id} variant="secondary" className="text-xs">
+                      <Badge key={w.id || w._id} variant="secondary" className="text-xs">
                         {w.name}
                       </Badge>
                     ))}
                     {agent.assignedStreets?.slice(0, 2).map((s: any) => (
-                      <Badge key={s._id} variant="outline" className="text-xs">
+                      <Badge key={s.id || s._id} variant="outline" className="text-xs">
                         {s.name}
                       </Badge>
                     ))}

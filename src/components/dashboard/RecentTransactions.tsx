@@ -1,23 +1,28 @@
 import { ArrowUpRight, Clock, CheckCircle2, XCircle } from "lucide-react";
 
 interface Transaction {
-  _id: string;
+  id: string;
+  _id?: string; // For backward compatibility
   transactionReference: string;
   amount: number;
   status: string;
   type: string;
   customerId: {
-    _id: string;
+    id: string;
+    _id?: string;
     fullName: string;
     customerAccountNumber: string;
   };
   invoiceId: {
-    _id: string;
+    id: string;
+    _id?: string;
     invoiceNumber: string;
   };
   paidAt: string | null;
   createdAt: string;
 }
+
+const getId = (item: { id?: string; _id?: string }): string => item.id || item._id || "";
 
 interface RecentTransactionsProps {
   transactions: Transaction[];
@@ -101,7 +106,7 @@ export const RecentTransactions = ({ transactions }: RecentTransactionsProps) =>
 
         return (
           <div
-            key={transaction._id}
+            key={getId(transaction)}
             className="group flex items-center justify-between p-4 bg-card/30 backdrop-blur-sm border border-border/40 rounded-lg hover:border-border/80 hover:shadow-sm transition-all duration-200"
           >
             <div className="flex items-center gap-4 flex-1 min-w-0">

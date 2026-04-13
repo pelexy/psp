@@ -17,21 +17,27 @@ interface AddCustomerDialogProps {
 }
 
 interface Ward {
-  _id: string;
+  id: string;
+  _id?: string;
   name: string;
 }
 
 interface Street {
-  _id: string;
+  id: string;
+  _id?: string;
   name: string;
-  wardId: string | { _id: string; name: string };
+  wardId: string | { id: string; _id?: string; name: string };
 }
 
 interface PropertyType {
-  _id: string;
+  id: string;
+  _id?: string;
   name: string;
   cost: number;
 }
+
+// Helper functions
+const getId = (item: { id?: string; _id?: string }): string => item.id || item._id || "";
 
 interface PropertyEntry {
   propertyTypeId: string;
@@ -85,7 +91,7 @@ export function AddCustomerDialog({ onCustomerAdded }: AddCustomerDialogProps) {
   useEffect(() => {
     if (formData.wardId) {
       const filtered = streets.filter((street) => {
-        const wardId = typeof street.wardId === "object" ? street.wardId._id : street.wardId;
+        const wardId = typeof street.wardId === "object" ? getId(street.wardId) : street.wardId;
         return wardId === formData.wardId;
       });
       setFilteredStreets(filtered);
@@ -148,7 +154,7 @@ export function AddCustomerDialog({ onCustomerAdded }: AddCustomerDialogProps) {
   // Calculate expected bill
   const calculateExpectedBill = (): number => {
     return properties.reduce((total, prop) => {
-      const propertyType = propertyTypes.find((pt) => pt._id === prop.propertyTypeId);
+      const propertyType = propertyTypes.find((pt) => getId(pt) === prop.propertyTypeId);
       if (propertyType && prop.quantity > 0) {
         return total + propertyType.cost * prop.quantity;
       }
@@ -352,7 +358,7 @@ export function AddCustomerDialog({ onCustomerAdded }: AddCustomerDialogProps) {
                     </SelectTrigger>
                     <SelectContent>
                       {wards.map((ward) => (
-                        <SelectItem key={ward._id} value={ward._id}>
+                        <SelectItem key={getId(ward)} value={getId(ward)}>
                           {ward.name}
                         </SelectItem>
                       ))}
@@ -373,7 +379,7 @@ export function AddCustomerDialog({ onCustomerAdded }: AddCustomerDialogProps) {
                     </SelectTrigger>
                     <SelectContent>
                       {filteredStreets.map((street) => (
-                        <SelectItem key={street._id} value={street._id}>
+                        <SelectItem key={getId(street)} value={getId(street)}>
                           {street.name}
                         </SelectItem>
                       ))}
@@ -471,7 +477,7 @@ export function AddCustomerDialog({ onCustomerAdded }: AddCustomerDialogProps) {
                           </SelectTrigger>
                           <SelectContent>
                             {propertyTypes.map((pt) => (
-                              <SelectItem key={pt._id} value={pt._id}>
+                              <SelectItem key={getId(pt)} value={getId(pt)}>
                                 {pt.name} - {formatCurrency(pt.cost)}
                               </SelectItem>
                             ))}
@@ -490,7 +496,7 @@ export function AddCustomerDialog({ onCustomerAdded }: AddCustomerDialogProps) {
                       <div className="w-28 text-right text-sm font-medium">
                         {prop.propertyTypeId && (
                           formatCurrency(
-                            (propertyTypes.find((pt) => pt._id === prop.propertyTypeId)?.cost || 0) * prop.quantity
+                            (propertyTypes.find((pt) => getId(pt) === prop.propertyTypeId)?.cost || 0) * prop.quantity
                           )
                         )}
                       </div>

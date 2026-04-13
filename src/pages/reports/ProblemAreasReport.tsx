@@ -43,9 +43,12 @@ interface LeakageData {
 }
 
 interface Staff {
-  _id: string;
+  id: string;
+  _id?: string; // For backward compatibility
   fullName: string;
 }
+
+const getId = (item: { id?: string; _id?: string }): string => item.id || item._id || "";
 
 const ITEMS_PER_PAGE = 50;
 
@@ -306,7 +309,7 @@ const ProblemAreasReport = () => {
                   <SelectContent>
                     <SelectItem value="all">All Territories</SelectItem>
                     {agents.map((agent) => (
-                      <SelectItem key={agent._id} value={agent._id}>{agent.fullName}</SelectItem>
+                      <SelectItem key={getId(agent)} value={getId(agent)}>{agent.fullName}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>

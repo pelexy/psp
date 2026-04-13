@@ -19,7 +19,7 @@ export function RecentTransactions({ transactionsData }: RecentTransactionsProps
         <div className="space-y-2 sm:space-y-3">
           {transactions.length > 0 ? transactions.map((transaction: any) => (
             <div
-              key={transaction._id}
+              key={transaction.id || transaction._id}
               className="flex items-center gap-2 sm:gap-3 md:gap-4 p-2.5 sm:p-3 md:p-4 rounded-lg sm:rounded-xl bg-gradient-to-r from-accent/30 to-transparent hover:from-accent/50 transition-all duration-300"
             >
               <div

@@ -25,8 +25,10 @@ interface AddExpenseDialogProps {
   open: boolean;
   onClose: () => void;
   onSuccess: () => void;
-  categories: Array<{ _id: string; name: string }>;
+  categories: Array<{ id: string; _id?: string; name: string }>;
 }
+
+const getId = (item: { id?: string; _id?: string }): string => item.id || item._id || "";
 
 export function AddExpenseDialog({
   open,
@@ -153,7 +155,7 @@ export function AddExpenseDialog({
                   </SelectTrigger>
                   <SelectContent>
                     {categories.map((category) => (
-                      <SelectItem key={category._id} value={category._id}>
+                      <SelectItem key={getId(category)} value={getId(category)}>
                         {category.name}
                       </SelectItem>
                     ))}

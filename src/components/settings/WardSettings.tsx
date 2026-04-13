@@ -37,12 +37,15 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
 interface Ward {
-  _id: string;
+  id: string;
+  _id?: string; // For backward compatibility
   name: string;
   description?: string;
   isActive: boolean;
   createdAt: string;
 }
+
+const getWardId = (ward: Ward): string => ward.id || ward._id || "";
 
 export function WardSettings() {
   const { accessToken } = useAuth();
@@ -99,9 +102,9 @@ export function WardSettings() {
     if (!accessToken) return;
 
     try {
-      await apiService.updateWard(accessToken, ward._id, { isActive: !ward.isActive });
+      await apiService.updateWard(accessToken, getWardId(ward), { isActive: !ward.isActive });
       setWards(prev =>
-        prev.map(w => (w._id === ward._id ? { ...w, isActive: !w.isActive } : w))
+        prev.map(w => (getWardId(w) === getWardId(ward) ? { ...w, isActive: !w.isActive } : w))
       );
       toast.success(`Ward ${!ward.isActive ? "activated" : "deactivated"} successfully`);
     } catch (error: any) {
@@ -146,13 +149,13 @@ export function WardSettings() {
 
     setSaving(true);
     try {
-      const response = await apiService.updateWard(accessToken, selectedWard._id, {
+      const response = await apiService.updateWard(accessToken, getWardId(selectedWard), {
         name: formData.name.trim(),
         description: formData.description.trim() || undefined,
       });
 
       setWards(prev =>
-        prev.map(w => (w._id === selectedWard._id ? response.data : w))
+        prev.map(w => (getWardId(w) === getWardId(selectedWard) ? response.data : w))
       );
       setShowEditDialog(false);
       setSelectedWard(null);
@@ -170,8 +173,8 @@ export function WardSettings() {
 
     setSaving(true);
     try {
-      await apiService.deleteWard(accessToken, selectedWard._id);
-      setWards(prev => prev.filter(w => w._id !== selectedWard._id));
+      await apiService.deleteWard(accessToken, getWardId(selectedWard));
+      setWards(prev => prev.filter(w => getWardId(w) !== getWardId(selectedWard)));
       setShowDeleteDialog(false);
       setSelectedWard(null);
       toast.success("Ward deleted successfully");
@@ -230,7 +233,7 @@ export function WardSettings() {
                 </TableHeader>
                 <TableBody>
                   {wards.map((ward) => (
-                    <TableRow key={ward._id}>
+                    <TableRow key={getWardId(ward)}>
                       <TableCell className="font-medium">{ward.name}</TableCell>
                       <TableCell className="hidden md:table-cell text-gray-500">
                         {ward.description || "-"}

@@ -37,19 +37,22 @@ import {
 } from "@/components/ui/alert-dialog";
 
 interface ExpenseCategory {
-  _id: string;
+  id: string;
+  _id?: string; // For backward compatibility
   name: string;
   description?: string;
   isActive: boolean;
 }
 
 interface Expense {
-  _id: string;
+  id: string;
+  _id?: string; // For backward compatibility
   title: string;
   description?: string;
   amount: number;
   categoryId: {
-    _id: string;
+    id: string;
+    _id?: string;
     name: string;
   };
   expenseDate: string;
@@ -58,12 +61,15 @@ interface Expense {
   vendor?: string;
   notes?: string;
   recordedBy?: {
-    _id: string;
+    id: string;
+    _id?: string;
     firstName: string;
     lastName: string;
   };
   createdAt: string;
 }
+
+const getId = (item: { id?: string; _id?: string }): string => item.id || item._id || "";
 
 export default function Expenses() {
   const { accessToken } = useAuth();
@@ -164,7 +170,7 @@ export default function Expenses() {
     if (!selectedExpense || !accessToken) return;
 
     try {
-      await apiService.deleteExpense(accessToken, selectedExpense._id);
+      await apiService.deleteExpense(accessToken, getId(selectedExpense));
       toast.success("Expense deleted successfully");
       loadExpenses();
       loadSummary();
@@ -298,7 +304,7 @@ export default function Expenses() {
                 <SelectContent>
                   <SelectItem value="all">All Categories</SelectItem>
                   {categories.map((category) => (
-                    <SelectItem key={category._id} value={category._id}>
+                    <SelectItem key={getId(category)} value={getId(category)}>
                       {category.name}
                     </SelectItem>
                   ))}
@@ -387,7 +393,7 @@ export default function Expenses() {
                     </TableHeader>
                     <TableBody>
                       {expenses.map((expense) => (
-                        <TableRow key={expense._id}>
+                        <TableRow key={getId(expense)}>
                           <TableCell className="font-medium">
                             {formatDate(expense.expenseDate)}
                           </TableCell>

@@ -37,13 +37,16 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
 interface PropertyType {
-  _id: string;
+  id: string;
+  _id?: string; // For backward compatibility
   name: string;
   cost: number;
   description?: string;
   isActive: boolean;
   createdAt: string;
 }
+
+const getId = (item: { id?: string; _id?: string }): string => item.id || item._id || "";
 
 export function PropertyTypeSettings() {
   const { accessToken } = useAuth();
@@ -105,12 +108,12 @@ export function PropertyTypeSettings() {
     if (!accessToken) return;
 
     try {
-      await apiService.updatePropertyType(accessToken, propertyType._id, {
+      await apiService.updatePropertyType(accessToken, getId(propertyType), {
         isActive: !propertyType.isActive,
       });
       setPropertyTypes(prev =>
         prev.map(pt =>
-          pt._id === propertyType._id ? { ...pt, isActive: !pt.isActive } : pt
+          getId(pt) === getId(propertyType) ? { ...pt, isActive: !pt.isActive } : pt
         )
       );
       toast.success(
@@ -173,7 +176,7 @@ export function PropertyTypeSettings() {
     try {
       const response = await apiService.updatePropertyType(
         accessToken,
-        selectedPropertyType._id,
+        getId(selectedPropertyType),
         {
           name: formData.name.trim(),
           cost,
@@ -182,7 +185,7 @@ export function PropertyTypeSettings() {
       );
 
       setPropertyTypes(prev =>
-        prev.map(pt => (pt._id === selectedPropertyType._id ? response.data : pt))
+        prev.map(pt => (getId(pt) === getId(selectedPropertyType) ? response.data : pt))
       );
       setShowEditDialog(false);
       setSelectedPropertyType(null);
@@ -200,8 +203,8 @@ export function PropertyTypeSettings() {
 
     setSaving(true);
     try {
-      await apiService.deletePropertyType(accessToken, selectedPropertyType._id);
-      setPropertyTypes(prev => prev.filter(pt => pt._id !== selectedPropertyType._id));
+      await apiService.deletePropertyType(accessToken, getId(selectedPropertyType));
+      setPropertyTypes(prev => prev.filter(pt => getId(pt) !== getId(selectedPropertyType)));
       setShowDeleteDialog(false);
       setSelectedPropertyType(null);
       toast.success("Property type deleted successfully");
@@ -275,7 +278,7 @@ export function PropertyTypeSettings() {
                 </TableHeader>
                 <TableBody>
                   {propertyTypes.map((propertyType) => (
-                    <TableRow key={propertyType._id}>
+                    <TableRow key={getId(propertyType)}>
                       <TableCell className="font-medium">
                         {propertyType.name}
                       </TableCell>

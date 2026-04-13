@@ -29,15 +29,19 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 
 interface Ward {
-  _id: string;
+  id: string;
+  _id?: string; // For backward compatibility
   name: string;
 }
 
 interface Street {
-  _id: string;
+  id: string;
+  _id?: string; // For backward compatibility
   name: string;
-  wardId: string | { _id: string; name: string };
+  wardId: string | { id: string; _id?: string; name: string };
 }
+
+const getId = (item: { id?: string; _id?: string }): string => item.id || item._id || "";
 
 const AgentDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -363,9 +367,9 @@ const AgentDetails = () => {
                         </SelectTrigger>
                         <SelectContent>
                           {wards
-                            .filter((w) => !selectedWards.includes(w._id))
+                            .filter((w) => !selectedWards.includes(getId(w)))
                             .map((ward) => (
-                              <SelectItem key={ward._id} value={ward._id}>
+                              <SelectItem key={getId(ward)} value={getId(ward)}>
                                 {ward.name}
                               </SelectItem>
                             ))}
@@ -373,7 +377,7 @@ const AgentDetails = () => {
                       </Select>
                       <div className="flex flex-wrap gap-2">
                         {selectedWards.map((wardId) => {
-                          const ward = wards.find((w) => w._id === wardId);
+                          const ward = wards.find((w) => getId(w) === wardId);
                           return ward ? (
                             <Badge key={wardId} variant="secondary" className="flex items-center gap-1 py-1 px-3">
                               {ward.name}
@@ -399,9 +403,9 @@ const AgentDetails = () => {
                         </SelectTrigger>
                         <SelectContent>
                           {streets
-                            .filter((s) => !selectedStreets.includes(s._id))
+                            .filter((s) => !selectedStreets.includes(getId(s)))
                             .map((street) => (
-                              <SelectItem key={street._id} value={street._id}>
+                              <SelectItem key={getId(street)} value={getId(street)}>
                                 {street.name}
                               </SelectItem>
                             ))}
@@ -409,7 +413,7 @@ const AgentDetails = () => {
                       </Select>
                       <div className="flex flex-wrap gap-2">
                         {selectedStreets.map((streetId) => {
-                          const street = streets.find((s) => s._id === streetId);
+                          const street = streets.find((s) => getId(s) === streetId);
                           return street ? (
                             <Badge key={streetId} variant="outline" className="flex items-center gap-1 py-1 px-3">
                               {street.name}
@@ -433,7 +437,7 @@ const AgentDetails = () => {
                       <div className="flex flex-wrap gap-2 mt-2">
                         {agent.assignedWards?.length > 0 ? (
                           agent.assignedWards.map((ward: any) => (
-                            <Badge key={ward._id} variant="secondary" className="py-1 px-3">
+                            <Badge key={ward.id || ward._id} variant="secondary" className="py-1 px-3">
                               {ward.name}
                             </Badge>
                           ))
@@ -448,7 +452,7 @@ const AgentDetails = () => {
                       <div className="flex flex-wrap gap-2 mt-2">
                         {agent.assignedStreets?.length > 0 ? (
                           agent.assignedStreets.map((street: any) => (
-                            <Badge key={street._id} variant="outline" className="py-1 px-3">
+                            <Badge key={street.id || street._id} variant="outline" className="py-1 px-3">
                               {street.name}
                             </Badge>
                           ))

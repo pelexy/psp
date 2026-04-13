@@ -39,19 +39,24 @@ interface CustomerDebt {
 }
 
 interface Ward {
-  _id: string;
+  id: string;
+  _id?: string; // For backward compatibility
   name: string;
 }
 
 interface Street {
-  _id: string;
+  id: string;
+  _id?: string; // For backward compatibility
   name: string;
 }
 
 interface Staff {
-  _id: string;
+  id: string;
+  _id?: string; // For backward compatibility
   fullName: string;
 }
+
+const getId = (item: { id?: string; _id?: string }): string => item.id || item._id || "";
 
 const ITEMS_PER_PAGE = 50;
 
@@ -329,7 +334,7 @@ const DebtAgingReport = () => {
                   <SelectContent>
                     <SelectItem value="all">All Wards</SelectItem>
                     {wards.map((ward) => (
-                      <SelectItem key={ward._id} value={ward._id}>{ward.name}</SelectItem>
+                      <SelectItem key={getId(ward)} value={getId(ward)}>{ward.name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -344,7 +349,7 @@ const DebtAgingReport = () => {
                   <SelectContent>
                     <SelectItem value="all">All Streets</SelectItem>
                     {streets.map((street) => (
-                      <SelectItem key={street._id} value={street._id}>{street.name}</SelectItem>
+                      <SelectItem key={getId(street)} value={getId(street)}>{street.name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -359,7 +364,7 @@ const DebtAgingReport = () => {
                   <SelectContent>
                     <SelectItem value="all">All Agents</SelectItem>
                     {agents.map((agent) => (
-                      <SelectItem key={agent._id} value={agent._id}>{agent.fullName}</SelectItem>
+                      <SelectItem key={getId(agent)} value={getId(agent)}>{agent.fullName}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>

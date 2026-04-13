@@ -22,12 +22,14 @@ import {
 } from "@/components/ui/select";
 
 interface Expense {
-  _id: string;
+  id: string;
+  _id?: string; // For backward compatibility
   title: string;
   description?: string;
   amount: number;
   categoryId: {
-    _id: string;
+    id: string;
+    _id?: string;
     name: string;
   };
   expenseDate: string;
@@ -42,8 +44,10 @@ interface EditExpenseDialogProps {
   onClose: () => void;
   onSuccess: () => void;
   expense: Expense;
-  categories: Array<{ _id: string; name: string }>;
+  categories: Array<{ id: string; _id?: string; name: string }>;
 }
+
+const getId = (item: { id?: string; _id?: string }): string => item.id || item._id || "";
 
 export function EditExpenseDialog({
   open,
@@ -72,7 +76,7 @@ export function EditExpenseDialog({
         title: expense.title,
         description: expense.description || "",
         amount: expense.amount.toString(),
-        categoryId: expense.categoryId._id,
+        categoryId: getId(expense.categoryId),
         expenseDate: new Date(expense.expenseDate).toISOString().split("T")[0],
         paymentMethod: expense.paymentMethod,
         paymentReference: expense.paymentReference || "",
@@ -98,7 +102,7 @@ export function EditExpenseDialog({
 
     try {
       setLoading(true);
-      const response = await apiService.updateExpense(accessToken, expense._id, {
+      const response = await apiService.updateExpense(accessToken, getId(expense), {
         title: formData.title,
         description: formData.description || undefined,
         amount: parseFloat(formData.amount),
@@ -171,7 +175,7 @@ export function EditExpenseDialog({
                 </SelectTrigger>
                 <SelectContent>
                   {categories.map((category) => (
-                    <SelectItem key={category._id} value={category._id}>
+                    <SelectItem key={getId(category)} value={getId(category)}>
                       {category.name}
                     </SelectItem>
                   ))}
