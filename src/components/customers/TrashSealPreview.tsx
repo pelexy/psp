@@ -16,7 +16,7 @@ interface TrashSealPreviewProps {
   customer: {
     customerDetails: {
       fullName: string;
-      customerAccountNumber: string;
+      accountNumber: string;
       isActive: boolean;
       address?: string;
       city?: string;
@@ -42,7 +42,7 @@ export const TrashSealPreview = ({ customer }: TrashSealPreviewProps) => {
       <!DOCTYPE html>
       <html>
         <head>
-          <title>Trash Seal - ${details.customerAccountNumber}</title>
+          <title>Trash Seal - ${details.accountNumber}</title>
           <style>
             * {
               margin: 0;
@@ -152,7 +152,7 @@ export const TrashSealPreview = ({ customer }: TrashSealPreviewProps) => {
               <div style={{ display: "flex", justifyContent: "center", marginBottom: "16px" }}>
                 <div style={{ background: "white", padding: "12px", borderRadius: "8px", border: "2px solid #d1d5db" }}>
                   <QRCodeSVG
-                    value={details.customerAccountNumber}
+                    value={details.accountNumber}
                     size={160}
                     level="H"
                     includeMargin={false}
@@ -165,7 +165,7 @@ export const TrashSealPreview = ({ customer }: TrashSealPreviewProps) => {
               {/* Account Number */}
               <div style={{ textAlign: "center", marginBottom: "16px" }}>
                 <p style={{ fontSize: "20px", fontWeight: "bold", fontFamily: "monospace", color: "#111827", letterSpacing: "0.05em", margin: 0 }}>
-                  {details.customerAccountNumber}
+                  {details.accountNumber}
                 </p>
               </div>
 
