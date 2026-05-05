@@ -1,6 +1,7 @@
-// Production API (auto-switches between dev and prod)
+// In dev, hit the local API via Vite's /api proxy (see vite.config.ts).
+// In prod, talk to the deployed API directly.
 const API_BASE_URL = import.meta.env.DEV
-  ? "https://payapi.buypowerpass.africa/api"
+  ? "/api"
   : "https://payapi.buypowerpass.africa/api";
 
 // Response when temporary password needs to be changed
@@ -947,13 +948,40 @@ class ApiService {
   async updateStaffTerritory(
     accessToken: string,
     staffId: string,
-    data: { assignedWards?: string[]; assignedStreets?: string[] },
+    data: {
+      assignAllWards?: boolean;
+      assignAllStreets?: boolean;
+      assignedWards?: string[];
+      assignedStreets?: string[];
+    },
   ): Promise<any> {
     return this.makeAuthenticatedRequest<any>(
       `/staff/${staffId}/territory`,
       {
         method: "PATCH",
         body: JSON.stringify(data),
+      },
+      accessToken,
+    );
+  }
+
+  async updateStaffPermissions(
+    accessToken: string,
+    staffId: string,
+    permissions: {
+      canUseMobileApp?: boolean;
+      canManageCustomers?: boolean;
+      canEnumerateCustomers?: boolean;
+      canScanBarcodes?: boolean;
+      canViewInvoices?: boolean;
+      canRecordPayments?: boolean;
+    },
+  ): Promise<any> {
+    return this.makeAuthenticatedRequest<any>(
+      `/staff/${staffId}/permissions`,
+      {
+        method: "PATCH",
+        body: JSON.stringify({ permissions }),
       },
       accessToken,
     );
