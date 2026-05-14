@@ -29,6 +29,7 @@ import DebtAgingReport from "@/pages/reports/DebtAgingReport";
 import OutstandingReport from "@/pages/reports/OutstandingReport";
 import CollectionRateReport from "@/pages/reports/CollectionRateReport";
 import ProblemAreasReport from "@/pages/reports/ProblemAreasReport";
+import MapAnalysisReport from "@/pages/reports/MapAnalysisReport";
 
 function App() {
   return (
@@ -84,6 +85,7 @@ function App() {
           <Route path="/reports/outstanding" element={<ProtectedRoute><OutstandingReport /></ProtectedRoute>} />
           <Route path="/reports/collection-rate" element={<ProtectedRoute><CollectionRateReport /></ProtectedRoute>} />
           <Route path="/reports/problem-areas" element={<ProtectedRoute><ProblemAreasReport /></ProtectedRoute>} />
+          <Route path="/reports/map-analysis" element={<ProtectedRoute><MapAnalysisReport /></ProtectedRoute>} />
 
           {/* Settings */}
           <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />

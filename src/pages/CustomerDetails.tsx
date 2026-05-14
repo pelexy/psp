@@ -730,6 +730,26 @@ const CustomerDetails = () => {
                       </div>
                     </div>
 
+                    {/* GPS Coordinates */}
+                    <div className="flex items-start gap-3">
+                      <Navigation className="h-5 w-5 text-gray-400 mt-0.5" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-gray-500 mb-1">GPS Coordinates</p>
+                        {details.latitude != null && details.longitude != null ? (
+                          <a
+                            href={`https://www.google.com/maps?q=${details.latitude},${details.longitude}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm font-medium text-blue-600 hover:underline font-mono"
+                          >
+                            {Number(details.latitude).toFixed(6)}, {Number(details.longitude).toFixed(6)}
+                          </a>
+                        ) : (
+                          <p className="text-sm font-medium text-gray-400 italic">Not mapped</p>
+                        )}
+                      </div>
+                    </div>
+
                   </div>
                 </div>
               </div>

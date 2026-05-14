@@ -1366,6 +1366,18 @@ class ApiService {
   // Common report filters type
   // wardId, streetId, agentId can be passed to any report
 
+  // Map Analysis for a street
+  async getStreetMapAnalysis(
+    accessToken: string,
+    streetId: string,
+  ): Promise<any> {
+    return this.makeAuthenticatedRequest<any>(
+      `/psp/reports/map-analysis/streets/${streetId}`,
+      {},
+      accessToken,
+    );
+  }
+
   // Debt Aging Report
   async getDebtAgingReport(
     accessToken: string,

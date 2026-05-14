@@ -77,6 +77,7 @@ const navigation: NavItem[] = [
       { name: "Outstanding", href: "/reports/outstanding" },
       { name: "Collection Rate", href: "/reports/collection-rate" },
       { name: "Problem Areas", href: "/reports/problem-areas" },
+      { name: "Map Analysis", href: "/reports/map-analysis" },
     ],
   },
   { name: "Settings", href: "/settings", icon: Settings },

@@ -56,6 +56,7 @@ const navItems: NavItem[] = [
       { name: "Outstanding", path: "/reports/outstanding" },
       { name: "Collection Rate", path: "/reports/collection-rate" },
       { name: "Problem Areas", path: "/reports/problem-areas" },
+      { name: "Map Analysis", path: "/reports/map-analysis" },
     ],
   },
   { name: "Settings", path: "/settings", icon: Settings },
