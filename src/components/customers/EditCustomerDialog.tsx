@@ -74,6 +74,7 @@ export function EditCustomerDialog({ customer, open, onOpenChange, onCustomerUpd
     customerType: "standalone",
     wardId: "",
     streetId: "",
+    oldAccountNumber: "",
   });
 
   const [properties, setProperties] = useState<PropertyEntry[]>([]);
@@ -93,6 +94,7 @@ export function EditCustomerDialog({ customer, open, onOpenChange, onCustomerUpd
         customerType: details.customerType || "standalone",
         wardId: details.wardId?._id || details.wardId || "",
         streetId: details.streetId?._id || details.streetId || "",
+        oldAccountNumber: details.oldAccountNumber || "",
       });
 
       // Initialize properties
@@ -242,6 +244,7 @@ export function EditCustomerDialog({ customer, open, onOpenChange, onCustomerUpd
         state: formData.state,
         lga: formData.lga,
         customerType: formData.customerType || "standalone",
+        oldAccountNumber: formData.oldAccountNumber.trim() || null,
         // Always send wardId and streetId (can be empty string to clear)
         wardId: formData.wardId || null,
         streetId: formData.streetId || null,
@@ -334,6 +337,21 @@ export function EditCustomerDialog({ customer, open, onOpenChange, onCustomerUpd
                     placeholder="08012345678"
                     required
                   />
+                </div>
+
+                <div className="col-span-2">
+                  <Label htmlFor="oldAccountNumber">Old Account Number (Optional)</Label>
+                  <Input
+                    id="oldAccountNumber"
+                    value={formData.oldAccountNumber}
+                    onChange={(e) =>
+                      setFormData({ ...formData, oldAccountNumber: e.target.value })
+                    }
+                    placeholder="e.g. LEG-12345"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Reference to the customer's account number from a previous/legacy system.
+                  </p>
                 </div>
               </div>
             </div>

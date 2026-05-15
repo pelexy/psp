@@ -75,6 +75,7 @@ export function AddCustomerDialog({ onCustomerAdded }: AddCustomerDialogProps) {
     customerType: "standalone",
     wardId: "",
     streetId: "",
+    oldAccountNumber: "",
   });
 
   const [properties, setProperties] = useState<PropertyEntry[]>([]);
@@ -203,6 +204,11 @@ export function AddCustomerDialog({ onCustomerAdded }: AddCustomerDialogProps) {
         customerType: formData.customerType,
       };
 
+      const trimmedOldAcct = formData.oldAccountNumber.trim();
+      if (trimmedOldAcct) {
+        customerData.oldAccountNumber = trimmedOldAcct;
+      }
+
       // Add ward and street if selected
       if (formData.wardId) {
         customerData.wardId = formData.wardId;
@@ -251,6 +257,7 @@ export function AddCustomerDialog({ onCustomerAdded }: AddCustomerDialogProps) {
       customerType: "standalone",
       wardId: "",
       streetId: "",
+      oldAccountNumber: "",
     });
     setProperties([]);
     setSelectedLGAs([]);
@@ -523,6 +530,22 @@ export function AddCustomerDialog({ onCustomerAdded }: AddCustomerDialogProps) {
                   </Card>
                 </div>
               )}
+            </div>
+
+            {/* Old Account Number */}
+            <div className="space-y-2">
+              <Label htmlFor="oldAccountNumber">Old Account Number (Optional)</Label>
+              <Input
+                id="oldAccountNumber"
+                value={formData.oldAccountNumber}
+                onChange={(e) =>
+                  setFormData({ ...formData, oldAccountNumber: e.target.value })
+                }
+                placeholder="e.g. LEG-12345"
+              />
+              <p className="text-xs text-gray-500">
+                Reference to the customer's account number from a previous/legacy system.
+              </p>
             </div>
 
             {/* Previous Debt */}

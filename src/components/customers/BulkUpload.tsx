@@ -21,6 +21,7 @@ interface ParsedCustomer {
   lga: string;
   city: string;
   previousDebt?: number;
+  oldAccountNumber?: string;
 }
 
 interface ValidationError {
@@ -103,6 +104,7 @@ export function BulkUpload({ onCustomersAdded }: BulkUploadProps) {
       lga: customer.lga?.trim() || "",
       city: customer.city?.trim() || "", // City is flexible, no validation
       previousDebt: customer.previousDebt ? parseFloat(customer.previousDebt) : 0,
+      oldAccountNumber: customer.oldAccountNumber?.trim() || undefined,
     };
 
     return { valid: true, data: validatedCustomer };
@@ -260,7 +262,8 @@ export function BulkUpload({ onCustomersAdded }: BulkUploadProps) {
       'city',
       'state',
       'lga',
-      'previousDebt'
+      'previousDebt',
+      'oldAccountNumber'
     ];
 
     const sampleData = [
@@ -271,7 +274,8 @@ export function BulkUpload({ onCustomersAdded }: BulkUploadProps) {
       'Lagos',
       'Lagos',
       'Lagos Island',
-      '10000'
+      '10000',
+      'LEG-12345'
     ];
 
     const csvContent = [
@@ -348,7 +352,7 @@ export function BulkUpload({ onCustomersAdded }: BulkUploadProps) {
             </p>
             <ul className="text-xs text-gray-500 space-y-1">
               <li>• <strong>Required:</strong> fullName, phone</li>
-              <li>• <strong>Optional:</strong> email, address, city, state, lga, previousDebt</li>
+              <li>• <strong>Optional:</strong> email, address, city, state, lga, previousDebt, oldAccountNumber</li>
               <li>• <strong>Phone:</strong> Accepts 08123456789, 8123456789, +2348123456789, or 2348123456789</li>
               <li>• State must be a valid Nigerian state</li>
               <li>• LGA must match the selected state</li>
@@ -378,6 +382,7 @@ export function BulkUpload({ onCustomersAdded }: BulkUploadProps) {
                     <th className="px-3 py-2 text-left font-semibold">Phone</th>
                     <th className="px-3 py-2 text-left font-semibold">Email</th>
                     <th className="px-3 py-2 text-left font-semibold">Location</th>
+                    <th className="px-3 py-2 text-left font-semibold">Old Acct #</th>
                     <th className="px-3 py-2 text-left font-semibold">Debt</th>
                   </tr>
                 </thead>
@@ -392,6 +397,7 @@ export function BulkUpload({ onCustomersAdded }: BulkUploadProps) {
                         {customer.city && `${customer.city}, `}
                         {customer.state || '-'}
                       </td>
+                      <td className="px-3 py-2 font-mono text-xs">{customer.oldAccountNumber || '-'}</td>
                       <td className="px-3 py-2">₦{(customer.previousDebt || 0).toLocaleString()}</td>
                     </tr>
                   ))}

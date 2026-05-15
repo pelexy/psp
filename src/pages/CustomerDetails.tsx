@@ -687,6 +687,21 @@ const CustomerDetails = () => {
                       </div>
                     </div>
 
+                    {/* Old Account Number */}
+                    <div className="flex items-start gap-3">
+                      <FileText className="h-5 w-5 text-gray-400 mt-0.5" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-gray-500 mb-1">Old Account Number</p>
+                        {details.oldAccountNumber ? (
+                          <p className="text-sm font-medium text-gray-900 font-mono">
+                            {details.oldAccountNumber}
+                          </p>
+                        ) : (
+                          <p className="text-sm text-gray-400 italic">Not set</p>
+                        )}
+                      </div>
+                    </div>
+
                     <div className="flex items-start gap-3">
                       <Mail className="h-5 w-5 text-gray-400 mt-0.5" />
                       <div className="flex-1 min-w-0">
