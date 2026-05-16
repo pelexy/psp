@@ -45,7 +45,6 @@ import {
   MapContainer,
   TileLayer,
   Polyline,
-  Popup,
   useMap,
 } from "react-leaflet";
 import L from "leaflet";
