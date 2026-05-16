@@ -724,9 +724,9 @@ const CustomerDetails = () => {
                       <div className="flex-1 min-w-0">
                         <p className="text-xs text-gray-500 mb-1">Ward / Street</p>
                         <p className="text-sm font-medium text-gray-900">
-                          {details.wardId?.name || details.ward?.name || 'Not set'}
-                          {(details.streetId?.name || details.street?.name) && (
-                            <span className="text-gray-600"> / {details.streetId?.name || details.street?.name}</span>
+                          {details.wardName || details.wardId?.name || details.ward?.name || 'Not set'}
+                          {(details.streetName || details.streetId?.name || details.street?.name) && (
+                            <span className="text-gray-600"> / {details.streetName || details.streetId?.name || details.street?.name}</span>
                           )}
                         </p>
                       </div>
