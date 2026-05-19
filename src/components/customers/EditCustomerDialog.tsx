@@ -248,12 +248,20 @@ export function EditCustomerDialog({ customer, open, onOpenChange, onCustomerUpd
         // Always send wardId and streetId (can be empty string to clear)
         wardId: formData.wardId || null,
         streetId: formData.streetId || null,
-        // Always send properties array with costPerUnit
-        properties: validProperties.map(p => ({
-          propertyTypeId: p.propertyTypeId,
-          quantity: p.quantity,
-          costPerUnit: p.costPerUnit, // Include costPerUnit even if undefined
-        })),
+        // Always send properties array with a concrete costPerUnit. If the
+        // user didn't customize it, fall back to the property type's default
+        // cost — sending undefined makes JSON drop the field and the backend
+        // rejects the payload with "costPerUnit must be a number".
+        properties: validProperties.map(p => {
+          const propertyType = propertyTypes.find(pt => getId(pt) === p.propertyTypeId);
+          const defaultCost = propertyType?.cost ?? 0;
+          const cost = p.costPerUnit !== undefined && p.costPerUnit !== null ? p.costPerUnit : defaultCost;
+          return {
+            propertyTypeId: p.propertyTypeId,
+            quantity: p.quantity,
+            costPerUnit: cost,
+          };
+        }),
       };
 
       console.log("Updating customer ID:", customerId);
