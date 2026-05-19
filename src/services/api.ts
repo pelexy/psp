@@ -435,9 +435,9 @@ class ApiService {
     params.append("limit", limit.toString());
 
     if (filters) {
-      if (filters.searchTerm) params.append("searchTerm", filters.searchTerm);
+      if (filters.searchTerm) params.append("search", filters.searchTerm);
       if (filters.isActive !== undefined)
-        params.append("isActive", filters.isActive.toString());
+        params.append("status", filters.isActive ? "active" : "inactive");
       if (filters.state) params.append("state", filters.state);
       if (filters.sortBy) params.append("sortBy", filters.sortBy);
       if (filters.sortOrder) params.append("sortOrder", filters.sortOrder);
