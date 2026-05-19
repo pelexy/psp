@@ -100,12 +100,21 @@ export function EditCustomerDialog({ customer, open, onOpenChange, onCustomerUpd
       // Initialize properties
       if (details.properties && details.properties.length > 0) {
         console.log('Loading properties from customer:', details.properties);
-        setProperties(details.properties.map((p: any) => ({
-          propertyTypeId: p.propertyTypeId?._id || p.propertyTypeId || "",
-          quantity: p.quantity || 1,
-          // Keep costPerUnit if it's explicitly set (even if 0), otherwise undefined
-          costPerUnit: p.costPerUnit !== undefined && p.costPerUnit !== null ? p.costPerUnit : undefined,
-        })));
+        setProperties(details.properties.map((p: any) => {
+          // costPerUnit may arrive as a string ("2000.00") because the backend
+          // stores property type costs as decimal/jsonb. Coerce to number so
+          // we can edit and re-send without tripping @IsNumber on the API.
+          let cost: number | undefined = undefined;
+          if (p.costPerUnit !== undefined && p.costPerUnit !== null && p.costPerUnit !== '') {
+            const n = Number(p.costPerUnit);
+            cost = Number.isFinite(n) ? n : undefined;
+          }
+          return {
+            propertyTypeId: p.propertyTypeId?._id || p.propertyTypeId || "",
+            quantity: Number(p.quantity) || 1,
+            costPerUnit: cost,
+          };
+        }));
       } else {
         setProperties([]);
       }
@@ -248,17 +257,20 @@ export function EditCustomerDialog({ customer, open, onOpenChange, onCustomerUpd
         // Always send wardId and streetId (can be empty string to clear)
         wardId: formData.wardId || null,
         streetId: formData.streetId || null,
-        // Always send properties array with a concrete costPerUnit. If the
-        // user didn't customize it, fall back to the property type's default
-        // cost — sending undefined makes JSON drop the field and the backend
-        // rejects the payload with "costPerUnit must be a number".
+        // Always send properties array with a concrete numeric costPerUnit.
+        // The backend stores decimals as strings (TypeORM decimal behavior),
+        // so we must coerce both the saved value AND the property type
+        // default to Number before sending — otherwise @IsNumber on the
+        // server rejects the payload.
         properties: validProperties.map(p => {
           const propertyType = propertyTypes.find(pt => getId(pt) === p.propertyTypeId);
-          const defaultCost = propertyType?.cost ?? 0;
-          const cost = p.costPerUnit !== undefined && p.costPerUnit !== null ? p.costPerUnit : defaultCost;
+          const defaultCost = Number(propertyType?.cost ?? 0);
+          const hasCustom = p.costPerUnit !== undefined && p.costPerUnit !== null;
+          const rawCost = hasCustom ? p.costPerUnit : defaultCost;
+          const cost = Number.isFinite(Number(rawCost)) ? Number(rawCost) : 0;
           return {
             propertyTypeId: p.propertyTypeId,
-            quantity: p.quantity,
+            quantity: Number(p.quantity) || 1,
             costPerUnit: cost,
           };
         }),
