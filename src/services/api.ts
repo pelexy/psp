@@ -2,7 +2,7 @@
 // In prod, talk to the deployed API directly.
 const API_BASE_URL = import.meta.env.DEV
   ? "/api"
-  : "https://payapi.buypowerpass.africa/api";
+  : "https://api.wastecollect.ng/api";
 
 // Response when temporary password needs to be changed
 export interface TemporaryPasswordResponse {
