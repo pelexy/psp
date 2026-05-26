@@ -66,6 +66,7 @@ export function EditCustomerDialog({ customer, open, onOpenChange, onCustomerUpd
   // Form state
   const [formData, setFormData] = useState({
     fullName: "",
+    email: "",
     phone: "",
     address: "",
     city: "",
@@ -86,6 +87,7 @@ export function EditCustomerDialog({ customer, open, onOpenChange, onCustomerUpd
       const details = customer.customerDetails || customer;
       setFormData({
         fullName: details.fullName || "",
+        email: details.email || details.user?.email || "",
         phone: details.phone || "",
         address: details.address || "",
         city: details.city || "",
@@ -233,6 +235,12 @@ export function EditCustomerDialog({ customer, open, onOpenChange, onCustomerUpd
       return;
     }
 
+    const trimmedEmail = formData.email.trim();
+    if (trimmedEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
+
     // Validate properties for compound/estate
     const validProperties = properties.filter((p) => p.propertyTypeId && p.quantity > 0);
     console.log('Properties before save:', properties);
@@ -247,6 +255,7 @@ export function EditCustomerDialog({ customer, open, onOpenChange, onCustomerUpd
     try {
       const updateData: any = {
         fullName: formData.fullName,
+        email: trimmedEmail || null,
         phone: formData.phone,
         address: formData.address,
         city: formData.city,
@@ -357,6 +366,20 @@ export function EditCustomerDialog({ customer, open, onOpenChange, onCustomerUpd
                     placeholder="08012345678"
                     required
                   />
+                </div>
+
+                <div className="col-span-2">
+                  <Label htmlFor="email">Email (Optional)</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    placeholder="customer@example.com"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Used for portal login and email notifications. Clearing this removes the customer's portal access.
+                  </p>
                 </div>
 
                 <div className="col-span-2">
