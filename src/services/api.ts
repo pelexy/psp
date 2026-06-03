@@ -47,6 +47,41 @@ export interface NormalLoginResponse {
 // Union type for login responses
 export type LoginResponse = NormalLoginResponse | TemporaryPasswordResponse;
 
+// Multi-company support
+export interface CompanyOption {
+  pspId: string;
+  companyName: string;
+  logo?: string | null;
+  isActive: boolean;
+  role: string;
+  isDefault: boolean;
+}
+
+export interface MyCompaniesResponse {
+  companies: CompanyOption[];
+}
+
+export interface SwitchCompanyResponse {
+  accessToken: string;
+  activeCompany: {
+    pspId: string;
+    companyName: string;
+    logo?: string | null;
+  };
+}
+
+export interface CreateCompanyRequest {
+  companyName: string;
+  phone: string;
+  address?: string;
+  location?: string;
+  state?: string;
+  lga?: string;
+  contactPersonName?: string;
+  contactPersonPhone?: string;
+  contactPersonEmail?: string;
+}
+
 export interface ChangePasswordRequest {
   oldPassword: string;
   newPassword: string;
@@ -346,6 +381,37 @@ class ApiService {
     });
 
     return this.handleResponse<T>(response);
+  }
+
+  // Multi-company API methods
+  async getMyCompanies(accessToken: string): Promise<MyCompaniesResponse> {
+    return this.makeAuthenticatedRequest<MyCompaniesResponse>(
+      "/auth/my-companies",
+      {},
+      accessToken,
+    );
+  }
+
+  async switchCompany(
+    accessToken: string,
+    pspId: string,
+  ): Promise<SwitchCompanyResponse> {
+    return this.makeAuthenticatedRequest<SwitchCompanyResponse>(
+      `/auth/switch-company/${pspId}`,
+      { method: "POST" },
+      accessToken,
+    );
+  }
+
+  async createCompany(
+    accessToken: string,
+    data: CreateCompanyRequest,
+  ): Promise<{ id: string; companyName: string }> {
+    return this.makeAuthenticatedRequest<{ id: string; companyName: string }>(
+      "/psp/company",
+      { method: "POST", body: JSON.stringify(data) },
+      accessToken,
+    );
   }
 
   // Dashboard API methods

@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { CompanySwitcher } from "@/components/CompanySwitcher";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -299,6 +300,9 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
               <Menu className="h-6 w-6 text-gray-600" />
             )}
           </button>
+
+          {/* Active company + switcher */}
+          <CompanySwitcher />
 
           {/* Right Side - Icons */}
           <div className="flex items-center gap-2 lg:gap-3 ml-auto">

@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { apiService } from '@/services/api';
-import type { PSPDashboardResponse } from '@/services/api';
+import type { PSPDashboardResponse, CompanyOption } from '@/services/api';
 
 interface User {
   _id: string;
@@ -35,6 +35,7 @@ interface DashboardData {
 interface AuthContextType {
   user: User | null;
   psp: PSP | null;
+  companies: CompanyOption[];
   accessToken: string | null;
   refreshToken: string | null;
   isAuthenticated: boolean;
@@ -44,6 +45,7 @@ interface AuthContextType {
   login: (user: User, psp: PSP, accessToken: string, refreshToken: string, isTemporaryPassword?: boolean) => Promise<void>;
   logout: () => void;
   updateTokens: (accessToken: string, refreshToken: string) => void;
+  switchCompany: (pspId: string) => Promise<void>;
   fetchDashboardData: () => Promise<void>;
 }
 
@@ -52,6 +54,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [psp, setPsp] = useState<PSP | null>(null);
+  const [companies, setCompanies] = useState<CompanyOption[]>([]);
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [refreshToken, setRefreshToken] = useState<string | null>(null);
   const [isTemporaryPassword, setIsTemporaryPassword] = useState(false);
@@ -87,6 +90,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setAccessToken(storedAccessToken);
           setRefreshToken(storedRefreshToken || null);
           setIsTemporaryPassword(storedIsTemporaryPassword === 'true');
+
+          const storedCompanies = localStorage.getItem('companies');
+          if (storedCompanies) {
+            try { setCompanies(JSON.parse(storedCompanies)); } catch { /* ignore */ }
+          }
 
           if (storedDashboardData) {
             setDashboardData(JSON.parse(storedDashboardData));
@@ -139,12 +147,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setRefreshToken(newRefreshToken);
     setIsTemporaryPassword(tempPassword);
 
+    // The login response carries the list of companies this account can access.
+    const loginCompanies: CompanyOption[] = (newUser as any).companies ?? [];
+    setCompanies(loginCompanies);
+
     // Store in localStorage
     localStorage.setItem('user', JSON.stringify(newUser));
     localStorage.setItem('psp', JSON.stringify(newPsp));
     localStorage.setItem('accessToken', newAccessToken);
     localStorage.setItem('refreshToken', newRefreshToken);
     localStorage.setItem('isTemporaryPassword', String(tempPassword));
+    localStorage.setItem('companies', JSON.stringify(loginCompanies));
 
     // Fetch dashboard data if not temporary password
     if (!tempPassword) {
@@ -166,6 +179,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const logout = () => {
     setUser(null);
     setPsp(null);
+    setCompanies([]);
     setAccessToken(null);
     setRefreshToken(null);
     setIsTemporaryPassword(false);
@@ -174,10 +188,47 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // Clear localStorage
     localStorage.removeItem('user');
     localStorage.removeItem('psp');
+    localStorage.removeItem('companies');
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('isTemporaryPassword');
     localStorage.removeItem('dashboardData');
+  };
+
+  /**
+   * Switch the active company. Gets a fresh token scoped to the target company,
+   * updates the stored token + company, refreshes the companies list, then does
+   * a full reload so every screen refetches data for the newly-active company.
+   */
+  const switchCompany = async (pspId: string) => {
+    if (!accessToken) throw new Error('Not authenticated');
+
+    const res = await apiService.switchCompany(accessToken, pspId);
+
+    // New token scoped to the chosen company.
+    localStorage.setItem('accessToken', res.accessToken);
+
+    // Update the cached company so the header reflects the switch immediately.
+    const storedPsp = localStorage.getItem('psp');
+    const basePsp = storedPsp ? JSON.parse(storedPsp) : {};
+    const updatedPsp = {
+      ...basePsp,
+      _id: res.activeCompany.pspId,
+      companyName: res.activeCompany.companyName,
+    };
+    localStorage.setItem('psp', JSON.stringify(updatedPsp));
+
+    // Refresh the companies list (covers a just-created company) with the new token.
+    try {
+      const list = await apiService.getMyCompanies(res.accessToken);
+      localStorage.setItem('companies', JSON.stringify(list.companies ?? []));
+    } catch {
+      /* non-fatal — keep the existing list */
+    }
+
+    // Drop per-company cached dashboard data and reload into the new company.
+    localStorage.removeItem('dashboardData');
+    window.location.href = '/dashboard';
   };
 
   const updateTokens = (newAccessToken: string, newRefreshToken: string) => {
@@ -194,6 +245,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       value={{
         user,
         psp,
+        companies,
         accessToken,
         refreshToken,
         isAuthenticated,
@@ -203,6 +255,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         login,
         logout,
         updateTokens,
+        switchCompany,
         fetchDashboardData,
       }}
     >
