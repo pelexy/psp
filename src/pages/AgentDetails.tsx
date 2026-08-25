@@ -41,7 +41,7 @@ import {
   ChevronDown,
   ChevronRight,
   type LucideIcon,
-} from "lucide-react";
+} from "@/lib/icons";
 import { apiService } from "@/services/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -369,7 +369,7 @@ const AgentDetails = () => {
           <CardContent className="p-6">
             <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-6">
               <div className="flex items-start gap-4 flex-1">
-                <div className="h-16 w-16 rounded-xl bg-primary text-primary-foreground flex items-center justify-center text-xl font-semibold tracking-tight">
+                <div className="h-16 w-16 rounded-lg bg-primary text-primary-foreground flex items-center justify-center text-xl font-semibold tracking-tight">
                   {initials(agent.fullName)}
                 </div>
                 <div className="min-w-0">
@@ -683,7 +683,7 @@ const AgentDetails = () => {
                     <div
                       key={p.key}
                       className={
-                        "flex items-center gap-2 p-2.5 rounded-lg border " +
+"flex items-center gap-2 p-2.5 rounded-lg border " +
                         (active
                           ? "border-primary/30 bg-primary/5"
                           : "border-border bg-muted/30 opacity-60")
@@ -691,13 +691,13 @@ const AgentDetails = () => {
                     >
                       <Icon
                         className={
-                          "h-3.5 w-3.5 " +
+"h-3.5 w-3.5 " +
                           (active ? "text-primary" : "text-muted-foreground")
                         }
                       />
                       <span
                         className={
-                          "text-xs font-medium " +
+"text-xs font-medium " +
                           (active ? "text-foreground" : "text-muted-foreground")
                         }
                       >
@@ -776,7 +776,7 @@ const AgentDetails = () => {
                         disabled={!isEditingPermissions || savingPermissions}
                         onClick={() => togglePermissionEdit(p.key)}
                         className={
-                          "text-left p-3 rounded-lg border flex items-start gap-3 transition " +
+"text-left p-3 rounded-lg border flex items-start gap-3 transition " +
                           (active
                             ? "border-primary/30 bg-primary/5"
                             : "border-border bg-muted/30") +
@@ -787,7 +787,7 @@ const AgentDetails = () => {
                       >
                         <div
                           className={
-                            "shrink-0 h-8 w-8 rounded-lg flex items-center justify-center " +
+"shrink-0 h-8 w-8 rounded-lg flex items-center justify-center " +
                             (active
                               ? "bg-primary/10 text-primary"
                               : "bg-muted text-muted-foreground")
@@ -799,7 +799,7 @@ const AgentDetails = () => {
                           <div className="flex items-center justify-between gap-2">
                             <p
                               className={
-                                "text-sm font-medium " +
+"text-sm font-medium " +
                                 (active
                                   ? "text-foreground"
                                   : "text-muted-foreground")
@@ -944,7 +944,7 @@ const AgentDetails = () => {
                                     </div>
                                     <span
                                       className={
-                                        "text-xs shrink-0 " +
+"text-xs shrink-0 " +
                                         (allInWard
                                           ? "text-primary font-semibold"
                                           : someInWard
@@ -1257,7 +1257,7 @@ function KpiRow({
       <p className="text-xs text-muted-foreground">{label}</p>
       <p
         className={
-          "text-lg font-semibold tracking-tight " +
+"text-lg font-semibold tracking-tight tabular-nums " +
           (valueClassName || "text-foreground")
         }
       >

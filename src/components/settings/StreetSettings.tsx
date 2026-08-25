@@ -49,7 +49,7 @@ import {
   FileSpreadsheet,
   CheckCircle2,
   XCircle,
-} from "lucide-react";
+} from "@/lib/icons";
 import { apiService } from "@/services/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";

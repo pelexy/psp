@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Recycle, Trash2 } from "lucide-react";
+import { Recycle } from "@/lib/icons";
 
 interface AuthLayoutProps {
   children: ReactNode;
@@ -51,27 +51,27 @@ const AuthLayout = ({ children }: AuthLayoutProps) => {
         {/* Animated Features */}
         <div className="relative z-10">
         <div className="max-w-md space-y-6">
-          <div className="animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
+          <div>
             <div className="flex items-center gap-3 text-white/90">
-              <div className="h-2 w-2 bg-white rounded-full animate-pulse"></div>
+              <div className="h-2 w-2 bg-white rounded-full"></div>
               <p className="text-lg">Real-time payment tracking</p>
             </div>
           </div>
-          <div className="animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
+          <div>
             <div className="flex items-center gap-3 text-white/90">
-              <div className="h-2 w-2 bg-white rounded-full animate-pulse"></div>
+              <div className="h-2 w-2 bg-white rounded-full"></div>
               <p className="text-lg">Automated debt management</p>
             </div>
           </div>
-          <div className="animate-fade-in-up" style={{ animationDelay: '0.6s' }}>
+          <div>
             <div className="flex items-center gap-3 text-white/90">
-              <div className="h-2 w-2 bg-white rounded-full animate-pulse"></div>
+              <div className="h-2 w-2 bg-white rounded-full"></div>
               <p className="text-lg">Comprehensive customer insights</p>
             </div>
           </div>
-          <div className="animate-fade-in-up" style={{ animationDelay: '0.8s' }}>
+          <div>
             <div className="flex items-center gap-3 text-white/90">
-              <div className="h-2 w-2 bg-white rounded-full animate-pulse"></div>
+              <div className="h-2 w-2 bg-white rounded-full"></div>
               <p className="text-lg">Secure & reliable platform</p>
             </div>
           </div>
@@ -85,18 +85,13 @@ const AuthLayout = ({ children }: AuthLayoutProps) => {
       </div>
 
       {/* Right Side - Auth Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-white relative overflow-hidden">
-        {/* Decorative Trash Icon */}
-        <div className="absolute -bottom-16 -right-16 opacity-[0.15]">
-          <Trash2 className="w-96 h-96 text-gray-400" strokeWidth={1.5} />
-        </div>
-
-        <div className="w-full max-w-md relative z-10">
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-muted/30 relative overflow-hidden">
+        <div className="w-full max-w-md relative z-10 bg-card rounded-lg shadow-card border border-border p-8">
           {/* Mobile Logo */}
           <div className="lg:hidden flex items-center gap-3 mb-10">
             <Recycle className="h-8 w-8 text-primary" />
             <div>
-              <h1 className="text-xl font-bold text-foreground">Collect</h1>
+              <h1 className="text-xl font-semibold tracking-tight text-foreground">Collect</h1>
               <p className="text-xs text-muted-foreground">by BuyPower</p>
             </div>
           </div>

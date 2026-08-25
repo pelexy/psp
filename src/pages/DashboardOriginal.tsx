@@ -10,7 +10,7 @@ import {
   TrendingUp,
   Calendar,
   RefreshCw,
-} from "lucide-react";
+} from "@/lib/icons";
 
 const DashboardOriginal = () => {
   const { accessToken, psp } = useAuth();

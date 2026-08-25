@@ -17,7 +17,8 @@ import {
   Receipt,
   BarChart3,
   Wallet,
-} from "lucide-react";
+  ArrowsClockwise,
+} from "@/lib/icons";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -56,9 +57,16 @@ const navigation: NavItem[] = [
     name: "Billing",
     icon: Receipt,
     children: [
-      { name: "Plans", href: "/billing/plans" },
-      { name: "Invoices", href: "/billing/invoices" },
-      { name: "Payments", href: "/billing/payments" },
+      { name: "Bills", href: "/billing/bills" },
+      { name: "Generated Bills", href: "/billing/generated-bills" },
+      { name: "Bill Runs", href: "/billing/runs" },
+    ],
+  },
+  {
+    name: "Transactions",
+    icon: ArrowsClockwise,
+    children: [
+      { name: "Payments", href: "/transactions/payments" },
     ],
   },
   {
@@ -87,7 +95,7 @@ const navigation: NavItem[] = [
 export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [expandedSections, setExpandedSections] = useState<string[]>(["Billing", "Agents", "Reports"]);
+  const [expandedSections, setExpandedSections] = useState<string[]>(["Billing", "Transactions", "Agents", "Reports"]);
   const { logout, user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();

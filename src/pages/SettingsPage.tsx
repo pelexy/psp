@@ -6,7 +6,7 @@ import { WardSettings } from "@/components/settings/WardSettings";
 import { StreetSettings } from "@/components/settings/StreetSettings";
 import { PropertyTypeSettings } from "@/components/settings/PropertyTypeSettings";
 import { ExpenseCategorySettings } from "@/components/settings/ExpenseCategorySettings";
-import { Building2, MapPin, Navigation, Home, Wallet } from "lucide-react";
+import { Building2, MapPin, Navigation, Home, Wallet } from "@/lib/icons";
 
 const SettingsPage = () => {
   const [activeTab, setActiveTab] = useState("profile");
@@ -15,8 +15,8 @@ const SettingsPage = () => {
     <DashboardLayout>
       <div className="p-4 md:p-6 lg:p-8 space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
-          <p className="text-gray-500 mt-1">Manage your profile, property types, wards, streets, and expense categories</p>
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">Settings</h1>
+          <p className="text-sm text-muted-foreground mt-1">Manage your profile, property types, wards, streets, and expense categories</p>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">

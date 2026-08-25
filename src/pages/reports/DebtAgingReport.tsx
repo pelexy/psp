@@ -22,7 +22,7 @@ import {
 import { apiService } from "@/services/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { Filter, FileSpreadsheet, AlertTriangle, Users, Banknote, ChevronLeft, ChevronRight } from "lucide-react";
+import { Filter, FileSpreadsheet, AlertTriangle, Users, Banknote, ChevronLeft, ChevronRight } from "@/lib/icons";
 
 interface CustomerDebt {
   id: string;
@@ -227,8 +227,8 @@ const DebtAgingReport = () => {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Debt Aging Report</h1>
-            <p className="text-sm text-gray-500 mt-1">
+            <h1 className="text-xl md:text-2xl font-semibold tracking-tight text-foreground">Debt Aging Report</h1>
+            <p className="text-sm text-muted-foreground mt-1">
               Analysis of outstanding customer debts by aging period
             </p>
           </div>
@@ -249,9 +249,9 @@ const DebtAgingReport = () => {
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs text-gray-500 uppercase font-medium">Current (0-30 days)</p>
-                    <p className="text-xl font-bold text-gray-900 mt-1">{formatCurrency(summary?.current.amount || 0)}</p>
-                    <p className="text-xs text-gray-500 mt-1">{summary?.current.count || 0} customers</p>
+                    <p className="text-xs text-muted-foreground uppercase font-medium">Current (0-30 days)</p>
+                    <p className="text-xl font-semibold text-foreground mt-1 tabular-nums">{formatCurrency(summary?.current.amount || 0)}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{summary?.current.count || 0} customers</p>
                   </div>
                   <Users className="h-8 w-8 text-green-500 opacity-50" />
                 </div>
@@ -262,9 +262,9 @@ const DebtAgingReport = () => {
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs text-gray-500 uppercase font-medium">Overdue (31-60 days)</p>
-                    <p className="text-xl font-bold text-yellow-600 mt-1">{formatCurrency(summary?.overdue30.amount || 0)}</p>
-                    <p className="text-xs text-gray-500 mt-1">{summary?.overdue30.count || 0} customers</p>
+                    <p className="text-xs text-muted-foreground uppercase font-medium">Overdue (31-60 days)</p>
+                    <p className="text-xl font-semibold text-yellow-600 mt-1 tabular-nums">{formatCurrency(summary?.overdue30.amount || 0)}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{summary?.overdue30.count || 0} customers</p>
                   </div>
                   <AlertTriangle className="h-8 w-8 text-yellow-500 opacity-50" />
                 </div>
@@ -275,9 +275,9 @@ const DebtAgingReport = () => {
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs text-gray-500 uppercase font-medium">Serious (61-90 days)</p>
-                    <p className="text-xl font-bold text-orange-600 mt-1">{formatCurrency(summary?.overdue60.amount || 0)}</p>
-                    <p className="text-xs text-gray-500 mt-1">{summary?.overdue60.count || 0} customers</p>
+                    <p className="text-xs text-muted-foreground uppercase font-medium">Serious (61-90 days)</p>
+                    <p className="text-xl font-semibold text-orange-600 mt-1 tabular-nums">{formatCurrency(summary?.overdue60.amount || 0)}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{summary?.overdue60.count || 0} customers</p>
                   </div>
                   <AlertTriangle className="h-8 w-8 text-orange-500 opacity-50" />
                 </div>
@@ -288,9 +288,9 @@ const DebtAgingReport = () => {
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs text-gray-500 uppercase font-medium">Critical (90+ days)</p>
-                    <p className="text-xl font-bold text-red-600 mt-1">{formatCurrency(summary?.overdue90.amount || 0)}</p>
-                    <p className="text-xs text-gray-500 mt-1">{summary?.overdue90.count || 0} customers</p>
+                    <p className="text-xs text-muted-foreground uppercase font-medium">Critical (90+ days)</p>
+                    <p className="text-xl font-semibold text-destructive mt-1 tabular-nums">{formatCurrency(summary?.overdue90.amount || 0)}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{summary?.overdue90.count || 0} customers</p>
                   </div>
                   <Banknote className="h-8 w-8 text-red-500 opacity-50" />
                 </div>
@@ -310,7 +310,7 @@ const DebtAgingReport = () => {
           <CardContent>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               <div>
-                <label className="text-xs font-medium text-gray-500 mb-1.5 block">Minimum Days Overdue</label>
+                <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Minimum Days Overdue</label>
                 <Select value={minDays} onValueChange={setMinDays}>
                   <SelectTrigger>
                     <SelectValue />
@@ -326,7 +326,7 @@ const DebtAgingReport = () => {
               </div>
 
               <div>
-                <label className="text-xs font-medium text-gray-500 mb-1.5 block">Ward</label>
+                <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Ward</label>
                 <Select value={wardId || "all"} onValueChange={(v) => setWardId(v === "all" ? "" : v)}>
                   <SelectTrigger>
                     <SelectValue placeholder="All Wards" />
@@ -341,7 +341,7 @@ const DebtAgingReport = () => {
               </div>
 
               <div>
-                <label className="text-xs font-medium text-gray-500 mb-1.5 block">Street</label>
+                <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Street</label>
                 <Select value={streetId || "all"} onValueChange={(v) => setStreetId(v === "all" ? "" : v)}>
                   <SelectTrigger>
                     <SelectValue placeholder="All Streets" />
@@ -356,7 +356,7 @@ const DebtAgingReport = () => {
               </div>
 
               <div>
-                <label className="text-xs font-medium text-gray-500 mb-1.5 block">Collection Agent</label>
+                <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Collection Agent</label>
                 <Select value={agentId || "all"} onValueChange={(v) => setAgentId(v === "all" ? "" : v)}>
                   <SelectTrigger>
                     <SelectValue placeholder="All Agents" />
@@ -375,15 +375,15 @@ const DebtAgingReport = () => {
 
         {/* Report Table */}
         <Card>
-          <CardHeader className="border-b bg-gray-50">
+          <CardHeader className="border-b border-border bg-muted/40">
             <div className="flex items-center justify-between">
               <CardTitle className="text-base">
                 Detailed Customer List
-                <span className="text-gray-400 font-normal ml-2">
+                <span className="text-muted-foreground font-normal ml-2">
                   ({filteredCustomers.length} records)
                 </span>
               </CardTitle>
-              <p className="text-sm font-semibold text-red-600">
+              <p className="text-sm font-semibold text-destructive tabular-nums">
                 Total: {formatCurrency(totalDebt)}
               </p>
             </div>
@@ -394,7 +394,7 @@ const DebtAgingReport = () => {
                 {[...Array(10)].map((_, i) => <Skeleton key={i} className="h-12" />)}
               </div>
             ) : filteredCustomers.length === 0 ? (
-              <div className="p-12 text-center text-gray-400">
+              <div className="p-12 text-center text-muted-foreground">
                 <AlertTriangle className="h-12 w-12 mx-auto mb-3 opacity-50" />
                 <p>No customers found with {minDays}+ days overdue</p>
               </div>
@@ -402,7 +402,7 @@ const DebtAgingReport = () => {
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
-                    <TableRow className="bg-gray-50">
+                    <TableRow className="bg-muted/40">
                       <TableHead className="w-16 font-semibold">S/N</TableHead>
                       <TableHead className="font-semibold">Account No.</TableHead>
                       <TableHead className="font-semibold">Customer Name</TableHead>
@@ -420,17 +420,17 @@ const DebtAgingReport = () => {
                     {paginatedCustomers.map((customer, index) => (
                       <TableRow
                         key={customer.id}
-                        className="hover:bg-blue-50 cursor-pointer"
+                        className="hover:bg-muted/40 cursor-pointer"
                         onClick={() => navigate(`/customers/${customer.accountNumber}`)}
                       >
-                        <TableCell className="font-mono text-gray-500">{startIndex + index + 1}</TableCell>
-                        <TableCell className="font-mono text-sm text-blue-600 hover:underline">{customer.accountNumber}</TableCell>
+                        <TableCell className="font-mono text-muted-foreground tabular-nums">{startIndex + index + 1}</TableCell>
+                        <TableCell className="font-mono text-sm text-primary hover:underline">{customer.accountNumber}</TableCell>
                         <TableCell className="font-medium">{customer.name}</TableCell>
-                        <TableCell className="text-gray-600">{customer.phone || "-"}</TableCell>
-                        <TableCell className="text-gray-600">{customer.ward || "-"}</TableCell>
-                        <TableCell className="text-gray-600">{customer.street || "-"}</TableCell>
-                        <TableCell className="text-gray-600">{customer.agent || "-"}</TableCell>
-                        <TableCell className="text-right font-semibold text-red-600">
+                        <TableCell className="text-muted-foreground">{customer.phone || "-"}</TableCell>
+                        <TableCell className="text-muted-foreground">{customer.ward || "-"}</TableCell>
+                        <TableCell className="text-muted-foreground">{customer.street || "-"}</TableCell>
+                        <TableCell className="text-muted-foreground">{customer.agent || "-"}</TableCell>
+                        <TableCell className="text-right font-semibold text-destructive tabular-nums">
                           {formatCurrency(customer.totalDebt)}
                         </TableCell>
                         <TableCell className="text-center">
@@ -443,7 +443,7 @@ const DebtAgingReport = () => {
                             {customer.daysOverdue} days
                           </span>
                         </TableCell>
-                        <TableCell className="text-gray-600">{formatDate(customer.oldestInvoiceDate)}</TableCell>
+                        <TableCell className="text-muted-foreground">{formatDate(customer.oldestInvoiceDate)}</TableCell>
                         <TableCell>
                           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                             customer.bucket === 'Critical' ? 'bg-red-100 text-red-800' :
@@ -461,8 +461,8 @@ const DebtAgingReport = () => {
 
                 {/* Pagination */}
                 {totalPages > 1 && (
-                  <div className="flex items-center justify-between px-4 py-3 border-t bg-gray-50">
-                    <div className="text-sm text-gray-600">
+                  <div className="flex items-center justify-between px-4 py-3 border-t border-border bg-muted/40">
+                    <div className="text-sm text-muted-foreground">
                       Showing {startIndex + 1} to {Math.min(endIndex, filteredCustomers.length)} of {filteredCustomers.length.toLocaleString()} records
                     </div>
                     <div className="flex items-center gap-2">
@@ -479,7 +479,7 @@ const DebtAgingReport = () => {
                         {currentPage > 2 && (
                           <>
                             <Button variant="outline" size="sm" onClick={() => goToPage(1)}>1</Button>
-                            {currentPage > 3 && <span className="px-2 text-gray-400">...</span>}
+                            {currentPage > 3 && <span className="px-2 text-muted-foreground">...</span>}
                           </>
                         )}
                         {currentPage > 1 && (
@@ -495,7 +495,7 @@ const DebtAgingReport = () => {
                         )}
                         {currentPage < totalPages - 1 && (
                           <>
-                            {currentPage < totalPages - 2 && <span className="px-2 text-gray-400">...</span>}
+                            {currentPage < totalPages - 2 && <span className="px-2 text-muted-foreground">...</span>}
                             <Button variant="outline" size="sm" onClick={() => goToPage(totalPages)}>
                               {totalPages}
                             </Button>

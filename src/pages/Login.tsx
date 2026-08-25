@@ -3,7 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, AlertCircle } from "lucide-react";
+import { Loader2, AlertCircle } from "@/lib/icons";
 import { toast } from "sonner";
 import AuthLayout from "@/components/layouts/AuthLayout";
 import { useAuth } from "@/contexts/AuthContext";
@@ -113,8 +113,8 @@ const Login = () => {
       <div className="w-full">
         {/* Header */}
         <div className="mb-10">
-          <h2 className="text-3xl font-bold text-foreground mb-2">Welcome back</h2>
-          <p className="text-muted-foreground">
+          <h2 className="text-3xl font-semibold tracking-tight text-foreground mb-2">Welcome back</h2>
+          <p className="text-sm text-muted-foreground">
             Sign in to access your waste collection management dashboard
           </p>
         </div>
@@ -122,9 +122,9 @@ const Login = () => {
         {/* Login Form */}
         <form onSubmit={handleSubmit} className="space-y-6">
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-3.5 flex items-start gap-2">
-              <AlertCircle className="h-5 w-5 text-red-600 mt-0.5 flex-shrink-0" />
-              <p className="text-sm text-red-800">{error}</p>
+            <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3.5 flex items-start gap-2">
+              <AlertCircle className="h-5 w-5 text-destructive mt-0.5 flex-shrink-0" />
+              <p className="text-sm text-destructive">{error}</p>
             </div>
           )}
 

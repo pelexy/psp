@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, AlertCircle, CheckCircle2, ArrowLeft } from "lucide-react";
+import { Loader2, AlertCircle, CheckCircle2, ArrowLeft } from "@/lib/icons";
 import { toast } from "sonner";
 import AuthLayout from "@/components/layouts/AuthLayout";
 import { apiService, ApiError } from "@/services/api";
@@ -57,8 +57,8 @@ const ForgotPassword = () => {
 
         {/* Header */}
         <div className="mb-10">
-          <h2 className="text-3xl font-bold text-foreground mb-2">Forgot password</h2>
-          <p className="text-muted-foreground">
+          <h2 className="text-3xl font-semibold tracking-tight text-foreground mb-2">Forgot password</h2>
+          <p className="text-sm text-muted-foreground">
             Enter your email and we'll send you reset instructions
           </p>
         </div>
@@ -66,19 +66,19 @@ const ForgotPassword = () => {
         {success ? (
           /* Success State */
           <div className="space-y-6">
-            <div className="bg-green-50 border border-green-200 rounded-lg p-5 flex items-start gap-3">
-              <CheckCircle2 className="h-6 w-6 text-green-600 mt-0.5 flex-shrink-0" />
+            <div className="bg-success/10 border border-success/20 rounded-lg p-5 flex items-start gap-3">
+              <CheckCircle2 className="h-6 w-6 text-success mt-0.5 flex-shrink-0" />
               <div>
-                <p className="font-semibold text-green-900 mb-1">
+                <p className="font-semibold text-foreground mb-1">
                   Check your email
                 </p>
-                <p className="text-sm text-green-800">
+                <p className="text-sm text-muted-foreground">
                   We've sent password reset instructions to <strong>{email}</strong>
                 </p>
               </div>
             </div>
 
-            <div className="bg-gray-50 rounded-lg p-4 text-center">
+            <div className="bg-muted/40 rounded-lg p-4 text-center">
               <p className="text-sm text-muted-foreground mb-4">
                 Didn't receive the email? Check your spam folder.
               </p>
@@ -98,9 +98,9 @@ const ForgotPassword = () => {
           /* Form */
           <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-3.5 flex items-start gap-2">
-                <AlertCircle className="h-5 w-5 text-red-600 mt-0.5 flex-shrink-0" />
-                <p className="text-sm text-red-800">{error}</p>
+              <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3.5 flex items-start gap-2">
+                <AlertCircle className="h-5 w-5 text-destructive mt-0.5 flex-shrink-0" />
+                <p className="text-sm text-destructive">{error}</p>
               </div>
             )}
 

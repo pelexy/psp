@@ -31,7 +31,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Loader2, Plus, Pencil, Trash2, Home } from "lucide-react";
+import { Loader2, Plus, Pencil, Trash2, Home } from "@/lib/icons";
 import { apiService } from "@/services/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -42,6 +42,8 @@ interface PropertyType {
   name: string;
   cost: number;
   description?: string;
+  isCommercial?: boolean;
+  allowPriceOverride?: boolean;
   isActive: boolean;
   createdAt: string;
 }
@@ -63,6 +65,8 @@ export function PropertyTypeSettings() {
     name: "",
     cost: "",
     description: "",
+    isCommercial: false,
+    allowPriceOverride: false,
   });
 
   useEffect(() => {
@@ -85,7 +89,7 @@ export function PropertyTypeSettings() {
   };
 
   const handleAdd = () => {
-    setFormData({ name: "", cost: "", description: "" });
+    setFormData({ name: "", cost: "", description: "", isCommercial: false, allowPriceOverride: false });
     setShowAddDialog(true);
   };
 
@@ -95,6 +99,8 @@ export function PropertyTypeSettings() {
       name: propertyType.name,
       cost: propertyType.cost.toString(),
       description: propertyType.description || "",
+      isCommercial: !!propertyType.isCommercial,
+      allowPriceOverride: !!propertyType.allowPriceOverride,
     });
     setShowEditDialog(true);
   };
@@ -145,6 +151,8 @@ export function PropertyTypeSettings() {
         name: formData.name.trim(),
         cost,
         description: formData.description.trim() || undefined,
+        isCommercial: formData.isCommercial,
+        allowPriceOverride: formData.allowPriceOverride,
       });
 
       setPropertyTypes(prev => [...prev, response.data]);
@@ -181,6 +189,8 @@ export function PropertyTypeSettings() {
           name: formData.name.trim(),
           cost,
           description: formData.description.trim() || undefined,
+          isCommercial: formData.isCommercial,
+          allowPriceOverride: formData.allowPriceOverride,
         }
       );
 
@@ -280,7 +290,19 @@ export function PropertyTypeSettings() {
                   {propertyTypes.map((propertyType) => (
                     <TableRow key={getId(propertyType)}>
                       <TableCell className="font-medium">
-                        {propertyType.name}
+                        <div className="flex items-center gap-2">
+                          {propertyType.name}
+                          {propertyType.isCommercial && (
+                            <Badge variant="outline" className="text-amber-700 border-amber-300 bg-amber-50">
+                              Commercial
+                            </Badge>
+                          )}
+                          {propertyType.allowPriceOverride && (
+                            <Badge variant="outline" className="text-blue-700 border-blue-300 bg-blue-50">
+                              Price override
+                            </Badge>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell className="font-semibold text-green-600">
                         {formatCurrency(propertyType.cost)}
@@ -374,6 +396,36 @@ export function PropertyTypeSettings() {
                 placeholder="Optional description"
               />
             </div>
+            <div className="flex items-center justify-between rounded-lg border p-3">
+              <div className="space-y-0.5">
+                <Label htmlFor="add-commercial">Commercial</Label>
+                <p className="text-xs text-gray-500">
+                  Mark types like Hotel, Hospital or Mall. Shows as "Name (Commercial)".
+                </p>
+              </div>
+              <Switch
+                id="add-commercial"
+                checked={formData.isCommercial}
+                onCheckedChange={(checked) =>
+                  setFormData(prev => ({ ...prev, isCommercial: checked }))
+                }
+              />
+            </div>
+            <div className="flex items-center justify-between rounded-lg border p-3">
+              <div className="space-y-0.5">
+                <Label htmlFor="add-override">Allow price override</Label>
+                <p className="text-xs text-gray-500">
+                  Let staff change this amount when adding it to a customer. The cost above becomes the default.
+                </p>
+              </div>
+              <Switch
+                id="add-override"
+                checked={formData.allowPriceOverride}
+                onCheckedChange={(checked) =>
+                  setFormData(prev => ({ ...prev, allowPriceOverride: checked }))
+                }
+              />
+            </div>
           </div>
           <DialogFooter>
             <Button
@@ -438,6 +490,36 @@ export function PropertyTypeSettings() {
                   setFormData(prev => ({ ...prev, description: e.target.value }))
                 }
                 placeholder="Optional description"
+              />
+            </div>
+            <div className="flex items-center justify-between rounded-lg border p-3">
+              <div className="space-y-0.5">
+                <Label htmlFor="edit-commercial">Commercial</Label>
+                <p className="text-xs text-gray-500">
+                  Mark types like Hotel, Hospital or Mall. Shows as "Name (Commercial)".
+                </p>
+              </div>
+              <Switch
+                id="edit-commercial"
+                checked={formData.isCommercial}
+                onCheckedChange={(checked) =>
+                  setFormData(prev => ({ ...prev, isCommercial: checked }))
+                }
+              />
+            </div>
+            <div className="flex items-center justify-between rounded-lg border p-3">
+              <div className="space-y-0.5">
+                <Label htmlFor="edit-override">Allow price override</Label>
+                <p className="text-xs text-gray-500">
+                  Let staff change this amount when adding it to a customer. The cost above becomes the default.
+                </p>
+              </div>
+              <Switch
+                id="edit-override"
+                checked={formData.allowPriceOverride}
+                onCheckedChange={(checked) =>
+                  setFormData(prev => ({ ...prev, allowPriceOverride: checked }))
+                }
               />
             </div>
           </div>

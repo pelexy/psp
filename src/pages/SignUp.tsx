@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import AuthLayout from "@/components/layouts/AuthLayout";
-import { ArrowLeft, Mail } from "lucide-react";
+import { ArrowLeft, Mail } from "@/lib/icons";
 
 const SignUp = () => {
   return (
@@ -18,26 +18,25 @@ const SignUp = () => {
 
         {/* Header */}
         <div className="mb-10">
-          <h2 className="text-3xl font-bold text-foreground mb-2">Get started</h2>
-          <p className="text-muted-foreground">
+          <h2 className="text-3xl font-semibold tracking-tight text-foreground mb-2">Get started</h2>
+          <p className="text-sm text-muted-foreground">
             Join BuyPower to manage your waste collection business
           </p>
         </div>
 
         {/* Info Message */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+        <div className="bg-muted/40 border border-border rounded-lg p-6">
           <div className="flex items-start gap-3">
-            <Mail className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+            <Mail className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
             <div>
-              <p className="font-semibold text-blue-900 mb-2">
+              <p className="font-semibold text-foreground mb-2">
                 Contact Sales for Access
               </p>
-              <p className="text-sm text-blue-800 mb-4">
+              <p className="text-sm text-muted-foreground mb-4">
                 New waste collection company accounts are created by BuyPower Administrator. Contact us to get started with managing your customer payments and debts.
               </p>
               <Button
                 variant="outline"
-                className="border-blue-300 hover:bg-blue-100"
                 onClick={() => window.location.href = "mailto:sales@buypower.ng"}
               >
                 Contact Sales Team

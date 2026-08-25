@@ -1,7 +1,7 @@
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { CalendarClock, Users, TrendingUp } from "lucide-react";
+import { CalendarClock, Users, TrendingUp } from "@/lib/icons";
 import { formatCurrency } from "@/utils/formatCurrency";
 
 interface CollectionServicesProps {
@@ -11,21 +11,20 @@ interface CollectionServicesProps {
 export function CollectionServices({ servicesData }: CollectionServicesProps) {
   const services = servicesData?.services || [];
   return (
-    <Card className="p-4 sm:p-5 md:p-6 bg-card/40 backdrop-blur-xl border-border/50 shadow-card animate-fade-in min-h-[400px] sm:min-h-[480px] w-full overflow-hidden">
-      <div className="space-y-4">
-        <div className="flex-1 min-w-0">
-          <h3 className="text-sm sm:text-base font-semibold text-foreground flex items-center gap-2">
-            <CalendarClock className="h-4 w-4 text-primary flex-shrink-0" />
-            <span className="truncate">Collection Services</span>
-          </h3>
-          <p className="text-xs text-muted-foreground">Revenue by service type</p>
-        </div>
+    <Card className="flex min-h-[400px] w-full flex-col overflow-hidden">
+      <div className="border-b border-border p-5 md:p-6">
+        <h3 className="flex items-center gap-2 text-base font-semibold text-foreground">
+          <CalendarClock className="h-4 w-4 flex-shrink-0 text-primary" />
+          <span className="truncate">Collection Services</span>
+        </h3>
+        <p className="text-[13px] text-muted-foreground">Revenue by service type</p>
+      </div>
 
-        <div className="space-y-2 sm:space-y-2.5">
+      <div className="flex-1 space-y-3 p-5 md:p-6">
           {services.length > 0 ? services.map((service: any) => (
             <div
               key={service.serviceName}
-              className="p-2.5 sm:p-3 rounded-lg bg-gradient-to-r from-accent/20 to-transparent border border-border/50 hover:border-primary/30 transition-all duration-300"
+              className="rounded-lg border border-border p-3.5 transition-colors hover:border-primary/40"
             >
               <div className="flex items-start justify-between mb-2">
                 <div>
@@ -78,14 +77,9 @@ export function CollectionServices({ servicesData }: CollectionServicesProps) {
           )}
         </div>
 
-        <div className="pt-3 border-t border-border/50">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-muted-foreground">
-              Active Services
-            </span>
-            <span className="text-lg font-bold text-foreground">{servicesData?.activeServices || "0"}</span>
-          </div>
-        </div>
+      <div className="flex items-center justify-between border-t border-border p-5 md:px-6">
+        <span className="text-[13px] font-medium text-muted-foreground">Active Services</span>
+        <span className="text-lg font-semibold tabular-nums text-foreground">{servicesData?.activeServices || "0"}</span>
       </div>
     </Card>
   );

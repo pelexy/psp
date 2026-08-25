@@ -22,7 +22,7 @@ import {
 import { apiService } from "@/services/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { Filter, FileSpreadsheet, AlertTriangle, Users, TrendingDown, Percent, ChevronLeft, ChevronRight } from "lucide-react";
+import { Filter, FileSpreadsheet, AlertTriangle, Users, TrendingDown, Percent, ChevronLeft, ChevronRight } from "@/lib/icons";
 
 interface CustomerCollection {
   id: string;
@@ -231,8 +231,8 @@ const CollectionRateReport = () => {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Collection Rate Report</h1>
-            <p className="text-sm text-gray-500 mt-1">
+            <h1 className="text-xl md:text-2xl font-semibold tracking-tight text-foreground">Collection Rate Report</h1>
+            <p className="text-sm text-muted-foreground mt-1">
               Customers with low payment collection rates
             </p>
           </div>
@@ -253,9 +253,9 @@ const CollectionRateReport = () => {
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs text-gray-500 uppercase font-medium">Critical (&lt;25%)</p>
-                    <p className="text-2xl font-bold text-red-600 mt-1">{criticalCount}</p>
-                    <p className="text-xs text-gray-500">customers</p>
+                    <p className="text-xs text-muted-foreground uppercase font-medium">Critical (&lt;25%)</p>
+                    <p className="text-2xl font-semibold text-destructive mt-1 tabular-nums">{criticalCount}</p>
+                    <p className="text-xs text-muted-foreground">customers</p>
                   </div>
                   <AlertTriangle className="h-8 w-8 text-red-500 opacity-50" />
                 </div>
@@ -266,9 +266,9 @@ const CollectionRateReport = () => {
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs text-gray-500 uppercase font-medium">Poor (25-50%)</p>
-                    <p className="text-2xl font-bold text-orange-600 mt-1">{poorCount}</p>
-                    <p className="text-xs text-gray-500">customers</p>
+                    <p className="text-xs text-muted-foreground uppercase font-medium">Poor (25-50%)</p>
+                    <p className="text-2xl font-semibold text-orange-600 mt-1 tabular-nums">{poorCount}</p>
+                    <p className="text-xs text-muted-foreground">customers</p>
                   </div>
                   <TrendingDown className="h-8 w-8 text-orange-500 opacity-50" />
                 </div>
@@ -279,9 +279,9 @@ const CollectionRateReport = () => {
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs text-gray-500 uppercase font-medium">Below Avg (50-75%)</p>
-                    <p className="text-2xl font-bold text-yellow-600 mt-1">{belowAvgCount}</p>
-                    <p className="text-xs text-gray-500">customers</p>
+                    <p className="text-xs text-muted-foreground uppercase font-medium">Below Avg (50-75%)</p>
+                    <p className="text-2xl font-semibold text-yellow-600 mt-1 tabular-nums">{belowAvgCount}</p>
+                    <p className="text-xs text-muted-foreground">customers</p>
                   </div>
                   <Percent className="h-8 w-8 text-yellow-500 opacity-50" />
                 </div>
@@ -292,9 +292,9 @@ const CollectionRateReport = () => {
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs text-gray-500 uppercase font-medium">Avg. Collection</p>
-                    <p className="text-2xl font-bold text-blue-600 mt-1">{avgCollectionRate.toFixed(1)}%</p>
-                    <p className="text-xs text-gray-500">rate</p>
+                    <p className="text-xs text-muted-foreground uppercase font-medium">Avg. Collection</p>
+                    <p className="text-2xl font-semibold text-foreground mt-1 tabular-nums">{avgCollectionRate.toFixed(1)}%</p>
+                    <p className="text-xs text-muted-foreground">rate</p>
                   </div>
                   <Percent className="h-8 w-8 text-blue-500 opacity-50" />
                 </div>
@@ -305,8 +305,8 @@ const CollectionRateReport = () => {
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs text-gray-500 uppercase font-medium">Total Outstanding</p>
-                    <p className="text-lg font-bold text-purple-600 mt-1">{formatCurrency(totalOutstanding)}</p>
+                    <p className="text-xs text-muted-foreground uppercase font-medium">Total Outstanding</p>
+                    <p className="text-lg font-semibold text-foreground mt-1 tabular-nums">{formatCurrency(totalOutstanding)}</p>
                   </div>
                   <Users className="h-8 w-8 text-purple-500 opacity-50" />
                 </div>
@@ -326,7 +326,7 @@ const CollectionRateReport = () => {
           <CardContent>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               <div>
-                <label className="text-xs font-medium text-gray-500 mb-1.5 block">Collection Rate Below</label>
+                <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Collection Rate Below</label>
                 <Select value={threshold} onValueChange={setThreshold}>
                   <SelectTrigger>
                     <SelectValue />
@@ -341,7 +341,7 @@ const CollectionRateReport = () => {
               </div>
 
               <div>
-                <label className="text-xs font-medium text-gray-500 mb-1.5 block">Ward</label>
+                <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Ward</label>
                 <Select value={wardId || "all"} onValueChange={(v) => setWardId(v === "all" ? "" : v)}>
                   <SelectTrigger>
                     <SelectValue placeholder="All Wards" />
@@ -356,7 +356,7 @@ const CollectionRateReport = () => {
               </div>
 
               <div>
-                <label className="text-xs font-medium text-gray-500 mb-1.5 block">Street</label>
+                <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Street</label>
                 <Select value={streetId || "all"} onValueChange={(v) => setStreetId(v === "all" ? "" : v)}>
                   <SelectTrigger>
                     <SelectValue placeholder="All Streets" />
@@ -371,7 +371,7 @@ const CollectionRateReport = () => {
               </div>
 
               <div>
-                <label className="text-xs font-medium text-gray-500 mb-1.5 block">Collection Agent</label>
+                <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Collection Agent</label>
                 <Select value={agentId || "all"} onValueChange={(v) => setAgentId(v === "all" ? "" : v)}>
                   <SelectTrigger>
                     <SelectValue placeholder="All Agents" />
@@ -390,15 +390,15 @@ const CollectionRateReport = () => {
 
         {/* Report Table */}
         <Card>
-          <CardHeader className="border-b bg-gray-50">
+          <CardHeader className="border-b border-border bg-muted/40">
             <div className="flex items-center justify-between">
               <CardTitle className="text-base">
                 Low Collection Rate Customers
-                <span className="text-gray-400 font-normal ml-2">
+                <span className="text-muted-foreground font-normal ml-2">
                   ({customers.length.toLocaleString()} records below {threshold}%)
                 </span>
               </CardTitle>
-              <p className="text-sm font-semibold text-blue-600">
+              <p className="text-sm font-semibold text-foreground tabular-nums">
                 Avg Rate: {avgCollectionRate.toFixed(1)}%
               </p>
             </div>
@@ -409,7 +409,7 @@ const CollectionRateReport = () => {
                 {[...Array(10)].map((_, i) => <Skeleton key={i} className="h-12" />)}
               </div>
             ) : customers.length === 0 ? (
-              <div className="p-12 text-center text-gray-400">
+              <div className="p-12 text-center text-muted-foreground">
                 <AlertTriangle className="h-12 w-12 mx-auto mb-3 opacity-50" />
                 <p>No customers found below {threshold}% collection rate</p>
               </div>
@@ -417,7 +417,7 @@ const CollectionRateReport = () => {
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
-                    <TableRow className="bg-gray-50">
+                    <TableRow className="bg-muted/40">
                       <TableHead className="w-16 font-semibold">S/N</TableHead>
                       <TableHead className="font-semibold">Account No.</TableHead>
                       <TableHead className="font-semibold">Customer Name</TableHead>
@@ -436,20 +436,20 @@ const CollectionRateReport = () => {
                     {paginatedCustomers.map((customer, index) => (
                       <TableRow
                         key={customer.id}
-                        className="hover:bg-blue-50 cursor-pointer"
+                        className="hover:bg-muted/40 cursor-pointer"
                         onClick={() => navigate(`/customers/${customer.accountNumber}`)}
                       >
-                        <TableCell className="font-mono text-gray-500">{startIndex + index + 1}</TableCell>
-                        <TableCell className="font-mono text-sm text-blue-600 hover:underline">{customer.accountNumber}</TableCell>
+                        <TableCell className="font-mono text-muted-foreground tabular-nums">{startIndex + index + 1}</TableCell>
+                        <TableCell className="font-mono text-sm text-primary hover:underline">{customer.accountNumber}</TableCell>
                         <TableCell className="font-medium">{customer.name}</TableCell>
-                        <TableCell className="text-gray-600">{customer.phone || "-"}</TableCell>
-                        <TableCell className="text-gray-600">{customer.ward || "-"}</TableCell>
-                        <TableCell className="text-gray-600">{customer.street || "-"}</TableCell>
-                        <TableCell className="text-gray-600">{customer.agent || "-"}</TableCell>
-                        <TableCell className="text-right text-gray-600">
+                        <TableCell className="text-muted-foreground">{customer.phone || "-"}</TableCell>
+                        <TableCell className="text-muted-foreground">{customer.ward || "-"}</TableCell>
+                        <TableCell className="text-muted-foreground">{customer.street || "-"}</TableCell>
+                        <TableCell className="text-muted-foreground">{customer.agent || "-"}</TableCell>
+                        <TableCell className="text-right text-muted-foreground tabular-nums">
                           {formatCurrency(customer.totalBilled)}
                         </TableCell>
-                        <TableCell className="text-right text-green-600">
+                        <TableCell className="text-right text-success tabular-nums">
                           {formatCurrency(customer.totalPaid)}
                         </TableCell>
                         <TableCell className="text-center">
@@ -468,10 +468,10 @@ const CollectionRateReport = () => {
                               {customer.monthsWithoutPayment} mo
                             </span>
                           ) : (
-                            <span className="text-gray-400">-</span>
+                            <span className="text-muted-foreground">-</span>
                           )}
                         </TableCell>
-                        <TableCell className="text-gray-600">{formatDate(customer.lastPaymentDate)}</TableCell>
+                        <TableCell className="text-muted-foreground">{formatDate(customer.lastPaymentDate)}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -479,8 +479,8 @@ const CollectionRateReport = () => {
 
                 {/* Pagination */}
                 {totalPages > 1 && (
-                  <div className="flex items-center justify-between px-4 py-3 border-t bg-gray-50">
-                    <div className="text-sm text-gray-600">
+                  <div className="flex items-center justify-between px-4 py-3 border-t border-border bg-muted/40">
+                    <div className="text-sm text-muted-foreground">
                       Showing {startIndex + 1} to {Math.min(endIndex, customers.length)} of {customers.length.toLocaleString()} records
                     </div>
                     <div className="flex items-center gap-2">
@@ -497,7 +497,7 @@ const CollectionRateReport = () => {
                         {currentPage > 2 && (
                           <>
                             <Button variant="outline" size="sm" onClick={() => goToPage(1)}>1</Button>
-                            {currentPage > 3 && <span className="px-2 text-gray-400">...</span>}
+                            {currentPage > 3 && <span className="px-2 text-muted-foreground">...</span>}
                           </>
                         )}
                         {currentPage > 1 && (
@@ -513,7 +513,7 @@ const CollectionRateReport = () => {
                         )}
                         {currentPage < totalPages - 1 && (
                           <>
-                            {currentPage < totalPages - 2 && <span className="px-2 text-gray-400">...</span>}
+                            {currentPage < totalPages - 2 && <span className="px-2 text-muted-foreground">...</span>}
                             <Button variant="outline" size="sm" onClick={() => goToPage(totalPages)}>
                               {totalPages}
                             </Button>

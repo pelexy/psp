@@ -5,7 +5,8 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
-import { Loader2, Plus, Trash2 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Loader2, Plus, Trash2 } from "@/lib/icons";
 import { apiService } from "@/services/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -36,6 +37,7 @@ interface PropertyType {
   _id?: string; // For backward compatibility
   name: string;
   cost: number;
+  isCommercial?: boolean;
 }
 
 const getId = (item: { id?: string; _id?: string }): string => item.id || item._id || "";
@@ -44,7 +46,22 @@ interface PropertyEntry {
   propertyTypeId: string;
   quantity: number;
   costPerUnit?: number; // Custom cost override for this customer
+  occupiedUnits?: number | string; // how many of the units are occupied (optional)
+  billVacant?: boolean; // bill the vacant units too? (default off)
 }
+
+// How many units are actually billed for a property line. Occupancy is optional
+// — a blank occupied count means all units are treated as occupied. Vacant units
+// are billed by default; they're excluded only when "Bill vacant units" is off.
+const billableUnitsFor = (prop: PropertyEntry): number => {
+  const qty = Number(prop.quantity) || 0;
+  const hasOcc =
+    prop.occupiedUnits !== undefined && prop.occupiedUnits !== null && prop.occupiedUnits !== "";
+  let occ = hasOcc ? Number(prop.occupiedUnits) : qty;
+  if (!Number.isFinite(occ) || occ < 0) occ = 0;
+  if (occ > qty) occ = qty;
+  return prop.billVacant !== false ? qty : occ;
+};
 
 const CUSTOMER_TYPES = [
   { value: "standalone", label: "Standalone" },
@@ -61,6 +78,7 @@ export function EditCustomerDialog({ customer, open, onOpenChange, onCustomerUpd
   const [wards, setWards] = useState<Ward[]>([]);
   const [streets, setStreets] = useState<Street[]>([]);
   const [filteredStreets, setFilteredStreets] = useState<Street[]>([]);
+  const [streetSearch, setStreetSearch] = useState("");
   const [propertyTypes, setPropertyTypes] = useState<PropertyType[]>([]);
 
   // Form state
@@ -115,6 +133,9 @@ export function EditCustomerDialog({ customer, open, onOpenChange, onCustomerUpd
             propertyTypeId: p.propertyTypeId?._id || p.propertyTypeId || "",
             quantity: Number(p.quantity) || 1,
             costPerUnit: cost,
+            occupiedUnits:
+              p.occupiedUnits !== undefined && p.occupiedUnits !== null ? Number(p.occupiedUnits) : "",
+            billVacant: p.billVacant !== false,
           };
         }));
       } else {
@@ -184,10 +205,10 @@ export function EditCustomerDialog({ customer, open, onOpenChange, onCustomerUpd
       toast.error("No property types available. Please add property types in Settings first.");
       return;
     }
-    setProperties([...properties, { propertyTypeId: "", quantity: 1, costPerUnit: undefined }]);
+    setProperties([...properties, { propertyTypeId: "", quantity: 1, costPerUnit: undefined, billVacant: true }]);
   };
 
-  const updateProperty = (index: number, field: keyof PropertyEntry, value: string | number) => {
+  const updateProperty = (index: number, field: keyof PropertyEntry, value: string | number | boolean) => {
     const updated = [...properties];
     updated[index] = { ...updated[index], [field]: value };
     setProperties(updated);
@@ -204,7 +225,7 @@ export function EditCustomerDialog({ customer, open, onOpenChange, onCustomerUpd
       if (propertyType && prop.quantity > 0) {
         // Use custom costPerUnit if set, otherwise use default property type cost
         const cost = prop.costPerUnit !== undefined ? prop.costPerUnit : propertyType.cost;
-        return total + cost * prop.quantity;
+        return total + cost * billableUnitsFor(prop);
       }
       return total;
     }, 0);
@@ -277,11 +298,17 @@ export function EditCustomerDialog({ customer, open, onOpenChange, onCustomerUpd
           const hasCustom = p.costPerUnit !== undefined && p.costPerUnit !== null;
           const rawCost = hasCustom ? p.costPerUnit : defaultCost;
           const cost = Number.isFinite(Number(rawCost)) ? Number(rawCost) : 0;
-          return {
+          const out: any = {
             propertyTypeId: p.propertyTypeId,
             quantity: Number(p.quantity) || 1,
             costPerUnit: cost,
+            billVacant: p.billVacant !== false,
           };
+          // Occupancy is optional — only send it when a count was entered.
+          if (p.occupiedUnits !== undefined && p.occupiedUnits !== null && p.occupiedUnits !== "") {
+            out.occupiedUnits = Number(p.occupiedUnits);
+          }
+          return out;
         }),
       };
 
@@ -429,17 +456,41 @@ export function EditCustomerDialog({ customer, open, onOpenChange, onCustomerUpd
                     value={formData.streetId || "none"}
                     onValueChange={(value) => setFormData({ ...formData, streetId: value === "none" ? "" : value })}
                     disabled={!formData.wardId || filteredStreets.length === 0}
+                    onOpenChange={(o) => { if (!o) setStreetSearch(""); }}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select street" />
                     </SelectTrigger>
                     <SelectContent>
+                      <div className="sticky top-0 z-10 -mx-1 -mt-1 mb-1 border-b bg-popover p-1.5">
+                        <Input
+                          autoFocus
+                          placeholder="Search streets…"
+                          value={streetSearch}
+                          onChange={(e) => setStreetSearch(e.target.value)}
+                          onKeyDown={(e) => e.stopPropagation()}
+                          onPointerDown={(e) => e.stopPropagation()}
+                          className="h-8"
+                        />
+                      </div>
                       <SelectItem value="none">None</SelectItem>
-                      {filteredStreets.map((street) => (
-                        <SelectItem key={getId(street)} value={getId(street)}>
-                          {street.name}
-                        </SelectItem>
-                      ))}
+                      {(() => {
+                        const q = streetSearch.trim().toLowerCase();
+                        const visible = q
+                          ? filteredStreets.filter((s) => s.name.toLowerCase().includes(q))
+                          : filteredStreets;
+                        return visible.length > 0 ? (
+                          visible.map((street) => (
+                            <SelectItem key={getId(street)} value={getId(street)}>
+                              {street.name}
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <div className="px-2 py-3 text-center text-sm text-muted-foreground">
+                            No streets found
+                          </div>
+                        );
+                      })()}
                     </SelectContent>
                   </Select>
                 </div>
@@ -532,9 +583,15 @@ export function EditCustomerDialog({ customer, open, onOpenChange, onCustomerUpd
                     const defaultCost = propertyType?.cost || 0;
                     const effectiveCost = prop.costPerUnit !== undefined ? prop.costPerUnit : defaultCost;
                     const hasCustomCost = prop.costPerUnit !== undefined && prop.costPerUnit !== defaultCost;
+                    const qty = Number(prop.quantity) || 0;
+                    const hasOcc =
+                      prop.occupiedUnits !== undefined && prop.occupiedUnits !== null && prop.occupiedUnits !== "";
+                    const occ = hasOcc ? Math.min(Math.max(Number(prop.occupiedUnits) || 0, 0), qty) : qty;
+                    const vacant = qty - occ;
 
                     return (
-                      <div key={index} className="grid grid-cols-12 gap-2 items-center">
+                      <div key={index} className="space-y-2 rounded-lg border border-gray-100 bg-gray-50/50 p-2">
+                      <div className="grid grid-cols-12 gap-2 items-center">
                         <div className="col-span-4">
                           <Select
                             value={prop.propertyTypeId}
@@ -551,7 +608,7 @@ export function EditCustomerDialog({ customer, open, onOpenChange, onCustomerUpd
                             <SelectContent>
                               {propertyTypes.map((pt) => (
                                 <SelectItem key={getId(pt)} value={getId(pt)}>
-                                  {pt.name}
+                                  {pt.name}{pt.isCommercial ? " (Commercial)" : ""}
                                 </SelectItem>
                               ))}
                             </SelectContent>
@@ -604,7 +661,7 @@ export function EditCustomerDialog({ customer, open, onOpenChange, onCustomerUpd
                           )}
                         </div>
                         <div className="col-span-2 text-right text-sm font-medium">
-                          {prop.propertyTypeId && formatCurrency(effectiveCost * prop.quantity)}
+                          {prop.propertyTypeId && formatCurrency(effectiveCost * billableUnitsFor(prop))}
                         </div>
                         <div className="col-span-1 text-right">
                           <Button
@@ -617,6 +674,38 @@ export function EditCustomerDialog({ customer, open, onOpenChange, onCustomerUpd
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
+                      </div>
+
+                      {/* Occupancy — how many of the units are occupied vs vacant */}
+                      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 pl-1 text-sm">
+                        <div className="flex items-center gap-2">
+                          <Label className="text-xs text-gray-500">Occupied</Label>
+                          <Input
+                            type="number"
+                            min="0"
+                            max={qty || undefined}
+                            className="h-8 w-16"
+                            value={prop.occupiedUnits ?? ""}
+                            placeholder={String(qty)}
+                            onChange={(e) =>
+                              updateProperty(index, "occupiedUnits", e.target.value === "" ? "" : parseInt(e.target.value))
+                            }
+                            title={`Occupied out of ${qty} unit(s)`}
+                          />
+                          <span className="text-xs text-gray-400">of {qty}</span>
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          Vacant: <span className="font-medium text-gray-700">{vacant}</span>
+                        </div>
+                        <label className="flex items-center gap-2 text-xs text-gray-600">
+                          <Switch
+                            checked={prop.billVacant !== false}
+                            onCheckedChange={(checked) => updateProperty(index, "billVacant", checked)}
+                            disabled={vacant === 0}
+                          />
+                          Bill vacant units
+                        </label>
+                      </div>
                       </div>
                     );
                   })}

@@ -23,7 +23,7 @@ import {
 import { apiService } from "@/services/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { Filter, FileSpreadsheet, AlertTriangle, Users, Banknote, Search, ChevronLeft, ChevronRight } from "lucide-react";
+import { Filter, FileSpreadsheet, AlertTriangle, Users, Banknote, Search, ChevronLeft, ChevronRight } from "@/lib/icons";
 
 interface OutstandingCustomer {
   id: string;
@@ -235,8 +235,8 @@ const OutstandingReport = () => {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Outstanding Balances Report</h1>
-            <p className="text-sm text-gray-500 mt-1">
+            <h1 className="text-xl md:text-2xl font-semibold tracking-tight text-foreground">Outstanding Balances Report</h1>
+            <p className="text-sm text-muted-foreground mt-1">
               Complete list of customers with unpaid balances
             </p>
           </div>
@@ -257,8 +257,8 @@ const OutstandingReport = () => {
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs text-gray-500 uppercase font-medium">Total Customers</p>
-                    <p className="text-2xl font-bold text-gray-900 mt-1">{filteredCustomers.length.toLocaleString()}</p>
+                    <p className="text-xs text-muted-foreground uppercase font-medium">Total Customers</p>
+                    <p className="text-2xl font-semibold text-foreground mt-1 tabular-nums">{filteredCustomers.length.toLocaleString()}</p>
                   </div>
                   <Users className="h-8 w-8 text-blue-500 opacity-50" />
                 </div>
@@ -269,8 +269,8 @@ const OutstandingReport = () => {
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs text-gray-500 uppercase font-medium">Total Outstanding</p>
-                    <p className="text-xl font-bold text-red-600 mt-1">{formatCurrency(totalOutstanding)}</p>
+                    <p className="text-xs text-muted-foreground uppercase font-medium">Total Outstanding</p>
+                    <p className="text-xl font-semibold text-destructive mt-1 tabular-nums">{formatCurrency(totalOutstanding)}</p>
                   </div>
                   <AlertTriangle className="h-8 w-8 text-red-500 opacity-50" />
                 </div>
@@ -281,8 +281,8 @@ const OutstandingReport = () => {
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs text-gray-500 uppercase font-medium">Total Collected</p>
-                    <p className="text-xl font-bold text-green-600 mt-1">{formatCurrency(totalPaid)}</p>
+                    <p className="text-xs text-muted-foreground uppercase font-medium">Total Collected</p>
+                    <p className="text-xl font-semibold text-success mt-1 tabular-nums">{formatCurrency(totalPaid)}</p>
                   </div>
                   <Banknote className="h-8 w-8 text-green-500 opacity-50" />
                 </div>
@@ -293,8 +293,8 @@ const OutstandingReport = () => {
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs text-gray-500 uppercase font-medium">Avg. Balance</p>
-                    <p className="text-xl font-bold text-purple-600 mt-1">
+                    <p className="text-xs text-muted-foreground uppercase font-medium">Avg. Balance</p>
+                    <p className="text-xl font-semibold text-foreground mt-1 tabular-nums">
                       {formatCurrency(filteredCustomers.length > 0 ? totalOutstanding / filteredCustomers.length : 0)}
                     </p>
                   </div>
@@ -316,9 +316,9 @@ const OutstandingReport = () => {
           <CardContent>
             <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
               <div>
-                <label className="text-xs font-medium text-gray-500 mb-1.5 block">Search</label>
+                <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Search</label>
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     placeholder="Name, Account, Phone..."
                     value={searchQuery}
@@ -329,7 +329,7 @@ const OutstandingReport = () => {
               </div>
 
               <div>
-                <label className="text-xs font-medium text-gray-500 mb-1.5 block">Min. Balance (NGN)</label>
+                <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Min. Balance (NGN)</label>
                 <Select value={minAmount} onValueChange={setMinAmount}>
                   <SelectTrigger>
                     <SelectValue />
@@ -345,7 +345,7 @@ const OutstandingReport = () => {
               </div>
 
               <div>
-                <label className="text-xs font-medium text-gray-500 mb-1.5 block">Ward</label>
+                <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Ward</label>
                 <Select value={wardId || "all"} onValueChange={(v) => setWardId(v === "all" ? "" : v)}>
                   <SelectTrigger>
                     <SelectValue placeholder="All Wards" />
@@ -360,7 +360,7 @@ const OutstandingReport = () => {
               </div>
 
               <div>
-                <label className="text-xs font-medium text-gray-500 mb-1.5 block">Street</label>
+                <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Street</label>
                 <Select value={streetId || "all"} onValueChange={(v) => setStreetId(v === "all" ? "" : v)}>
                   <SelectTrigger>
                     <SelectValue placeholder="All Streets" />
@@ -375,7 +375,7 @@ const OutstandingReport = () => {
               </div>
 
               <div>
-                <label className="text-xs font-medium text-gray-500 mb-1.5 block">Collection Agent</label>
+                <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Collection Agent</label>
                 <Select value={agentId || "all"} onValueChange={(v) => setAgentId(v === "all" ? "" : v)}>
                   <SelectTrigger>
                     <SelectValue placeholder="All Agents" />
@@ -394,15 +394,15 @@ const OutstandingReport = () => {
 
         {/* Report Table */}
         <Card>
-          <CardHeader className="border-b bg-gray-50">
+          <CardHeader className="border-b border-border bg-muted/40">
             <div className="flex items-center justify-between">
               <CardTitle className="text-base">
                 Customer Balances
-                <span className="text-gray-400 font-normal ml-2">
+                <span className="text-muted-foreground font-normal ml-2">
                   ({filteredCustomers.length.toLocaleString()} records)
                 </span>
               </CardTitle>
-              <p className="text-sm font-semibold text-red-600">
+              <p className="text-sm font-semibold text-destructive tabular-nums">
                 Total Outstanding: {formatCurrency(totalOutstanding)}
               </p>
             </div>
@@ -413,7 +413,7 @@ const OutstandingReport = () => {
                 {[...Array(10)].map((_, i) => <Skeleton key={i} className="h-12" />)}
               </div>
             ) : filteredCustomers.length === 0 ? (
-              <div className="p-12 text-center text-gray-400">
+              <div className="p-12 text-center text-muted-foreground">
                 <AlertTriangle className="h-12 w-12 mx-auto mb-3 opacity-50" />
                 <p>No customers found matching your criteria</p>
               </div>
@@ -421,7 +421,7 @@ const OutstandingReport = () => {
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
-                    <TableRow className="bg-gray-50">
+                    <TableRow className="bg-muted/40">
                       <TableHead className="w-16 font-semibold">S/N</TableHead>
                       <TableHead className="font-semibold">Account No.</TableHead>
                       <TableHead className="font-semibold">Customer Name</TableHead>
@@ -439,26 +439,26 @@ const OutstandingReport = () => {
                     {paginatedCustomers.map((customer, index) => (
                       <TableRow
                         key={customer.id}
-                        className="hover:bg-blue-50 cursor-pointer"
+                        className="hover:bg-muted/40 cursor-pointer"
                         onClick={() => navigate(`/customers/${customer.accountNumber}`)}
                       >
-                        <TableCell className="font-mono text-gray-500">{startIndex + index + 1}</TableCell>
-                        <TableCell className="font-mono text-sm text-blue-600 hover:underline">{customer.accountNumber}</TableCell>
+                        <TableCell className="font-mono text-muted-foreground tabular-nums">{startIndex + index + 1}</TableCell>
+                        <TableCell className="font-mono text-sm text-primary hover:underline">{customer.accountNumber}</TableCell>
                         <TableCell className="font-medium">{customer.name}</TableCell>
-                        <TableCell className="text-gray-600">{customer.phone || "-"}</TableCell>
-                        <TableCell className="text-gray-600">{customer.ward || "-"}</TableCell>
-                        <TableCell className="text-gray-600">{customer.street || "-"}</TableCell>
-                        <TableCell className="text-gray-600">{customer.agent || "-"}</TableCell>
-                        <TableCell className="text-right text-gray-600">
+                        <TableCell className="text-muted-foreground">{customer.phone || "-"}</TableCell>
+                        <TableCell className="text-muted-foreground">{customer.ward || "-"}</TableCell>
+                        <TableCell className="text-muted-foreground">{customer.street || "-"}</TableCell>
+                        <TableCell className="text-muted-foreground">{customer.agent || "-"}</TableCell>
+                        <TableCell className="text-right text-muted-foreground tabular-nums">
                           {formatCurrency(customer.totalDebt)}
                         </TableCell>
-                        <TableCell className="text-right text-green-600">
+                        <TableCell className="text-right text-success tabular-nums">
                           {formatCurrency(customer.totalPaid)}
                         </TableCell>
-                        <TableCell className="text-right font-semibold text-red-600">
+                        <TableCell className="text-right font-semibold text-destructive tabular-nums">
                           {formatCurrency(customer.currentBalance)}
                         </TableCell>
-                        <TableCell className="text-gray-600">{formatDate(customer.lastPaymentDate)}</TableCell>
+                        <TableCell className="text-muted-foreground">{formatDate(customer.lastPaymentDate)}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -466,8 +466,8 @@ const OutstandingReport = () => {
 
                 {/* Pagination */}
                 {totalPages > 1 && (
-                  <div className="flex items-center justify-between px-4 py-3 border-t bg-gray-50">
-                    <div className="text-sm text-gray-600">
+                  <div className="flex items-center justify-between px-4 py-3 border-t border-border bg-muted/40">
+                    <div className="text-sm text-muted-foreground">
                       Showing {startIndex + 1} to {Math.min(endIndex, filteredCustomers.length)} of {filteredCustomers.length.toLocaleString()} records
                     </div>
                     <div className="flex items-center gap-2">
@@ -484,7 +484,7 @@ const OutstandingReport = () => {
                         {currentPage > 2 && (
                           <>
                             <Button variant="outline" size="sm" onClick={() => goToPage(1)}>1</Button>
-                            {currentPage > 3 && <span className="px-2 text-gray-400">...</span>}
+                            {currentPage > 3 && <span className="px-2 text-muted-foreground">...</span>}
                           </>
                         )}
                         {currentPage > 1 && (
@@ -500,7 +500,7 @@ const OutstandingReport = () => {
                         )}
                         {currentPage < totalPages - 1 && (
                           <>
-                            {currentPage < totalPages - 2 && <span className="px-2 text-gray-400">...</span>}
+                            {currentPage < totalPages - 2 && <span className="px-2 text-muted-foreground">...</span>}
                             <Button variant="outline" size="sm" onClick={() => goToPage(totalPages)}>
                               {totalPages}
                             </Button>

@@ -272,8 +272,40 @@ class ApiService {
     this.baseUrl = baseUrl;
   }
 
+  // Clears the stored session and redirects to login. Guarded so it only fires
+  // once and never loops while already on the login screen.
+  private forceLogout() {
+    if (typeof window === "undefined") return;
+    try {
+      [
+        "user",
+        "psp",
+        "companies",
+        "accessToken",
+        "refreshToken",
+        "isTemporaryPassword",
+        "dashboardData",
+      ].forEach((key) => localStorage.removeItem(key));
+    } catch {
+      // ignore storage errors
+    }
+    const path = window.location.pathname;
+    if (path !== "/login" && path !== "/") {
+      // Hard navigation so AuthContext re-initialises from the now-empty storage.
+      window.location.replace("/login");
+    }
+  }
+
   private async handleResponse<T>(response: Response): Promise<T> {
     if (!response.ok) {
+      // Session expired / invalid token: a 401 from any non-auth endpoint means
+      // the stored token is no longer valid. Clear the session and send the user
+      // back to login instead of leaving them stuck on the page. Auth endpoints
+      // (login/reset) are excluded so a bad-password 401 doesn't trigger this.
+      if (response.status === 401 && !/\/auth\//.test(response.url || "")) {
+        this.forceLogout();
+      }
+
       let errorData;
       try {
         errorData = await response.json();
@@ -373,6 +405,8 @@ class ApiService {
   ): Promise<T> {
     const response = await fetch(`${this.baseUrl}${endpoint}`, {
       ...options,
+      // Never serve a stale cached copy — dashboards/balances must reflect live data.
+      cache: "no-store",
       headers: {
         ...options.headers,
         Authorization: `Bearer ${accessToken}`,
@@ -492,6 +526,9 @@ class ApiService {
       searchTerm?: string;
       isActive?: boolean;
       state?: string;
+      lga?: string;
+      hasOutstanding?: boolean;
+      paymentBehavior?: string;
       sortBy?: string;
       sortOrder?: "asc" | "desc";
     },
@@ -505,6 +542,9 @@ class ApiService {
       if (filters.isActive !== undefined)
         params.append("status", filters.isActive ? "active" : "inactive");
       if (filters.state) params.append("state", filters.state);
+      if (filters.lga) params.append("lga", filters.lga);
+      if (filters.hasOutstanding) params.append("hasOutstanding", "true");
+      if (filters.paymentBehavior) params.append("paymentBehavior", filters.paymentBehavior);
       if (filters.sortBy) params.append("sortBy", filters.sortBy);
       if (filters.sortOrder) params.append("sortOrder", filters.sortOrder);
     }
@@ -1363,7 +1403,7 @@ class ApiService {
 
   async createPropertyType(
     accessToken: string,
-    data: { name: string; cost: number; description?: string },
+    data: { name: string; cost: number; description?: string; isCommercial?: boolean; allowPriceOverride?: boolean },
   ): Promise<any> {
     const response = await fetch(`${this.baseUrl}/property-types`, {
       method: "POST",
@@ -1383,7 +1423,9 @@ class ApiService {
       name?: string;
       cost?: number;
       description?: string;
+      isCommercial?: boolean;
       isActive?: boolean;
+      allowPriceOverride?: boolean;
     },
   ): Promise<any> {
     const response = await fetch(`${this.baseUrl}/property-types/${id}`, {
@@ -1760,6 +1802,126 @@ class ApiService {
       return { success: true, message: "Expense deleted successfully" };
     }
     return this.handleResponse<any>(response);
+  }
+
+  // ── Bill engine ─────────────────────────────────────────────────────────
+  async getBillSummary(accessToken: string): Promise<any> {
+    return this.makeAuthenticatedRequest<any>("/psp/bills/summary", {}, accessToken);
+  }
+
+  async getBillConfig(accessToken: string): Promise<any> {
+    return this.makeAuthenticatedRequest<any>("/psp/bills/config", {}, accessToken);
+  }
+
+  async updateBillConfig(accessToken: string, body: any): Promise<any> {
+    return this.makeAuthenticatedRequest<any>(
+      "/psp/bills/config",
+      { method: "PUT", body: JSON.stringify(body) },
+      accessToken,
+    );
+  }
+
+  async runBills(accessToken: string): Promise<any> {
+    return this.makeAuthenticatedRequest<any>("/psp/bills/run", { method: "POST" }, accessToken);
+  }
+
+  async getBillRuns(accessToken: string, page = 1, limit = 20): Promise<any> {
+    return this.makeAuthenticatedRequest<any>(`/psp/bills/runs?page=${page}&limit=${limit}`, {}, accessToken);
+  }
+
+  async getBillRun(accessToken: string, id: string): Promise<any> {
+    return this.makeAuthenticatedRequest<any>(`/psp/bills/runs/${id}`, {}, accessToken);
+  }
+
+  async getBills(
+    accessToken: string,
+    page = 1,
+    limit = 20,
+    filters?: {
+      customerId?: string;
+      search?: string;
+      wardId?: string;
+      streetId?: string;
+      status?: string;
+      billType?: string;
+      billCycleId?: string;
+      dateFrom?: string;
+      dateTo?: string;
+      dueFrom?: string;
+      dueTo?: string;
+    },
+  ): Promise<any> {
+    const q = new URLSearchParams({ page: String(page), limit: String(limit) });
+    if (filters) {
+      if (filters.customerId) q.append("customerId", filters.customerId);
+      if (filters.search) q.append("search", filters.search);
+      if (filters.wardId) q.append("wardId", filters.wardId);
+      if (filters.streetId) q.append("streetId", filters.streetId);
+      if (filters.status) q.append("status", filters.status);
+      if (filters.billType) q.append("billType", filters.billType);
+      if (filters.billCycleId) q.append("billCycleId", filters.billCycleId);
+      if (filters.dateFrom) q.append("dateFrom", filters.dateFrom);
+      if (filters.dateTo) q.append("dateTo", filters.dateTo);
+      if (filters.dueFrom) q.append("dueFrom", filters.dueFrom);
+      if (filters.dueTo) q.append("dueTo", filters.dueTo);
+    }
+    return this.makeAuthenticatedRequest<any>(`/psp/bills?${q.toString()}`, {}, accessToken);
+  }
+
+  async getBill(accessToken: string, id: string): Promise<any> {
+    return this.makeAuthenticatedRequest<any>(`/psp/bills/${id}`, {}, accessToken);
+  }
+
+  async sendBill(accessToken: string, id: string): Promise<any> {
+    return this.makeAuthenticatedRequest<any>(`/psp/bills/${id}/send`, { method: "POST" }, accessToken);
+  }
+
+  async getCustomerBilling(accessToken: string, customerId: string): Promise<any> {
+    return this.makeAuthenticatedRequest<any>(`/psp/bills/customer/${customerId}`, {}, accessToken);
+  }
+
+  // Ledger statement — the source of truth. Returns every DEBIT/CREDIT/FEE line
+  // (charges, payments, platform fees) so the money breakdown is fully transparent.
+  async getCustomerLedgerStatement(
+    accessToken: string,
+    customerId: string,
+    page = 1,
+    limit = 500,
+  ): Promise<any> {
+    return this.makeAuthenticatedRequest<any>(
+      `/ledger/customer/${customerId}/statement?page=${page}&limit=${limit}`,
+      {},
+      accessToken,
+    );
+  }
+
+  async updateCustomerBilling(accessToken: string, customerId: string, body: any): Promise<any> {
+    return this.makeAuthenticatedRequest<any>(
+      `/psp/bills/customer/${customerId}`,
+      { method: "PUT", body: JSON.stringify(body) },
+      accessToken,
+    );
+  }
+
+  // ── Bill cycles ─────────────────────────────────────────────────────────
+  async getBillCycles(accessToken: string): Promise<any> {
+    return this.makeAuthenticatedRequest<any>("/psp/bill-cycles", {}, accessToken);
+  }
+
+  async createBillCycle(accessToken: string, body: any): Promise<any> {
+    return this.makeAuthenticatedRequest<any>("/psp/bill-cycles", { method: "POST", body: JSON.stringify(body) }, accessToken);
+  }
+
+  async updateBillCycle(accessToken: string, id: string, body: any): Promise<any> {
+    return this.makeAuthenticatedRequest<any>(`/psp/bill-cycles/${id}`, { method: "PUT", body: JSON.stringify(body) }, accessToken);
+  }
+
+  async deleteBillCycle(accessToken: string, id: string): Promise<any> {
+    return this.makeAuthenticatedRequest<any>(`/psp/bill-cycles/${id}`, { method: "DELETE" }, accessToken);
+  }
+
+  async runBillCycle(accessToken: string, id: string): Promise<any> {
+    return this.makeAuthenticatedRequest<any>(`/psp/bill-cycles/${id}/run`, { method: "POST" }, accessToken);
   }
 }
 

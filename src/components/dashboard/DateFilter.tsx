@@ -1,4 +1,4 @@
-import { RotateCw } from "lucide-react";
+import { RotateCw } from "@/lib/icons";
 import { Button } from "@/components/ui/button";
 
 export type DateRange = "7d" | "14d" | "30d" | "custom";

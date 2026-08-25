@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowDownToLine, ArrowUpFromLine, Eye, EyeOff } from "lucide-react";
+import { ArrowDownToLine, ArrowUpFromLine, Eye, EyeOff } from "@/lib/icons";
 import { WithdrawDialog } from "./WithdrawDialog";
 
 export function WalletCard() {

@@ -6,7 +6,7 @@ import type { Column } from "@/components/shared";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Search, Eye } from "lucide-react";
+import { Search, Eye } from "@/lib/icons";
 import { CreateInvoiceDialog } from "@/components/invoices/CreateInvoiceDialog";
 import { InvoiceFilterPanel } from "@/components/invoices/InvoiceFilterPanel";
 import { apiService } from "@/services/api";
@@ -118,21 +118,21 @@ const Invoices = () => {
         header: "Customer",
         accessor: (invoice) => (
           <div>
-            <p className="font-medium text-gray-900">{invoice.customer?.fullName || 'N/A'}</p>
-            <p className="text-xs text-gray-500">{invoice.customer?.accountNumber || ''}</p>
+            <p className="font-medium text-foreground">{invoice.customer?.fullName || 'N/A'}</p>
+            <p className="text-xs text-muted-foreground">{invoice.customer?.accountNumber || ''}</p>
           </div>
         ),
       },
       {
         key: "service",
         header: "Service",
-        accessor: (invoice) => <span className="text-gray-700">{invoice.collection?.collectionName || 'N/A'}</span>,
+        accessor: (invoice) => <span className="text-foreground">{invoice.collection?.collectionName || 'N/A'}</span>,
       },
       {
         key: "amount",
         header: "Amount",
         accessor: (invoice) => (
-          <span className="font-semibold text-gray-900">
+          <span className="font-semibold tabular-nums text-foreground">
             ₦{(invoice.amount || 0).toLocaleString()}
           </span>
         ),
@@ -141,7 +141,7 @@ const Invoices = () => {
         key: "dueDate",
         header: "Due Date",
         accessor: (invoice) => (
-          <span className="text-gray-700">
+          <span className="text-foreground">
             {invoice.dueDate ? format(new Date(invoice.dueDate), "MMM dd, yyyy") : 'N/A'}
           </span>
         ),
@@ -156,32 +156,10 @@ const Invoices = () => {
         ),
       },
       {
-        key: "status",
-        header: "Status",
-        accessor: (invoice) => {
-          const status = invoice.status || 'pending';
-          const variant =
-            status === 'paid' ? 'default' :
-            status === 'overdue' ? 'destructive' :
-            status === 'partially_paid' ? 'secondary' :
-            'outline';
-
-          // Format status for display
-          const displayStatus = status === 'partially_paid' ? 'Partially Paid' :
-                               status.charAt(0).toUpperCase() + status.slice(1);
-
-          return (
-            <Badge variant={variant} className="font-medium capitalize">
-              {displayStatus}
-            </Badge>
-          );
-        },
-      },
-      {
         key: "createdAt",
         header: "Created",
         accessor: (invoice) => (
-          <span className="text-sm text-gray-600">
+          <span className="text-sm text-muted-foreground">
             {invoice.createdAt ? format(new Date(invoice.createdAt), "MMM dd, yyyy") : 'N/A'}
           </span>
         ),
@@ -194,7 +172,7 @@ const Invoices = () => {
             <Button
               variant="ghost"
               size="sm"
-              className="h-8 px-2 text-green-600 hover:text-green-700 hover:bg-green-50"
+              className="h-8 px-2 text-success"
               onClick={() => navigate(`/billing/invoices/${invoice.invoiceNumber}`)}
               title="View Invoice"
             >
@@ -210,12 +188,12 @@ const Invoices = () => {
 
   return (
     <DashboardLayout>
-      <div className="p-4 md:p-6 lg:p-8 space-y-6 lg:space-y-8 bg-gradient-to-br from-background via-background to-accent/5 max-w-full overflow-hidden">
+      <div className="p-4 md:p-6 lg:p-8 space-y-6 lg:space-y-8 bg-background max-w-full overflow-hidden">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-in fade-in slide-in-from-top-4 duration-500">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-xl md:text-2xl font-bold text-gray-900">Invoices</h1>
-            <p className="text-xs md:text-sm text-gray-500 mt-1">
+            <h1 className="text-xl md:text-2xl font-semibold tracking-tight text-foreground">Invoices</h1>
+            <p className="text-sm text-muted-foreground mt-1">
               Manage all invoices • {totalItems} total invoices
             </p>
           </div>
@@ -224,12 +202,12 @@ const Invoices = () => {
         </div>
 
         {/* Main Content Card */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 animate-in fade-in slide-in-from-bottom-4 duration-700 max-w-full overflow-hidden">
+        <div className="bg-card rounded-lg shadow-card border border-border max-w-full overflow-hidden">
           {/* Search and Filters */}
-          <div className="p-4 md:p-6 border-b border-gray-200">
+          <div className="p-4 md:p-6 border-b border-border">
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
               <div className="flex-1 w-full relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Search by invoice number, customer, or account number..."
                   value={searchQuery}

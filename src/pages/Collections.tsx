@@ -28,7 +28,7 @@ import {
   DollarSign,
   Calendar,
   Clock,
-} from "lucide-react";
+} from "@/lib/icons";
 import { apiService } from "@/services/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -187,7 +187,7 @@ const Collections = () => {
         <div className="p-4 md:p-6 lg:p-8">
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-            <p className="text-gray-500 mt-4">Loading collections...</p>
+            <p className="text-muted-foreground mt-4">Loading collections...</p>
           </div>
         </div>
       </DashboardLayout>
@@ -196,12 +196,12 @@ const Collections = () => {
 
   return (
     <DashboardLayout>
-      <div className="p-4 md:p-6 lg:p-8 space-y-6 bg-gradient-to-br from-background via-background to-accent/5 max-w-full overflow-hidden">
+      <div className="p-4 md:p-6 lg:p-8 space-y-6 bg-background max-w-full overflow-hidden">
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-xl md:text-2xl font-bold text-gray-900">Collections</h1>
-            <p className="text-xs md:text-sm text-gray-500 mt-1">
+            <h1 className="text-xl md:text-2xl font-semibold tracking-tight text-foreground">Collections</h1>
+            <p className="text-sm text-muted-foreground mt-1">
               Manage your recurring billing services • {collections.length} total collections
             </p>
           </div>
@@ -252,7 +252,7 @@ const Collections = () => {
                       ))}
                     </SelectContent>
                   </Select>
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-muted-foreground mt-1">
                     Category of service for this collection
                   </p>
                 </div>
@@ -288,7 +288,7 @@ const Collections = () => {
                       required
                       min="0"
                     />
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs text-muted-foreground mt-1">
                       This amount will be charged to all customers in this collection
                     </p>
                   </div>
@@ -296,8 +296,8 @@ const Collections = () => {
 
                 {/* VARIABLE amount type info */}
                 {formData.amountType === "VARIABLE" && (
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                    <p className="text-sm text-blue-900">
+                  <div className="bg-muted/40 border border-border rounded-lg p-3">
+                    <p className="text-sm text-foreground">
                       <strong>Variable Amount:</strong> Each customer will have a different amount. You'll set individual amounts when enrolling customers.
                     </p>
                   </div>
@@ -305,8 +305,8 @@ const Collections = () => {
 
                 {/* CUSTOMER_PROPERTY amount type info */}
                 {formData.amountType === "CUSTOMER_PROPERTY" && (
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                    <p className="text-sm text-green-900">
+                  <div className="bg-muted/40 border border-border rounded-lg p-3">
+                    <p className="text-sm text-foreground">
                       <strong>Customer Property Bill:</strong> Each customer will be billed based on their property breakdown (expected bill). Make sure customers have properties assigned in their profile.
                     </p>
                   </div>
@@ -352,7 +352,7 @@ const Collections = () => {
                           <SelectItem value="sunday">Sunday</SelectItem>
                         </SelectContent>
                       </Select>
-                      <p className="text-xs text-gray-500 mt-1">
+                      <p className="text-xs text-muted-foreground mt-1">
                         Day when invoices will be automatically generated
                       </p>
                     </div>
@@ -376,7 +376,7 @@ const Collections = () => {
                           <SelectItem value="sunday">Sunday</SelectItem>
                         </SelectContent>
                       </Select>
-                      <p className="text-xs text-gray-500 mt-1">
+                      <p className="text-xs text-muted-foreground mt-1">
                         Day when invoices are due for payment
                       </p>
                     </div>
@@ -397,7 +397,7 @@ const Collections = () => {
                         max="28"
                         required
                       />
-                      <p className="text-xs text-gray-500 mt-1">
+                      <p className="text-xs text-muted-foreground mt-1">
                         Day of the month when invoices will be automatically generated (max 28 for all months)
                       </p>
                     </div>
@@ -413,7 +413,7 @@ const Collections = () => {
                         max="28"
                         required
                       />
-                      <p className="text-xs text-gray-500 mt-1">
+                      <p className="text-xs text-muted-foreground mt-1">
                         Day of the month when invoices are due for payment (max 28 for all months)
                       </p>
                     </div>
@@ -457,7 +457,7 @@ const Collections = () => {
                     rows={3}
                     maxLength={30}
                   />
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-muted-foreground mt-1">
                     {formData.description.length}/30 characters
                   </p>
                 </div>
@@ -469,7 +469,7 @@ const Collections = () => {
                     id="importAllCustomers"
                     checked={formData.importAllCustomers}
                     onChange={(e) => setFormData({ ...formData, importAllCustomers: e.target.checked })}
-                    className="h-4 w-4 rounded border-gray-300"
+                    className="h-4 w-4 rounded border-border"
                   />
                   <Label htmlFor="importAllCustomers" className="font-normal">
                     Auto-enroll all existing customers to this collection
@@ -496,10 +496,10 @@ const Collections = () => {
 
         {/* Collections Grid */}
         {collections.length === 0 ? (
-          <div className="text-center py-16 bg-white rounded-xl border border-gray-200">
-            <Recycle className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">No Collections Yet</h3>
-            <p className="text-gray-500 mb-6">Create your first collection to start managing recurring billing</p>
+          <div className="text-center py-16 bg-card rounded-lg shadow-card border border-border">
+            <Recycle className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-foreground mb-2">No Collections Yet</h3>
+            <p className="text-muted-foreground mb-6">Create your first collection to start managing recurring billing</p>
             <Button onClick={() => setDialogOpen(true)} className="gap-2">
               <Plus className="h-4 w-4" />
               Create Collection
@@ -510,7 +510,7 @@ const Collections = () => {
             {collections.map((collection) => (
               <div
                 key={collection.id}
-                className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-all duration-200 cursor-pointer relative overflow-hidden group"
+                className="bg-card border border-border rounded-lg shadow-card p-6 hover:shadow-elevated transition-shadow cursor-pointer relative overflow-hidden group"
                 onClick={() => navigate(`/billing/plans/${collection.id}`)}
               >
                 {/* Backlog Badge */}
@@ -527,14 +527,14 @@ const Collections = () => {
                       <Recycle className="h-6 w-6 text-primary" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-lg font-bold text-gray-900 truncate group-hover:text-primary transition-colors">
+                      <h3 className="text-lg font-semibold text-foreground truncate group-hover:text-primary transition-colors">
                         {collection.collectionName}
                       </h3>
                       <div className="flex items-center gap-2 mt-1">
                         <Badge variant="outline" className="text-xs capitalize">
                           {(collection.serviceType || 'waste_collection').replace('_', ' ')}
                         </Badge>
-                        <span className="text-xs text-gray-500">
+                        <span className="text-xs text-muted-foreground">
                           {collection.billingFrequency.replace('_', ' ').toUpperCase()}
                         </span>
                       </div>
@@ -542,14 +542,14 @@ const Collections = () => {
                   </div>
 
                   {collection.description && (
-                    <p className="text-sm text-gray-600 mt-3 line-clamp-2">{collection.description}</p>
+                    <p className="text-sm text-muted-foreground mt-3 line-clamp-2">{collection.description}</p>
                   )}
                 </div>
 
                 {/* Amount Badge */}
                 {collection.amountType === "FIXED" && (
                   <div className="mb-4">
-                    <div className="inline-flex items-center gap-2 bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-lg text-sm font-semibold">
+                    <div className="inline-flex items-center gap-2 bg-muted/40 text-foreground px-3 py-1.5 rounded-lg text-sm font-semibold tabular-nums">
                       <DollarSign className="h-4 w-4" />
                       ₦{collection.baseAmount.toLocaleString()}
                     </div>
@@ -557,7 +557,7 @@ const Collections = () => {
                 )}
                 {collection.amountType === "VARIABLE" && (
                   <div className="mb-4">
-                    <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 px-3 py-1.5 rounded-lg text-sm font-semibold">
+                    <div className="inline-flex items-center gap-2 bg-muted/40 text-foreground px-3 py-1.5 rounded-lg text-sm font-semibold">
                       <DollarSign className="h-4 w-4" />
                       Variable Amount
                     </div>
@@ -565,7 +565,7 @@ const Collections = () => {
                 )}
                 {collection.amountType === "CUSTOMER_PROPERTY" && (
                   <div className="mb-4">
-                    <div className="inline-flex items-center gap-2 bg-purple-50 text-purple-700 px-3 py-1.5 rounded-lg text-sm font-semibold">
+                    <div className="inline-flex items-center gap-2 bg-muted/40 text-foreground px-3 py-1.5 rounded-lg text-sm font-semibold">
                       <DollarSign className="h-4 w-4" />
                       Customer Property Bill
                     </div>
@@ -574,40 +574,40 @@ const Collections = () => {
 
                 {/* Stats Grid */}
                 <div className="grid grid-cols-2 gap-3 mb-4">
-                  <div className="bg-gray-50 rounded-lg p-3">
+                  <div className="bg-muted/40 rounded-lg p-3">
                     <div className="flex items-center gap-2 mb-1">
-                      <Users className="h-4 w-4 text-gray-500" />
-                      <span className="text-xs text-gray-500">Members</span>
+                      <Users className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-xs text-muted-foreground">Members</span>
                     </div>
-                    <p className="text-lg font-bold text-gray-900">{collection.totalMembers || 0}</p>
+                    <p className="text-lg font-semibold text-foreground tabular-nums">{collection.totalMembers || 0}</p>
                   </div>
 
-                  <div className="bg-gray-50 rounded-lg p-3">
+                  <div className="bg-muted/40 rounded-lg p-3">
                     <div className="flex items-center gap-2 mb-1">
-                      <Calendar className="h-4 w-4 text-gray-500" />
-                      <span className="text-xs text-gray-500">Invoices</span>
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-xs text-muted-foreground">Invoices</span>
                     </div>
-                    <p className="text-lg font-bold text-gray-900">{collection.totalInvoices || 0}</p>
+                    <p className="text-lg font-semibold text-foreground tabular-nums">{collection.totalInvoices || 0}</p>
                   </div>
                 </div>
 
                 {/* Financial Summary */}
-                <div className="border-t border-gray-200 pt-4 space-y-2">
+                <div className="border-t border-border pt-4 space-y-2">
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Total Billed</span>
-                    <span className="text-sm font-semibold text-gray-900">
+                    <span className="text-sm text-muted-foreground">Total Billed</span>
+                    <span className="text-sm font-semibold text-foreground tabular-nums">
                       ₦{(collection.totalAmount || 0).toLocaleString()}
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Paid</span>
-                    <span className="text-sm font-semibold text-emerald-600">
+                    <span className="text-sm text-muted-foreground">Paid</span>
+                    <span className="text-sm font-semibold text-success tabular-nums">
                       ₦{(collection.totalPaid || 0).toLocaleString()}
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Outstanding</span>
-                    <span className="text-sm font-semibold text-red-600">
+                    <span className="text-sm text-muted-foreground">Outstanding</span>
+                    <span className="text-sm font-semibold text-destructive tabular-nums">
                       ₦{(collection.totalUnpaid || 0).toLocaleString()}
                     </span>
                   </div>
@@ -616,14 +616,14 @@ const Collections = () => {
                 {/* Progress Bar */}
                 <div className="mt-4">
                   <div className="flex justify-between items-center mb-2">
-                    <span className="text-xs text-gray-600">Payment Rate</span>
-                    <span className="text-xs font-semibold text-gray-900">
+                    <span className="text-xs text-muted-foreground">Payment Rate</span>
+                    <span className="text-xs font-semibold text-foreground tabular-nums">
                       {collection.percentagePaid || 0}%
                     </span>
                   </div>
-                  <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                  <div className="h-2 bg-muted rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-emerald-500 transition-all duration-500"
+                      className="h-full bg-success transition-all"
                       style={{ width: `${collection.percentagePaid || 0}%` }}
                     />
                   </div>
@@ -631,7 +631,7 @@ const Collections = () => {
 
                 {/* Next Invoice Date */}
                 {collection.nextInvoiceDate && !collection.isBacklog && (
-                  <div className="mt-4 flex items-center gap-2 text-xs text-gray-500">
+                  <div className="mt-4 flex items-center gap-2 text-xs text-muted-foreground">
                     <Clock className="h-3.5 w-3.5" />
                     <span>
                       Next invoice: {new Date(collection.nextInvoiceDate).toLocaleDateString()}

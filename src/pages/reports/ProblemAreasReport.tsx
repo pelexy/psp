@@ -21,7 +21,7 @@ import {
 import { apiService } from "@/services/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { Filter, FileSpreadsheet, AlertTriangle, MapPin, TrendingDown, Banknote, ChevronLeft, ChevronRight } from "lucide-react";
+import { Filter, FileSpreadsheet, AlertTriangle, MapPin, TrendingDown, Banknote, ChevronLeft, ChevronRight } from "@/lib/icons";
 
 interface AreaData {
   id: string;
@@ -204,8 +204,8 @@ const ProblemAreasReport = () => {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Problem Areas Report</h1>
-            <p className="text-sm text-gray-500 mt-1">
+            <h1 className="text-xl md:text-2xl font-semibold tracking-tight text-foreground">Problem Areas Report</h1>
+            <p className="text-sm text-muted-foreground mt-1">
               Geographic analysis of collection performance by ward and street
             </p>
           </div>
@@ -230,8 +230,8 @@ const ProblemAreasReport = () => {
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs text-gray-500 uppercase font-medium">Expected Revenue</p>
-                    <p className="text-xl font-bold text-blue-600 mt-1">{formatCurrency(leakage.expectedRevenue)}</p>
+                    <p className="text-xs text-muted-foreground uppercase font-medium">Expected Revenue</p>
+                    <p className="text-xl font-semibold text-foreground mt-1 tabular-nums">{formatCurrency(leakage.expectedRevenue)}</p>
                   </div>
                   <Banknote className="h-8 w-8 text-blue-500 opacity-50" />
                 </div>
@@ -242,8 +242,8 @@ const ProblemAreasReport = () => {
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs text-gray-500 uppercase font-medium">Actual Collected</p>
-                    <p className="text-xl font-bold text-green-600 mt-1">{formatCurrency(leakage.actualCollected)}</p>
+                    <p className="text-xs text-muted-foreground uppercase font-medium">Actual Collected</p>
+                    <p className="text-xl font-semibold text-success mt-1 tabular-nums">{formatCurrency(leakage.actualCollected)}</p>
                   </div>
                   <Banknote className="h-8 w-8 text-green-500 opacity-50" />
                 </div>
@@ -254,8 +254,8 @@ const ProblemAreasReport = () => {
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs text-gray-500 uppercase font-medium">Revenue Leakage</p>
-                    <p className="text-xl font-bold text-red-600 mt-1">{formatCurrency(leakage.leakageAmount)}</p>
+                    <p className="text-xs text-muted-foreground uppercase font-medium">Revenue Leakage</p>
+                    <p className="text-xl font-semibold text-destructive mt-1 tabular-nums">{formatCurrency(leakage.leakageAmount)}</p>
                   </div>
                   <TrendingDown className="h-8 w-8 text-red-500 opacity-50" />
                 </div>
@@ -266,8 +266,8 @@ const ProblemAreasReport = () => {
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs text-gray-500 uppercase font-medium">Leakage Rate</p>
-                    <p className="text-xl font-bold text-orange-600 mt-1">{leakage.leakagePercent.toFixed(1)}%</p>
+                    <p className="text-xs text-muted-foreground uppercase font-medium">Leakage Rate</p>
+                    <p className="text-xl font-semibold text-orange-600 mt-1 tabular-nums">{leakage.leakagePercent.toFixed(1)}%</p>
                   </div>
                   <AlertTriangle className="h-8 w-8 text-orange-500 opacity-50" />
                 </div>
@@ -287,7 +287,7 @@ const ProblemAreasReport = () => {
           <CardContent>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               <div>
-                <label className="text-xs font-medium text-gray-500 mb-1.5 block">Area Type</label>
+                <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Area Type</label>
                 <Select value={typeFilter} onValueChange={setTypeFilter}>
                   <SelectTrigger>
                     <SelectValue />
@@ -301,7 +301,7 @@ const ProblemAreasReport = () => {
               </div>
 
               <div>
-                <label className="text-xs font-medium text-gray-500 mb-1.5 block">Collection Agent Territory</label>
+                <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Collection Agent Territory</label>
                 <Select value={agentId || "all"} onValueChange={(v) => setAgentId(v === "all" ? "" : v)}>
                   <SelectTrigger>
                     <SelectValue placeholder="All Territories" />
@@ -320,15 +320,15 @@ const ProblemAreasReport = () => {
 
         {/* Report Table */}
         <Card>
-          <CardHeader className="border-b bg-gray-50">
+          <CardHeader className="border-b border-border bg-muted/40">
             <div className="flex items-center justify-between">
               <CardTitle className="text-base">
                 Problem Areas
-                <span className="text-gray-400 font-normal ml-2">
+                <span className="text-muted-foreground font-normal ml-2">
                   ({filteredAreas.length} records)
                 </span>
               </CardTitle>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-muted-foreground">
                 Sorted by collection rate (lowest first)
               </p>
             </div>
@@ -339,7 +339,7 @@ const ProblemAreasReport = () => {
                 {[...Array(10)].map((_, i) => <Skeleton key={i} className="h-12" />)}
               </div>
             ) : filteredAreas.length === 0 ? (
-              <div className="p-12 text-center text-gray-400">
+              <div className="p-12 text-center text-muted-foreground">
                 <MapPin className="h-12 w-12 mx-auto mb-3 opacity-50" />
                 <p>No area data available</p>
               </div>
@@ -348,7 +348,7 @@ const ProblemAreasReport = () => {
                 <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
-                      <TableRow className="bg-gray-50">
+                      <TableRow className="bg-muted/40">
                         <TableHead className="w-16 font-semibold">Rank</TableHead>
                         <TableHead className="w-24 font-semibold">Type</TableHead>
                         <TableHead className="font-semibold">Name</TableHead>
@@ -362,8 +362,8 @@ const ProblemAreasReport = () => {
                     </TableHeader>
                     <TableBody>
                       {paginatedAreas.map((area, index) => (
-                        <TableRow key={`${area.type}-${area.id}`} className="hover:bg-gray-50">
-                          <TableCell className="font-mono text-gray-500">{startIndex + index + 1}</TableCell>
+                        <TableRow key={`${area.type}-${area.id}`} className="hover:bg-muted/40">
+                          <TableCell className="font-mono text-muted-foreground tabular-nums">{startIndex + index + 1}</TableCell>
                           <TableCell>
                             <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
                               area.type === "ward" ? "bg-blue-100 text-blue-800" : "bg-purple-100 text-purple-800"
@@ -373,16 +373,16 @@ const ProblemAreasReport = () => {
                           </TableCell>
                           <TableCell className="font-medium">
                             <div className="flex items-center gap-2">
-                              <MapPin className="h-4 w-4 text-gray-400" />
+                              <MapPin className="h-4 w-4 text-muted-foreground" />
                               {area.name}
                             </div>
                           </TableCell>
-                          <TableCell className="text-center">{area.customerCount}</TableCell>
-                          <TableCell className="text-center text-red-600">{area.debtorCount}</TableCell>
-                          <TableCell className="text-right text-red-600 font-medium">
+                          <TableCell className="text-center tabular-nums">{area.customerCount}</TableCell>
+                          <TableCell className="text-center text-destructive tabular-nums">{area.debtorCount}</TableCell>
+                          <TableCell className="text-right text-destructive font-medium tabular-nums">
                             {formatCurrency(area.totalDebt)}
                           </TableCell>
-                          <TableCell className="text-right text-green-600">
+                          <TableCell className="text-right text-success tabular-nums">
                             {formatCurrency(area.totalCollected)}
                           </TableCell>
                           <TableCell className="text-center">
@@ -395,7 +395,7 @@ const ProblemAreasReport = () => {
                               {area.collectionRate.toFixed(1)}%
                             </span>
                           </TableCell>
-                          <TableCell className="text-right text-gray-600">
+                          <TableCell className="text-right text-muted-foreground tabular-nums">
                             {formatCurrency(area.avgDebtPerCustomer)}
                           </TableCell>
                         </TableRow>
@@ -406,8 +406,8 @@ const ProblemAreasReport = () => {
 
                 {/* Pagination */}
                 {totalPages > 1 && (
-                  <div className="flex items-center justify-between px-4 py-3 border-t bg-gray-50">
-                    <div className="text-sm text-gray-600">
+                  <div className="flex items-center justify-between px-4 py-3 border-t border-border bg-muted/40">
+                    <div className="text-sm text-muted-foreground">
                       Showing {startIndex + 1} to {Math.min(endIndex, filteredAreas.length)} of {filteredAreas.length.toLocaleString()} records
                     </div>
                     <div className="flex items-center gap-2">
@@ -424,7 +424,7 @@ const ProblemAreasReport = () => {
                         {currentPage > 2 && (
                           <>
                             <Button variant="outline" size="sm" onClick={() => goToPage(1)}>1</Button>
-                            {currentPage > 3 && <span className="px-2 text-gray-400">...</span>}
+                            {currentPage > 3 && <span className="px-2 text-muted-foreground">...</span>}
                           </>
                         )}
                         {currentPage > 1 && (
@@ -440,7 +440,7 @@ const ProblemAreasReport = () => {
                         )}
                         {currentPage < totalPages - 1 && (
                           <>
-                            {currentPage < totalPages - 2 && <span className="px-2 text-gray-400">...</span>}
+                            {currentPage < totalPages - 2 && <span className="px-2 text-muted-foreground">...</span>}
                             <Button variant="outline" size="sm" onClick={() => goToPage(totalPages)}>
                               {totalPages}
                             </Button>

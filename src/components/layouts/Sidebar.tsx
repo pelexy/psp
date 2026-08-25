@@ -11,7 +11,8 @@ import {
   ChevronDown,
   Recycle,
   Receipt,
-} from "lucide-react";
+  ArrowsClockwise,
+} from "@/lib/icons";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -35,9 +36,15 @@ const navItems: NavItem[] = [
     name: "Billing",
     icon: Receipt,
     children: [
-      { name: "Plans", path: "/billing/plans" },
-      { name: "Invoices", path: "/billing/invoices" },
-      { name: "Payments", path: "/billing/payments" },
+      { name: "Bills", path: "/billing/bills" },
+      { name: "Generated Bills", path: "/billing/generated-bills" },
+    ],
+  },
+  {
+    name: "Transactions",
+    icon: ArrowsClockwise,
+    children: [
+      { name: "Payments", path: "/transactions/payments" },
     ],
   },
   {
@@ -67,7 +74,7 @@ export const Sidebar = () => {
   const { logout } = useAuth();
   const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(false);
-  const [expandedSections, setExpandedSections] = useState<string[]>(["Billing", "Agents", "Reports"]);
+  const [expandedSections, setExpandedSections] = useState<string[]>(["Billing", "Transactions", "Agents", "Reports"]);
 
   const handleLogout = () => {
     logout();

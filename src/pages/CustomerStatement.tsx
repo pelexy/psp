@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/layouts/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, Printer } from "lucide-react";
+import { ArrowLeft, Printer } from "@/lib/icons";
 import { apiService } from "@/services/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -76,8 +76,8 @@ const CustomerStatement = () => {
       <DashboardLayout>
         <div className="p-6">
           <div className="text-center py-12">
-            <h2 className="text-xl font-semibold text-gray-900">No Pending Invoices</h2>
-            <p className="text-gray-500 mt-2">This customer has no outstanding invoices.</p>
+            <h2 className="text-xl font-semibold tracking-tight text-foreground">No Pending Invoices</h2>
+            <p className="text-sm text-muted-foreground mt-2">This customer has no outstanding invoices.</p>
             <Button onClick={() => navigate(-1)} className="mt-4">
               Go Back
             </Button>
@@ -93,7 +93,7 @@ const CustomerStatement = () => {
   return (
     <DashboardLayout>
       {/* Action Bar */}
-      <div className="p-4 border-b bg-white print:hidden">
+      <div className="p-4 border-b border-border bg-card print:hidden">
         <div className="flex items-center justify-between">
           <Button variant="ghost" onClick={() => navigate(-1)}>
             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -107,7 +107,7 @@ const CustomerStatement = () => {
       </div>
 
       {/* Statement Content - LAWMA Style */}
-      <div className="p-4 md:p-6 bg-gray-100 min-h-screen print:bg-white print:p-0">
+      <div className="p-4 md:p-6 bg-background min-h-screen print:bg-white print:p-0">
         <div
           ref={printRef}
           data-print-content

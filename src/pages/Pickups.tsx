@@ -12,7 +12,7 @@ import { apiService } from "@/services/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { CheckCircle2, XCircle, Filter, X, Search } from "lucide-react";
+import { CheckCircle2, XCircle, Filter, X, Search } from "@/lib/icons";
 
 const Pickups = () => {
   const { accessToken } = useAuth();
@@ -85,10 +85,10 @@ const Pickups = () => {
       header: "Date & Time",
       accessor: (pickup) => (
         <div>
-          <p className="font-medium text-gray-900">
+          <p className="font-medium text-foreground">
             {pickup.collectionDate ? format(new Date(pickup.collectionDate), "MMM dd, yyyy") : 'N/A'}
           </p>
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-muted-foreground">
             {pickup.collectionDate ? format(new Date(pickup.collectionDate), "HH:mm") : ''}
           </p>
         </div>
@@ -99,7 +99,7 @@ const Pickups = () => {
       header: "Customer",
       accessor: (pickup) => (
         <div
-          className={pickup.customer?.id ? "cursor-pointer hover:bg-gray-50 -m-2 p-2 rounded transition-colors" : ""}
+          className={pickup.customer?.id ? "cursor-pointer hover:bg-muted/40 -m-2 p-2 rounded transition-colors" : ""}
           onClick={(e) => {
             if (pickup.customer?.id) {
               e.stopPropagation();
@@ -107,10 +107,10 @@ const Pickups = () => {
             }
           }}
         >
-          <p className={`font-medium ${pickup.customer?.id ? "text-blue-600 hover:text-blue-800" : "text-gray-900"}`}>
+          <p className={`font-medium ${pickup.customer?.id ? "text-primary" : "text-foreground"}`}>
             {pickup.customer?.name || 'N/A'}
           </p>
-          <p className="text-xs text-gray-500">{pickup.customer?.phone || ''}</p>
+          <p className="text-xs text-muted-foreground">{pickup.customer?.phone || ''}</p>
         </div>
       ),
     },
@@ -119,8 +119,8 @@ const Pickups = () => {
       header: "Agent",
       accessor: (pickup) => (
         <div>
-          <p className="font-medium text-gray-900">{pickup.staff?.name || 'N/A'}</p>
-          <p className="text-xs text-gray-500 font-mono">{pickup.staff?.staffId || ''}</p>
+          <p className="font-medium text-foreground">{pickup.staff?.name || 'N/A'}</p>
+          <p className="text-xs text-muted-foreground font-mono">{pickup.staff?.staffId || ''}</p>
         </div>
       ),
     },
@@ -128,14 +128,14 @@ const Pickups = () => {
       key: "location",
       header: "Location",
       accessor: (pickup) => (
-        <span className="text-gray-700 text-sm">{pickup.location || 'N/A'}</span>
+        <span className="text-foreground text-sm">{pickup.location || 'N/A'}</span>
       ),
     },
     {
       key: "notes",
       header: "Notes",
       accessor: (pickup) => (
-        <span className="text-gray-600 text-sm italic">
+        <span className="text-muted-foreground text-sm italic">
           {pickup.notes || '-'}
         </span>
       ),
@@ -147,13 +147,13 @@ const Pickups = () => {
         <div className="flex items-center gap-1">
           {pickup.emailSent ? (
             <>
-              <CheckCircle2 className="h-4 w-4 text-green-600" />
-              <span className="text-xs text-green-600 font-medium">Sent</span>
+              <CheckCircle2 className="h-4 w-4 text-success" />
+              <span className="text-xs text-success font-medium">Sent</span>
             </>
           ) : (
             <>
-              <XCircle className="h-4 w-4 text-red-600" />
-              <span className="text-xs text-red-600 font-medium">Failed</span>
+              <XCircle className="h-4 w-4 text-destructive" />
+              <span className="text-xs text-destructive font-medium">Failed</span>
             </>
           )}
         </div>
@@ -163,12 +163,12 @@ const Pickups = () => {
 
   return (
     <DashboardLayout>
-      <div className="p-4 md:p-6 lg:p-8 space-y-6 lg:space-y-8 bg-gradient-to-br from-background via-background to-accent/5 max-w-full overflow-hidden">
+      <div className="p-4 md:p-6 lg:p-8 space-y-6 lg:space-y-8 bg-background max-w-full overflow-hidden">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-in fade-in slide-in-from-top-4 duration-500">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-xl md:text-2xl font-bold text-gray-900">Waste Collection Pickups</h1>
-            <p className="text-xs md:text-sm text-gray-500 mt-1">
+            <h1 className="text-xl md:text-2xl font-semibold tracking-tight text-foreground">Waste Collection Pickups</h1>
+            <p className="text-sm text-muted-foreground mt-1">
               All pickups confirmed by field agents • {pickups.length} pickups
             </p>
           </div>
@@ -183,7 +183,7 @@ const Pickups = () => {
               <Filter className="h-4 w-4" />
               Filters
               {hasActiveFilters && (
-                <span className="ml-1 px-1.5 py-0.5 text-xs bg-white text-blue-600 rounded-full">
+                <span className="ml-1 px-1.5 py-0.5 text-xs bg-primary-foreground text-primary rounded-full">
                   {[selectedAgent, startDate, endDate].filter(Boolean).length}
                 </span>
               )}
@@ -193,12 +193,12 @@ const Pickups = () => {
 
         {/* Filters Panel */}
         {showFilters && (
-          <Card className="animate-in fade-in slide-in-from-top-2 duration-300">
+          <Card>
             <CardContent className="pt-6">
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 {/* Agent Filter */}
                 <div className="space-y-2">
-                  <Label className="text-sm text-gray-600">Field Agent</Label>
+                  <Label className="text-sm text-muted-foreground">Field Agent</Label>
                   <Select value={selectedAgent || "all"} onValueChange={(val) => setSelectedAgent(val === "all" ? "" : val)}>
                     <SelectTrigger>
                       <SelectValue placeholder="All Agents" />
@@ -216,7 +216,7 @@ const Pickups = () => {
 
                 {/* Start Date */}
                 <div className="space-y-2">
-                  <Label className="text-sm text-gray-600">From Date</Label>
+                  <Label className="text-sm text-muted-foreground">From Date</Label>
                   <Input
                     type="date"
                     value={startDate}
@@ -226,7 +226,7 @@ const Pickups = () => {
 
                 {/* End Date */}
                 <div className="space-y-2">
-                  <Label className="text-sm text-gray-600">To Date</Label>
+                  <Label className="text-sm text-muted-foreground">To Date</Label>
                   <Input
                     type="date"
                     value={endDate}
@@ -236,7 +236,7 @@ const Pickups = () => {
 
                 {/* Limit */}
                 <div className="space-y-2">
-                  <Label className="text-sm text-gray-600">Records</Label>
+                  <Label className="text-sm text-muted-foreground">Records</Label>
                   <Select value={limit.toString()} onValueChange={(value) => setLimit(Number(value))}>
                     <SelectTrigger>
                       <SelectValue placeholder="Limit" />
@@ -253,12 +253,12 @@ const Pickups = () => {
 
               {/* Filter Actions */}
               {hasActiveFilters && (
-                <div className="flex items-center justify-between mt-4 pt-4 border-t">
-                  <div className="flex items-center gap-2 text-sm text-gray-500">
+                <div className="flex items-center justify-between mt-4 pt-4 border-t border-border">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Search className="h-4 w-4" />
                     Showing filtered results
                   </div>
-                  <Button variant="ghost" size="sm" onClick={clearFilters} className="gap-1 text-gray-500">
+                  <Button variant="ghost" size="sm" onClick={clearFilters} className="gap-1 text-muted-foreground">
                     <X className="h-4 w-4" />
                     Clear Filters
                   </Button>
@@ -269,7 +269,7 @@ const Pickups = () => {
         )}
 
         {/* Main Content Card */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 animate-in fade-in slide-in-from-bottom-4 duration-700 max-w-full overflow-hidden">
+        <div className="bg-card rounded-lg shadow-card border border-border max-w-full overflow-hidden">
           {/* Data Table */}
           <DataTable
             columns={columns}

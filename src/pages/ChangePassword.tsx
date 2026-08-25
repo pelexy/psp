@@ -3,7 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, AlertCircle, ArrowLeft } from "lucide-react";
+import { Loader2, AlertCircle, ArrowLeft } from "@/lib/icons";
 import { toast } from "sonner";
 import AuthLayout from "@/components/layouts/AuthLayout";
 import { useAuth } from "@/contexts/AuthContext";
@@ -84,10 +84,10 @@ const ChangePassword = () => {
 
         {/* Header */}
         <div className="mb-10">
-          <h2 className="text-3xl font-bold text-foreground mb-2">
+          <h2 className="text-3xl font-semibold tracking-tight text-foreground mb-2">
             {isTemporaryPassword ? "Set New Password" : "Change Password"}
           </h2>
-          <p className="text-muted-foreground">
+          <p className="text-sm text-muted-foreground">
             {isTemporaryPassword
               ? "You are using a temporary password. Please set a new password to continue."
               : "Update your password to keep your account secure"}
@@ -96,13 +96,13 @@ const ChangePassword = () => {
 
         {/* Info Message for Temporary Password */}
         {isTemporaryPassword && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-5 flex items-start gap-3 mb-6">
-            <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+          <div className="bg-muted/40 border border-border rounded-lg p-5 flex items-start gap-3 mb-6">
+            <AlertCircle className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
             <div>
-              <p className="font-semibold text-blue-900 mb-1">
+              <p className="font-semibold text-foreground mb-1">
                 Password Change Required
               </p>
-              <p className="text-sm text-blue-800">
+              <p className="text-sm text-muted-foreground">
                 For security reasons, you must change your temporary password before accessing the dashboard.
               </p>
             </div>
@@ -112,9 +112,9 @@ const ChangePassword = () => {
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-6">
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-3.5 flex items-start gap-2">
-              <AlertCircle className="h-5 w-5 text-red-600 mt-0.5 flex-shrink-0" />
-              <p className="text-sm text-red-800">{error}</p>
+            <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3.5 flex items-start gap-2">
+              <AlertCircle className="h-5 w-5 text-destructive mt-0.5 flex-shrink-0" />
+              <p className="text-sm text-destructive">{error}</p>
             </div>
           )}
 

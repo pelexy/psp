@@ -5,10 +5,14 @@ export interface Customer {
   customerId?: string;
   customerAccountNumber?: string;
   accountNumber?: string;
-  fullName?: string;
+  fullName?: string; // account name = property address (BuyPower-style)
   name?: string;
   phone?: string;
   email?: string;
+  // Contact person for the property (primary property user)
+  contactName?: string;
+  contactPhone?: string;
+  contactEmail?: string;
   address?: string;
   location?: string;
   city?: string;

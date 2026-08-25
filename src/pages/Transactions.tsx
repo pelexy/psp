@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, Filter, X, CreditCard, Wallet, Building2, HandCoins } from "lucide-react";
+import { Search, Filter, X, CreditCard, Wallet, Building2, HandCoins } from "@/lib/icons";
 import { apiService } from "@/services/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -23,6 +23,11 @@ interface Transaction {
   _id: string;
   transactionReference: string;
   amount: number;
+  // PSP "payment" copy: gross paid by the customer, platform fee, and the net
+  // that actually reached this PSP's wallet.
+  grossAmount?: number;
+  commissionAmount?: number;
+  netAmount?: number;
   type: string;
   status: string;
   paymentChannel: string;
@@ -33,12 +38,6 @@ interface Transaction {
     fullName: string;
     customerAccountNumber: string;
     phone?: string;
-  };
-  invoiceId?: {
-    _id: string;
-    invoiceNumber: string;
-    serviceName?: string;
-    collectionName?: string;
   };
   paidAt?: string;
   createdAt: string;
@@ -140,9 +139,9 @@ const Transactions = () => {
   const getStatusBadge = (status: string) => {
     switch (status?.toLowerCase()) {
       case "success":
-        return <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">Success</Badge>;
+        return <Badge variant="default">Success</Badge>;
       case "pending":
-        return <Badge variant="secondary" className="bg-yellow-100 text-yellow-700 border-yellow-200">Pending</Badge>;
+        return <Badge variant="secondary">Pending</Badge>;
       case "failed":
         return <Badge variant="destructive">Failed</Badge>;
       default:
@@ -161,7 +160,7 @@ const Transactions = () => {
       case "manual":
         return <HandCoins className="h-4 w-4 text-orange-500" />;
       default:
-        return <CreditCard className="h-4 w-4 text-gray-500" />;
+        return <CreditCard className="h-4 w-4 text-muted-foreground" />;
     }
   };
 
@@ -190,17 +189,35 @@ const Transactions = () => {
               }
             }}
           >
-            <p className="font-medium text-gray-900">{tx.customerId?.fullName || "N/A"}</p>
-            <p className="text-xs text-gray-500">{tx.customerId?.customerAccountNumber || ""}</p>
+            <p className="font-medium text-foreground">{tx.customerId?.fullName || "N/A"}</p>
+            <p className="text-xs text-muted-foreground">{tx.customerId?.customerAccountNumber || ""}</p>
           </div>
         ),
       },
       {
         key: "amount",
-        header: "Amount",
+        header: "Gross paid",
         accessor: (tx) => (
-          <span className="font-semibold text-gray-900">
-            ₦{(tx.amount || 0).toLocaleString()}
+          <span className="font-semibold tabular-nums text-foreground">
+            ₦{(tx.grossAmount ?? tx.amount ?? 0).toLocaleString()}
+          </span>
+        ),
+      },
+      {
+        key: "fee",
+        header: "Platform fee",
+        accessor: (tx) => (
+          <span className="tabular-nums text-muted-foreground">
+            {tx.commissionAmount ? `₦${tx.commissionAmount.toLocaleString()}` : "—"}
+          </span>
+        ),
+      },
+      {
+        key: "net",
+        header: "Net received",
+        accessor: (tx) => (
+          <span className="font-semibold tabular-nums text-emerald-600">
+            ₦{(tx.netAmount ?? tx.amount ?? 0).toLocaleString()}
           </span>
         ),
       },
@@ -215,20 +232,6 @@ const Transactions = () => {
         ),
       },
       {
-        key: "invoice",
-        header: "Service / Invoice",
-        accessor: (tx) => (
-          <div>
-            <p className="text-sm font-medium text-gray-900">
-              {tx.serviceName || tx.invoiceId?.serviceName || tx.invoiceId?.collectionName || tx.description || "N/A"}
-            </p>
-            <p className="text-xs text-gray-500 font-mono">
-              {tx.invoiceId?.invoiceNumber || "-"}
-            </p>
-          </div>
-        ),
-      },
-      {
         key: "status",
         header: "Status",
         accessor: (tx) => getStatusBadge(tx.status),
@@ -238,10 +241,10 @@ const Transactions = () => {
         header: "Date",
         accessor: (tx) => (
           <div className="text-sm">
-            <p className="text-gray-900">
+            <p className="text-foreground">
               {tx.paidAt ? format(new Date(tx.paidAt), "MMM dd, yyyy") : format(new Date(tx.createdAt), "MMM dd, yyyy")}
             </p>
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-muted-foreground">
               {tx.paidAt ? format(new Date(tx.paidAt), "hh:mm a") : format(new Date(tx.createdAt), "hh:mm a")}
             </p>
           </div>
@@ -253,24 +256,24 @@ const Transactions = () => {
 
   return (
     <DashboardLayout>
-      <div className="p-4 md:p-6 lg:p-8 space-y-6 lg:space-y-8 bg-gradient-to-br from-background via-background to-accent/5 max-w-full overflow-hidden">
+      <div className="p-4 md:p-6 lg:p-8 space-y-6 lg:space-y-8 bg-background max-w-full overflow-hidden">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-in fade-in slide-in-from-top-4 duration-500">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-xl md:text-2xl font-bold text-gray-900">Payments</h1>
-            <p className="text-xs md:text-sm text-gray-500 mt-1">
+            <h1 className="text-xl md:text-2xl font-semibold tracking-tight text-foreground">Payments</h1>
+            <p className="text-sm text-muted-foreground mt-1">
               View all payment transactions • {totalItems} total payments
             </p>
           </div>
         </div>
 
         {/* Main Content Card */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 animate-in fade-in slide-in-from-bottom-4 duration-700 max-w-full overflow-hidden">
+        <div className="bg-card rounded-lg shadow-card border border-border max-w-full overflow-hidden">
           {/* Search and Filters */}
-          <div className="p-4 md:p-6 border-b border-gray-200">
+          <div className="p-4 md:p-6 border-b border-border">
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
               <div className="flex-1 w-full relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Search by reference, customer name, or account number..."
                   value={searchQuery}
@@ -297,11 +300,11 @@ const Transactions = () => {
 
             {/* Filter Panel */}
             {showFilters && (
-              <div className="mt-4 pt-4 border-t border-gray-100">
+              <div className="mt-4 pt-4 border-t border-border">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   {/* Status Filter */}
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700">Status</label>
+                    <label className="text-sm font-medium text-muted-foreground">Status</label>
                     <Select
                       value={filters.status}
                       onValueChange={(value) => setFilters({ ...filters, status: value })}
@@ -320,7 +323,7 @@ const Transactions = () => {
 
                   {/* Channel Filter */}
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700">Payment Channel</label>
+                    <label className="text-sm font-medium text-muted-foreground">Payment Channel</label>
                     <Select
                       value={filters.paymentChannel}
                       onValueChange={(value) => setFilters({ ...filters, paymentChannel: value })}
@@ -340,7 +343,7 @@ const Transactions = () => {
 
                   {/* Start Date */}
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700">From Date</label>
+                    <label className="text-sm font-medium text-muted-foreground">From Date</label>
                     <Input
                       type="date"
                       value={filters.startDate}
@@ -351,7 +354,7 @@ const Transactions = () => {
 
                   {/* End Date */}
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700">To Date</label>
+                    <label className="text-sm font-medium text-muted-foreground">To Date</label>
                     <Input
                       type="date"
                       value={filters.endDate}
@@ -368,7 +371,7 @@ const Transactions = () => {
                       variant="ghost"
                       size="sm"
                       onClick={handleClearFilters}
-                      className="gap-2 text-gray-500"
+                      className="gap-2 text-muted-foreground"
                     >
                       <X className="h-4 w-4" />
                       Clear all filters

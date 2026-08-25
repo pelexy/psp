@@ -10,7 +10,7 @@ import { apiService } from "@/services/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { MapPin, Eye } from "lucide-react";
+import { MapPin, Eye } from "@/lib/icons";
 
 const Agents = () => {
   const { accessToken } = useAuth();
@@ -54,8 +54,8 @@ const Agents = () => {
       header: "Name",
       accessor: (agent) => (
         <div>
-          <p className="font-medium text-gray-900">{agent.fullName}</p>
-          <p className="text-xs text-gray-500">{agent.phone}</p>
+          <p className="font-medium text-foreground">{agent.fullName}</p>
+          <p className="text-xs text-muted-foreground">{agent.phone}</p>
         </div>
       ),
     },
@@ -63,7 +63,7 @@ const Agents = () => {
       key: "email",
       header: "Email",
       accessor: (agent) => (
-        <span className="text-gray-700">{agent.email}</span>
+        <span className="text-foreground">{agent.email}</span>
       ),
     },
     {
@@ -76,15 +76,15 @@ const Agents = () => {
 
         return hasTerritory ? (
           <div className="flex items-center gap-1">
-            <MapPin className="h-3 w-3 text-gray-400" />
-            <span className="text-sm text-gray-600">
+            <MapPin className="h-3 w-3 text-muted-foreground" />
+            <span className="text-sm text-muted-foreground">
               {wardCount > 0 && `${wardCount} ward${wardCount > 1 ? "s" : ""}`}
               {wardCount > 0 && streetCount > 0 && ", "}
               {streetCount > 0 && `${streetCount} street${streetCount > 1 ? "s" : ""}`}
             </span>
           </div>
         ) : (
-          <span className="text-xs text-gray-400">Not assigned</span>
+          <span className="text-xs text-muted-foreground">Not assigned</span>
         );
       },
     },
@@ -109,7 +109,7 @@ const Agents = () => {
       key: "createdAt",
       header: "Created",
       accessor: (agent) => (
-        <span className="text-sm text-gray-600">
+        <span className="text-sm text-muted-foreground">
           {agent.createdAt ? format(new Date(agent.createdAt), "MMM dd, yyyy") : 'N/A'}
         </span>
       ),
@@ -125,7 +125,7 @@ const Agents = () => {
             e.stopPropagation();
             handleViewAgent(agent.id);
           }}
-          className="text-gray-500 hover:text-gray-700"
+          className="text-muted-foreground"
         >
           <Eye className="h-4 w-4" />
         </Button>
@@ -135,12 +135,12 @@ const Agents = () => {
 
   return (
     <DashboardLayout>
-      <div className="p-4 md:p-6 lg:p-8 space-y-6 lg:space-y-8 bg-gradient-to-br from-background via-background to-accent/5 max-w-full overflow-hidden">
+      <div className="p-4 md:p-6 lg:p-8 space-y-6 lg:space-y-8 bg-background max-w-full overflow-hidden">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-in fade-in slide-in-from-top-4 duration-500">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-xl md:text-2xl font-bold text-gray-900">Field Agents</h1>
-            <p className="text-xs md:text-sm text-gray-500 mt-1">
+            <h1 className="text-xl md:text-2xl font-semibold tracking-tight text-foreground">Field Agents</h1>
+            <p className="text-sm text-muted-foreground mt-1">
               Manage field staff • {agents.length} total agents
             </p>
           </div>
@@ -149,7 +149,7 @@ const Agents = () => {
         </div>
 
         {/* Main Content Card */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 animate-in fade-in slide-in-from-bottom-4 duration-700 max-w-full overflow-hidden">
+        <div className="bg-card rounded-lg shadow-card border border-border max-w-full overflow-hidden">
           {/* Data Table */}
           <DataTable
             columns={columns}

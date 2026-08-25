@@ -9,7 +9,7 @@ import {
   FileText,
   TrendingUp,
   AlertCircle,
-} from "lucide-react";
+} from "@/lib/icons";
 
 const DashboardNew = () => {
   const { accessToken } = useAuth();

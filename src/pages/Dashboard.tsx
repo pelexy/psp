@@ -8,6 +8,7 @@ import { RecentTransactions } from "@/components/RecentTransactions";
 import { StaffPerformance } from "@/components/StaffPerformance";
 import { CollectionServices } from "@/components/CollectionServices";
 import { TimeFilter } from "@/components/TimeFilter";
+import { BillingStatus } from "@/components/BillingStatus";
 import { DashboardSkeleton } from "@/components/DashboardSkeleton";
 import { useAuth } from "@/contexts/AuthContext";
 import { apiService } from "@/services/api";
@@ -15,11 +16,11 @@ import type { DateRangeType } from "@/utils/dateRanges";
 import { getDateRangeParams } from "@/utils/dateRanges";
 import { formatCurrency } from "@/utils/formatCurrency";
 import {
-  FileText,
+  Users,
   Trash2,
   CheckCircle2,
-  AlertCircle,
-} from "lucide-react";
+  HandCoins,
+} from "@/lib/icons";
 
 const Dashboard = () => {
   const [loading, setLoading] = useState(true);
@@ -99,15 +100,15 @@ const Dashboard = () => {
 
   return (
     <DashboardLayout>
-      <div className="w-full max-w-full overflow-x-hidden p-3 sm:p-4 md:p-6 lg:p-8 space-y-4 sm:space-y-6 lg:space-y-8 bg-gradient-to-br from-background via-background to-accent/5">
+      <div className="w-full max-w-full overflow-x-hidden p-4 md:p-6 lg:p-8 space-y-6">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 animate-in fade-in slide-in-from-top-4 duration-500">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
           <div className="w-full sm:w-auto">
-            <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 truncate">
+            <h1 className="text-xl md:text-2xl font-semibold tracking-tight text-foreground truncate">
               {dashboardData.pspInfo?.companyName || psp?.companyName || "Dashboard Overview"}
             </h1>
-            <p className="text-xs md:text-sm text-gray-500 mt-1">
-              Welcome back! Here's your waste management PSP performance
+            <p className="text-sm text-muted-foreground mt-1">
+              Welcome back — here's your collection performance at a glance
             </p>
           </div>
           <div className="w-full sm:w-auto">
@@ -121,18 +122,8 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Financial Overview - Wallet & Invoice Combined */}
-        <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100">
-          <FinancialOverview comprehensiveData={comprehensiveData} />
-        </div>
-
-        {/* Revenue Chart - Full Width */}
-        <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 delay-300">
-          <RevenueChart revenueData={revenuePerformance} />
-        </div>
-
         {/* Operations Metrics */}
-        <div className="grid gap-3 sm:gap-4 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-[400ms]">
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
           <MetricCard
             title="Waste Collections"
             subtitle={`Year ${selectedYear}`}
@@ -152,33 +143,42 @@ const Dashboard = () => {
             iconColor="success"
           />
           <MetricCard
-            title="Total Invoices"
+            title="Customers"
             subtitle={`Year ${selectedYear}`}
-            value={performanceData ? performanceData.totalInvoices.thisMonth.toString() : "0"}
-            change={performanceData ? `${formatCurrency(performanceData.totalInvoices.thisMonthValue)} total value` : "₦0"}
+            value={comprehensiveData ? (comprehensiveData.activeCustomers?.total ?? 0).toLocaleString() : "0"}
+            change={comprehensiveData ? `${comprehensiveData.activeCustomers?.active ?? 0} active` : "0 active"}
             changeType="neutral"
-            icon={FileText}
+            icon={Users}
             iconColor="primary"
           />
           <MetricCard
-            title="Pending Invoices"
-            subtitle="Awaiting payment"
-            value={performanceData ? performanceData.pendingInvoices.count.toString() : "0"}
-            change={performanceData ? `${formatCurrency(performanceData.pendingInvoices.totalValue)} value` : "₦0"}
+            title="Outstanding"
+            subtitle="Owed on customer ledgers"
+            value={comprehensiveData ? formatCurrency(comprehensiveData.billingSummary?.outstanding || 0) : "₦0"}
+            change={comprehensiveData ? `${(comprehensiveData.billingSummary?.customersOwing || 0).toLocaleString()} customer${comprehensiveData.billingSummary?.customersOwing === 1 ? "" : "s"} owing` : "0 customers"}
             changeType="neutral"
-            icon={AlertCircle}
+            icon={HandCoins}
             iconColor="warning"
           />
         </div>
 
+        {/* Bill generation status */}
+        <BillingStatus />
+
+        {/* Financial Overview - Wallet & Invoice Combined */}
+        <FinancialOverview comprehensiveData={comprehensiveData} />
+
+        {/* Revenue Chart - Full Width */}
+        <RevenueChart revenueData={revenuePerformance} />
+
         {/* Staff Performance & Collection Services */}
-        <div className="grid gap-3 sm:gap-4 md:gap-6 grid-cols-1 lg:grid-cols-2 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-[500ms]">
+        <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
           <StaffPerformance agentsData={topAgents} />
           <CollectionServices servicesData={collectionServices} />
         </div>
 
         {/* Customers & Transactions */}
-        <div className="grid gap-3 sm:gap-4 md:gap-6 grid-cols-1 lg:grid-cols-2 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-[600ms]">
+        <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
           <TopCustomers customersData={topCustomers} />
           <RecentTransactions transactionsData={recentTransactions} />
         </div>

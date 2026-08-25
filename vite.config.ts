@@ -14,10 +14,9 @@ export default defineConfig({
     port: 3006,
     proxy: {
       '/api': {
-        // Production API - uncomment to restore
-        // target: 'https://payapi.buypowerpass.africa',
-        // Localhost API
-        target: 'http://localhost:3005',
+        // Local backend (new code) — see payservice on :3007.
+        target: 'http://localhost:3007',
+        // Live production API: 'https://api.wastecollect.ng'
         changeOrigin: true,
         secure: false,
         rewrite: (path) => path.replace(/^\/api/, '/api'),

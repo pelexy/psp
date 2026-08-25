@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Recycle, LogOut } from "lucide-react";
+import { Recycle, LogOut } from "@/lib/icons";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";

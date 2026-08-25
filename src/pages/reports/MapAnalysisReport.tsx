@@ -40,7 +40,7 @@ import {
   Crosshair,
   ChevronLeft,
   ChevronRight,
-} from "lucide-react";
+} from "@/lib/icons";
 import {
   MapContainer,
   TileLayer,
@@ -403,8 +403,8 @@ const MapAnalysisReport = () => {
       <div className="p-4 md:p-6 lg:p-8 space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Map Analysis</h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <h1 className="text-xl md:text-2xl font-semibold tracking-tight text-foreground">Map Analysis</h1>
+          <p className="text-sm text-muted-foreground mt-1">
             Walk a street, see gaps between properties, and flag suspected unmapped houses.
           </p>
         </div>
@@ -414,7 +414,7 @@ const MapAnalysisReport = () => {
           <CardContent className="p-4 sm:p-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="text-xs font-medium text-gray-500 mb-1 block">
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">
                   Ward (optional)
                 </label>
                 <Select
@@ -439,7 +439,7 @@ const MapAnalysisReport = () => {
                 </Select>
               </div>
               <div>
-                <label className="text-xs font-medium text-gray-500 mb-1 block">
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">
                   Street *
                 </label>
                 <Select
@@ -466,8 +466,8 @@ const MapAnalysisReport = () => {
         {!streetId && (
           <Card>
             <CardContent className="p-12 text-center">
-              <MapPin className="h-10 w-10 text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-500">
+              <MapPin className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+              <p className="text-muted-foreground">
                 Select a street above to load its map analysis.
               </p>
             </CardContent>
@@ -488,13 +488,13 @@ const MapAnalysisReport = () => {
               <Card>
                 <CardContent className="p-4">
                   <div className="flex items-center gap-2 mb-2">
-                    <Users className="h-4 w-4 text-blue-500" />
-                    <span className="text-xs text-gray-500 uppercase">Properties</span>
+                    <Users className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-xs text-muted-foreground uppercase">Properties</span>
                   </div>
-                  <p className="text-2xl font-bold text-gray-900">
+                  <p className="text-2xl font-semibold text-foreground tabular-nums">
                     {data.stats.totalProperties.toLocaleString()}
                   </p>
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-muted-foreground mt-1">
                     {data.stats.mappedCount.toLocaleString()} mapped •{" "}
                     {data.stats.unmappedCount.toLocaleString()} not mapped
                   </p>
@@ -503,50 +503,50 @@ const MapAnalysisReport = () => {
               <Card>
                 <CardContent className="p-4">
                   <div className="flex items-center gap-2 mb-2">
-                    <Navigation className="h-4 w-4 text-emerald-500" />
-                    <span className="text-xs text-gray-500 uppercase">Coverage</span>
+                    <Navigation className="h-4 w-4 text-success" />
+                    <span className="text-xs text-muted-foreground uppercase">Coverage</span>
                   </div>
-                  <p className="text-2xl font-bold text-gray-900">
+                  <p className="text-2xl font-semibold text-foreground tabular-nums">
                     {data.stats.coverageRate}%
                   </p>
-                  <p className="text-xs text-gray-500 mt-1">GPS-captured rate</p>
+                  <p className="text-xs text-muted-foreground mt-1">GPS-captured rate</p>
                 </CardContent>
               </Card>
               <Card>
                 <CardContent className="p-4">
                   <div className="flex items-center gap-2 mb-2">
-                    <Ruler className="h-4 w-4 text-purple-500" />
-                    <span className="text-xs text-gray-500 uppercase">Median Gap</span>
+                    <Ruler className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-xs text-muted-foreground uppercase">Median Gap</span>
                   </div>
-                  <p className="text-2xl font-bold text-gray-900">
+                  <p className="text-2xl font-semibold text-foreground tabular-nums">
                     {formatMeters(data.stats.medianGapMeters)}
                   </p>
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-muted-foreground mt-1">
                     Mean {formatMeters(data.stats.meanGapMeters)} • Max{" "}
                     {formatMeters(data.stats.maxGapMeters)}
                   </p>
                 </CardContent>
               </Card>
-              <Card className={data.stats.flaggedJumps > 0 ? "border-red-300" : ""}>
+              <Card className={data.stats.flaggedJumps > 0 ? "border-destructive/40" : ""}>
                 <CardContent className="p-4">
                   <div className="flex items-center gap-2 mb-2">
                     <AlertTriangle
                       className={`h-4 w-4 ${
-                        data.stats.flaggedJumps > 0 ? "text-red-500" : "text-gray-400"
+                        data.stats.flaggedJumps > 0 ? "text-destructive" : "text-muted-foreground"
                       }`}
                     />
-                    <span className="text-xs text-gray-500 uppercase">
+                    <span className="text-xs text-muted-foreground uppercase">
                       Suspected Jumps
                     </span>
                   </div>
                   <p
-                    className={`text-2xl font-bold ${
-                      data.stats.flaggedJumps > 0 ? "text-red-600" : "text-gray-900"
+                    className={`text-2xl font-semibold tabular-nums ${
+                      data.stats.flaggedJumps > 0 ? "text-destructive" : "text-foreground"
                     }`}
                   >
                     {data.stats.flaggedJumps.toLocaleString()}
                   </p>
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-muted-foreground mt-1">
                     ~{data.stats.estimatedMissedProperties.toLocaleString()} houses likely
                     missed
                   </p>
@@ -560,7 +560,7 @@ const MapAnalysisReport = () => {
                 <CardTitle className="text-base">
                   {data.street.name}
                   {data.street.wardName && (
-                    <span className="text-sm font-normal text-gray-500 ml-2">
+                    <span className="text-sm font-normal text-muted-foreground ml-2">
                       ({data.street.wardName})
                     </span>
                   )}
@@ -568,7 +568,7 @@ const MapAnalysisReport = () => {
               </CardHeader>
               <CardContent>
                 {data.center ? (
-                  <div className="h-[560px] w-full rounded-lg overflow-hidden border">
+                  <div className="h-[560px] w-full rounded-lg overflow-hidden border border-border">
                     <MapContainer
                       center={[data.center.latitude, data.center.longitude]}
                       zoom={17}
@@ -605,16 +605,16 @@ const MapAnalysisReport = () => {
                     </MapContainer>
                   </div>
                 ) : (
-                  <div className="h-[560px] flex items-center justify-center bg-gray-50 rounded-lg border">
+                  <div className="h-[560px] flex items-center justify-center bg-muted/40 rounded-lg border border-border">
                     <div className="text-center">
-                      <MapPin className="h-8 w-8 text-gray-300 mx-auto mb-2" />
-                      <p className="text-sm text-gray-500">
+                      <MapPin className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                      <p className="text-sm text-muted-foreground">
                         No mapped properties on this street yet.
                       </p>
                     </div>
                   </div>
                 )}
-                <div className="flex items-center flex-wrap gap-4 mt-3 text-xs text-gray-500">
+                <div className="flex items-center flex-wrap gap-4 mt-3 text-xs text-muted-foreground">
                   <div className="flex items-center gap-1">
                     <div className="w-3 h-3 rounded-full bg-emerald-500 border border-white shadow"></div>
                     Property (clusters at low zoom)
@@ -668,20 +668,20 @@ const MapAnalysisReport = () => {
                 <TabsContent value="jumps" className="m-0">
                   <CardContent className="pt-6">
                     {jumpSegments.length === 0 ? (
-                      <p className="text-sm text-gray-500 text-center py-12">
+                      <p className="text-sm text-muted-foreground text-center py-12">
                         No suspected jumps on this street. Coverage looks contiguous.
                       </p>
                     ) : (
                       <>
-                        <p className="text-xs text-gray-500 mb-4">
+                        <p className="text-xs text-muted-foreground mb-4">
                           Gaps where consecutive properties are more than{" "}
                           <strong>2× the median</strong> ({formatMeters(data.stats.jumpThresholdMeters)})
                           apart. Likely missed houses between them.
                         </p>
-                        <div className="overflow-x-auto border rounded-lg">
+                        <div className="overflow-x-auto border border-border rounded-lg">
                           <Table>
                             <TableHeader>
-                              <TableRow className="bg-gray-50">
+                              <TableRow className="bg-muted/40">
                                 <TableHead>From</TableHead>
                                 <TableHead>To</TableHead>
                                 <TableHead className="text-right">Gap</TableHead>
@@ -699,7 +699,7 @@ const MapAnalysisReport = () => {
                                       <div className="font-medium">
                                         #{from?.position} {from?.fullName || "—"}
                                       </div>
-                                      <div className="font-mono text-xs text-gray-500">
+                                      <div className="font-mono text-xs text-muted-foreground">
                                         {from?.accountNumber}
                                       </div>
                                     </TableCell>
@@ -707,14 +707,14 @@ const MapAnalysisReport = () => {
                                       <div className="font-medium">
                                         #{to?.position} {to?.fullName || "—"}
                                       </div>
-                                      <div className="font-mono text-xs text-gray-500">
+                                      <div className="font-mono text-xs text-muted-foreground">
                                         {to?.accountNumber}
                                       </div>
                                     </TableCell>
-                                    <TableCell className="text-right font-semibold text-red-600">
+                                    <TableCell className="text-right font-semibold text-destructive tabular-nums">
                                       {formatMeters(s.distanceMeters)}
                                     </TableCell>
-                                    <TableCell className="text-right font-semibold">
+                                    <TableCell className="text-right font-semibold tabular-nums">
                                       {s.estimatedMissed > 0 ? `~${s.estimatedMissed}` : "—"}
                                     </TableCell>
                                     <TableCell className="text-right">
@@ -749,7 +749,7 @@ const MapAnalysisReport = () => {
                 <TabsContent value="properties" className="m-0">
                   <CardContent className="pt-6">
                     <div className="relative max-w-md mb-4">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input
                         placeholder="Search name, account, phone, address..."
                         value={propSearch}
@@ -760,10 +760,10 @@ const MapAnalysisReport = () => {
                         className="pl-10"
                       />
                     </div>
-                    <div className="overflow-x-auto border rounded-lg">
+                    <div className="overflow-x-auto border border-border rounded-lg">
                       <Table>
                         <TableHeader>
-                          <TableRow className="bg-gray-50">
+                          <TableRow className="bg-muted/40">
                             <TableHead className="w-12">#</TableHead>
                             <TableHead>Name</TableHead>
                             <TableHead>Account</TableHead>
@@ -776,29 +776,29 @@ const MapAnalysisReport = () => {
                         <TableBody>
                           {propsPaged.length === 0 && (
                             <TableRow>
-                              <TableCell colSpan={7} className="text-center text-gray-500 py-8">
+                              <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                                 No properties match your search.
                               </TableCell>
                             </TableRow>
                           )}
                           {propsPaged.map((p) => (
                             <TableRow key={p.customerId}>
-                              <TableCell className="font-semibold text-gray-500">
+                              <TableCell className="font-semibold text-muted-foreground tabular-nums">
                                 {p.position}
                               </TableCell>
                               <TableCell className="font-medium">{p.fullName}</TableCell>
                               <TableCell className="font-mono text-xs">{p.accountNumber}</TableCell>
                               <TableCell className="text-sm">{p.phone}</TableCell>
-                              <TableCell className="text-sm text-gray-600 max-w-[240px] truncate">
+                              <TableCell className="text-sm text-muted-foreground max-w-[240px] truncate">
                                 {p.address || "—"}
                               </TableCell>
                               <TableCell className="text-right">
                                 {p.currentBalance > 0 ? (
-                                  <span className="text-red-600 font-semibold">
+                                  <span className="text-destructive font-semibold tabular-nums">
                                     {formatCurrency(p.currentBalance)}
                                   </span>
                                 ) : (
-                                  <span className="text-gray-400">₦0</span>
+                                  <span className="text-muted-foreground tabular-nums">₦0</span>
                                 )}
                               </TableCell>
                               <TableCell className="text-right">
@@ -829,12 +829,12 @@ const MapAnalysisReport = () => {
                 {/* Unmapped tab */}
                 <TabsContent value="unmapped" className="m-0">
                   <CardContent className="pt-6">
-                    <p className="text-xs text-gray-500 mb-4">
+                    <p className="text-xs text-muted-foreground mb-4">
                       These properties have no GPS coordinates yet. Send a field agent to
                       capture coordinates so they can appear on the map.
                     </p>
                     <div className="relative max-w-md mb-4">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input
                         placeholder="Search name, account, phone, address..."
                         value={unmappedSearch}
@@ -845,10 +845,10 @@ const MapAnalysisReport = () => {
                         className="pl-10"
                       />
                     </div>
-                    <div className="overflow-x-auto border rounded-lg">
+                    <div className="overflow-x-auto border border-border rounded-lg">
                       <Table>
                         <TableHeader>
-                          <TableRow className="bg-gray-50">
+                          <TableRow className="bg-muted/40">
                             <TableHead>Name</TableHead>
                             <TableHead>Account</TableHead>
                             <TableHead>Phone</TableHead>
@@ -859,7 +859,7 @@ const MapAnalysisReport = () => {
                         <TableBody>
                           {unmappedPaged.length === 0 && (
                             <TableRow>
-                              <TableCell colSpan={5} className="text-center text-gray-500 py-8">
+                              <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
                                 {data.unmappedProperties.length === 0
                                   ? "Every property on this street has GPS coordinates."
                                   : "No properties match your search."}
@@ -871,16 +871,16 @@ const MapAnalysisReport = () => {
                               <TableCell className="font-medium">{p.fullName}</TableCell>
                               <TableCell className="font-mono text-xs">{p.accountNumber}</TableCell>
                               <TableCell className="text-sm">{p.phone}</TableCell>
-                              <TableCell className="text-sm text-gray-600 max-w-[260px] truncate">
+                              <TableCell className="text-sm text-muted-foreground max-w-[260px] truncate">
                                 {p.address || "—"}
                               </TableCell>
                               <TableCell className="text-right">
                                 {p.currentBalance > 0 ? (
-                                  <span className="text-red-600 font-semibold">
+                                  <span className="text-destructive font-semibold tabular-nums">
                                     {formatCurrency(p.currentBalance)}
                                   </span>
                                 ) : (
-                                  <span className="text-gray-400">₦0</span>
+                                  <span className="text-muted-foreground tabular-nums">₦0</span>
                                 )}
                               </TableCell>
                             </TableRow>
@@ -921,7 +921,7 @@ const Pagination = ({
   const endIdx = Math.min(page * PAGE_SIZE, total);
   return (
     <div className="flex items-center justify-between mt-4 text-sm">
-      <span className="text-gray-500">
+      <span className="text-muted-foreground tabular-nums">
         {startIdx.toLocaleString()}–{endIdx.toLocaleString()} of {total.toLocaleString()}
       </span>
       <div className="flex items-center gap-2">
@@ -933,7 +933,7 @@ const Pagination = ({
         >
           <ChevronLeft className="h-4 w-4" />
         </Button>
-        <span className="text-gray-700">
+        <span className="text-foreground tabular-nums">
           Page {page} of {totalPages}
         </span>
         <Button

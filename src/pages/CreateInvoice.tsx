@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { FileUp, Receipt, Upload, Download, CheckCircle2, XCircle, Loader2 } from "lucide-react";
+import { FileUp, Receipt, Upload, Download, CheckCircle2, XCircle, Loader2 } from "@/lib/icons";
 import { apiService } from "@/services/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -283,19 +283,19 @@ CUST-001-2024-000003,Electricity Bill,2025-12-25,,December electricity`;
 
   return (
     <DashboardLayout>
-      <div className="p-4 md:p-6 lg:p-8 space-y-6 lg:space-y-8 bg-gradient-to-br from-background via-background to-accent/5">
+      <div className="p-4 md:p-6 lg:p-8 space-y-6 lg:space-y-8 bg-background">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-in fade-in slide-in-from-top-4 duration-500">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-xl md:text-2xl font-bold text-gray-900">Create Invoice</h1>
-            <p className="text-xs md:text-sm text-gray-500 mt-1">
+            <h1 className="text-xl md:text-2xl font-semibold tracking-tight text-foreground">Create Invoice</h1>
+            <p className="text-sm text-muted-foreground mt-1">
               Create single or bulk invoices for your customers
             </p>
           </div>
         </div>
 
         {/* Main Content */}
-        <Card className="animate-in fade-in slide-in-from-bottom-4 duration-700">
+        <Card>
           <Tabs defaultValue="single" className="w-full">
             <CardHeader className="border-b">
               <TabsList className="grid w-full max-w-md grid-cols-2">
@@ -337,7 +337,7 @@ CUST-001-2024-000003,Electricity Bill,2025-12-25,,December electricity`;
                             <SelectItem key={customer.id} value={customer.accountNumber}>
                               <div className="flex flex-col">
                                 <span className="font-medium">{customer.name}</span>
-                                <span className="text-xs text-gray-500">{customer.accountNumber}</span>
+                                <span className="text-xs text-muted-foreground">{customer.accountNumber}</span>
                               </div>
                             </SelectItem>
                           ))}
@@ -421,9 +421,9 @@ CUST-001-2024-000003,Electricity Bill,2025-12-25,,December electricity`;
                           type="number"
                           value={selectedService.amount}
                           disabled
-                          className="bg-gray-50"
+                          className="bg-muted/40"
                         />
-                        <p className="text-xs text-gray-500">Fixed amount - cannot be changed</p>
+                        <p className="text-xs text-muted-foreground">Fixed amount - cannot be changed</p>
                       </div>
                     )}
 
@@ -480,7 +480,7 @@ CUST-001-2024-000003,Electricity Bill,2025-12-25,,December electricity`;
                 {/* Instructions */}
                 <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
                   <h4 className="font-semibold text-blue-900 mb-2">CSV Format Instructions:</h4>
-                  <pre className="text-xs bg-white p-3 rounded border overflow-x-auto">
+                  <pre className="text-xs bg-card p-3 rounded border overflow-x-auto">
 {`accountNumber,serviceName,dueDate,amount,description
 CUST531738049694,Waste Management,2025-12-15,5000,Monthly waste
 CUST-001-2024-000002,Water Supply,2025-12-20,12500,Water bill`}
@@ -510,7 +510,7 @@ CUST-001-2024-000002,Water Supply,2025-12-20,12500,Water bill`}
                       disabled={uploading}
                     />
                     {file && (
-                      <p className="text-sm text-gray-600">
+                      <p className="text-sm text-muted-foreground">
                         Selected: <span className="font-medium">{file.name}</span>
                       </p>
                     )}
@@ -540,9 +540,9 @@ CUST-001-2024-000002,Water Supply,2025-12-20,12500,Water bill`}
                   <div className="space-y-2">
                     <div className="flex items-center justify-between text-sm">
                       <span className="font-medium">Processing invoices...</span>
-                      <span className="text-gray-600">{progress}%</span>
+                      <span className="text-muted-foreground">{progress}%</span>
                     </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div className="w-full bg-muted rounded-full h-2">
                       <div
                         className="bg-primary h-2 rounded-full transition-all duration-300"
                         style={{ width: `${progress}%` }}
@@ -561,26 +561,26 @@ CUST-001-2024-000002,Water Supply,2025-12-20,12500,Water bill`}
                       <Card>
                         <CardContent className="pt-6">
                           <div className="text-center">
-                            <p className="text-2xl font-bold">{result.summary.total}</p>
-                            <p className="text-sm text-gray-600">Total</p>
+                            <p className="text-2xl font-semibold tabular-nums">{result.summary.total}</p>
+                            <p className="text-sm text-muted-foreground">Total</p>
                           </div>
                         </CardContent>
                       </Card>
                       <Card>
                         <CardContent className="pt-6">
                           <div className="text-center">
-                            <p className="text-2xl font-bold text-green-600">
+                            <p className="text-2xl font-semibold text-success tabular-nums">
                               {result.summary.successful}
                             </p>
-                            <p className="text-sm text-gray-600">Successful</p>
+                            <p className="text-sm text-muted-foreground">Successful</p>
                           </div>
                         </CardContent>
                       </Card>
                       <Card>
                         <CardContent className="pt-6">
                           <div className="text-center">
-                            <p className="text-2xl font-bold text-red-600">{result.summary.failed}</p>
-                            <p className="text-sm text-gray-600">Failed</p>
+                            <p className="text-2xl font-semibold text-destructive tabular-nums">{result.summary.failed}</p>
+                            <p className="text-sm text-muted-foreground">Failed</p>
                           </div>
                         </CardContent>
                       </Card>
@@ -589,14 +589,14 @@ CUST-001-2024-000002,Water Supply,2025-12-20,12500,Water bill`}
                     {/* Successful Invoices */}
                     {result.successful.length > 0 && (
                       <div className="space-y-2">
-                        <h4 className="font-semibold text-green-600 flex items-center gap-2">
+                        <h4 className="font-semibold text-success flex items-center gap-2">
                           <CheckCircle2 className="h-5 w-5" />
                           Successful Invoices ({result.successful.length})
                         </h4>
                         <div className="border rounded-lg overflow-hidden">
                           <div className="overflow-x-auto">
                             <table className="w-full text-sm">
-                              <thead className="bg-gray-50 border-b">
+                              <thead className="bg-muted/40 border-b">
                                 <tr>
                                   <th className="px-4 py-2 text-left">Row</th>
                                   <th className="px-4 py-2 text-left">Account Number</th>
@@ -614,7 +614,7 @@ CUST-001-2024-000002,Water Supply,2025-12-20,12500,Water bill`}
                                     <td className="px-4 py-2 font-mono text-xs">
                                       {item.invoiceNumber}
                                     </td>
-                                    <td className="px-4 py-2 text-right font-semibold">
+                                    <td className="px-4 py-2 text-right font-semibold tabular-nums">
                                       ₦{item.amount.toLocaleString()}
                                     </td>
                                   </tr>
@@ -630,7 +630,7 @@ CUST-001-2024-000002,Water Supply,2025-12-20,12500,Water bill`}
                     {result.failed.length > 0 && (
                       <div className="space-y-2">
                         <div className="flex items-center justify-between">
-                          <h4 className="font-semibold text-red-600 flex items-center gap-2">
+                          <h4 className="font-semibold text-destructive flex items-center gap-2">
                             <XCircle className="h-5 w-5" />
                             Failed Invoices ({result.failed.length})
                           </h4>
@@ -642,7 +642,7 @@ CUST-001-2024-000002,Water Supply,2025-12-20,12500,Water bill`}
                         <div className="border rounded-lg overflow-hidden">
                           <div className="overflow-x-auto">
                             <table className="w-full text-sm">
-                              <thead className="bg-gray-50 border-b">
+                              <thead className="bg-muted/40 border-b">
                                 <tr>
                                   <th className="px-4 py-2 text-left">Row</th>
                                   <th className="px-4 py-2 text-left">Account Number</th>
@@ -656,7 +656,7 @@ CUST-001-2024-000002,Water Supply,2025-12-20,12500,Water bill`}
                                     <td className="px-4 py-2">{item.row}</td>
                                     <td className="px-4 py-2">{item.accountNumber}</td>
                                     <td className="px-4 py-2">{item.serviceName}</td>
-                                    <td className="px-4 py-2 text-red-600">{item.error}</td>
+                                    <td className="px-4 py-2 text-destructive">{item.error}</td>
                                   </tr>
                                 ))}
                               </tbody>

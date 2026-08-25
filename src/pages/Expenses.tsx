@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Filter, Edit, Trash2 } from "lucide-react";
+import { Plus, Filter, Edit, Trash2 } from "@/lib/icons";
 import { AddExpenseDialog } from "@/components/expenses/AddExpenseDialog";
 import { EditExpenseDialog } from "@/components/expenses/EditExpenseDialog";
 import {
@@ -213,16 +213,8 @@ export default function Expenses() {
   };
 
   const getPaymentMethodBadge = (method: string) => {
-    const colors: Record<string, string> = {
-      cash: "bg-green-100 text-green-800",
-      pos: "bg-blue-100 text-blue-800",
-      transfer: "bg-purple-100 text-purple-800",
-      cheque: "bg-yellow-100 text-yellow-800",
-      other: "bg-gray-100 text-gray-800",
-    };
-
     return (
-      <Badge className={colors[method] || colors.other}>
+      <Badge variant="secondary">
         {method.toUpperCase()}
       </Badge>
     );
@@ -234,8 +226,8 @@ export default function Expenses() {
         {/* Header */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Expenses</h1>
-            <p className="text-sm text-gray-500 mt-1">
+            <h1 className="text-xl md:text-2xl font-semibold tracking-tight text-foreground">Expenses</h1>
+            <p className="text-sm text-muted-foreground mt-1">
               Track and manage your business expenses
             </p>
           </div>
@@ -252,34 +244,34 @@ export default function Expenses() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-gray-500">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
                 Total Expenses
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(totalExpenses)}</div>
+              <div className="text-2xl font-semibold tabular-nums text-foreground">{formatCurrency(totalExpenses)}</div>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-gray-500">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
                 Total Records
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{total}</div>
+              <div className="text-2xl font-semibold tabular-nums text-foreground">{total}</div>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-gray-500">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
                 Categories Used
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{summary.length}</div>
+              <div className="text-2xl font-semibold tabular-nums text-foreground">{summary.length}</div>
             </CardContent>
           </Card>
         </div>
@@ -361,10 +353,10 @@ export default function Expenses() {
         <Card>
           <CardContent className="p-0">
             {loading ? (
-              <div className="p-8 text-center text-gray-500">Loading expenses...</div>
+              <div className="p-8 text-center text-muted-foreground">Loading expenses...</div>
             ) : categories.length === 0 ? (
               <div className="p-8 text-center">
-                <div className="text-amber-600 bg-amber-50 border border-amber-200 rounded-md p-4 max-w-md mx-auto">
+                <div className="text-foreground bg-muted/40 border border-border rounded-md p-4 max-w-md mx-auto">
                   <p className="font-medium mb-2">No Expense Categories</p>
                   <p className="text-sm">
                     Before you can add expenses, you need to create expense categories first.
@@ -373,7 +365,7 @@ export default function Expenses() {
                 </div>
               </div>
             ) : expenses.length === 0 ? (
-              <div className="p-8 text-center text-gray-500">
+              <div className="p-8 text-center text-muted-foreground">
                 No expenses found. Click "Add Expense" to create one.
               </div>
             ) : (
@@ -401,7 +393,7 @@ export default function Expenses() {
                             <div>
                               <p className="font-medium">{expense.title}</p>
                               {expense.description && (
-                                <p className="text-xs text-gray-500 mt-1">
+                                <p className="text-xs text-muted-foreground mt-1">
                                   {expense.description}
                                 </p>
                               )}
@@ -412,7 +404,7 @@ export default function Expenses() {
                               {expense.categoryId.name}
                             </Badge>
                           </TableCell>
-                          <TableCell className="font-semibold">
+                          <TableCell className="font-semibold tabular-nums">
                             {formatCurrency(expense.amount)}
                           </TableCell>
                           <TableCell>
@@ -438,7 +430,7 @@ export default function Expenses() {
                                   setSelectedExpense(expense);
                                   setShowDeleteDialog(true);
                                 }}
-                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                className="text-destructive"
                               >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
@@ -452,8 +444,8 @@ export default function Expenses() {
 
                 {/* Pagination */}
                 {totalPages > 1 && (
-                  <div className="flex items-center justify-between px-6 py-4 border-t">
-                    <div className="text-sm text-gray-500">
+                  <div className="flex items-center justify-between px-6 py-4 border-t border-border">
+                    <div className="text-sm text-muted-foreground">
                       Page {currentPage} of {totalPages} ({total} total)
                     </div>
                     <div className="flex gap-2">
@@ -526,7 +518,7 @@ export default function Expenses() {
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
-              className="bg-red-600 hover:bg-red-700"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Delete
             </AlertDialogAction>

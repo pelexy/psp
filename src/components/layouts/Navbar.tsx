@@ -1,4 +1,4 @@
-import { Bell, User, Activity } from "lucide-react";
+import { Bell, User, Activity } from "@/lib/icons";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   DropdownMenu,

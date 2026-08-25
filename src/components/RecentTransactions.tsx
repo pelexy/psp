@@ -1,6 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowUpRight, ArrowDownLeft, Receipt } from "lucide-react";
+import { ArrowUpRight, ArrowDownLeft, Receipt } from "@/lib/icons";
 import { formatCurrency } from "@/utils/formatCurrency";
 
 interface RecentTransactionsProps {
@@ -10,67 +10,59 @@ interface RecentTransactionsProps {
 export function RecentTransactions({ transactionsData }: RecentTransactionsProps) {
   const transactions = transactionsData || [];
   return (
-    <Card className="p-4 sm:p-5 md:p-6 bg-card/40 backdrop-blur-xl border-border/50 shadow-card animate-fade-in min-h-[400px] sm:min-h-[480px] w-full overflow-hidden">
-      <div className="space-y-4 sm:space-y-6">
-        <div>
-          <h3 className="text-base sm:text-lg font-semibold text-foreground">Recent Transactions</h3>
-          <p className="text-xs sm:text-sm text-muted-foreground">Latest payment activity</p>
-        </div>
-        <div className="space-y-2 sm:space-y-3">
-          {transactions.length > 0 ? transactions.map((transaction: any) => (
+    <Card className="min-h-[400px] w-full overflow-hidden">
+      <div className="border-b border-border p-5 md:p-6">
+        <h3 className="text-base font-semibold text-foreground">Recent Transactions</h3>
+        <p className="text-[13px] text-muted-foreground">Latest payment activity</p>
+      </div>
+      <div className="divide-y divide-border">
+        {transactions.length > 0 ? transactions.map((transaction: any) => (
+          <div
+            key={transaction.id || transaction._id}
+            className="flex items-center gap-3 px-5 py-3.5 transition-colors hover:bg-muted/50 md:px-6"
+          >
             <div
-              key={transaction.id || transaction._id}
-              className="flex items-center gap-2 sm:gap-3 md:gap-4 p-2.5 sm:p-3 md:p-4 rounded-lg sm:rounded-xl bg-gradient-to-r from-accent/30 to-transparent hover:from-accent/50 transition-all duration-300"
+              className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg ${
+                transaction.type === "credit" ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"
+              }`}
             >
-              <div
-                className={`flex-shrink-0 h-10 w-10 sm:h-12 sm:w-12 rounded-xl sm:rounded-2xl flex items-center justify-center backdrop-blur-sm ${
-                  transaction.type === "credit"
-                    ? "bg-success/20 border-2 border-success/30"
-                    : "bg-warning/20 border-2 border-warning/30"
+              {transaction.type === "credit" ? (
+                <ArrowDownLeft className="h-[18px] w-[18px]" />
+              ) : (
+                <ArrowUpRight className="h-[18px] w-[18px]" />
+              )}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-[13px] font-medium text-foreground">
+                {transaction.description}
+              </p>
+              <p className="truncate text-xs text-muted-foreground">
+                {transaction.transactionReference} · {new Date(transaction.createdAt).toLocaleDateString()}
+              </p>
+            </div>
+            <div className="flex flex-col items-end gap-1">
+              <p
+                className={`text-[13px] font-semibold tabular-nums ${
+                  transaction.type === "credit" ? "text-success" : "text-foreground"
                 }`}
               >
-                {transaction.type === "credit" ? (
-                  <ArrowDownLeft className="h-5 w-5 sm:h-6 sm:w-6 text-success" />
-                ) : (
-                  <ArrowUpRight className="h-5 w-5 sm:h-6 sm:w-6 text-warning" />
-                )}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-foreground truncate">
-                  {transaction.description}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {transaction.transactionReference} • {new Date(transaction.createdAt).toLocaleDateString()}
-                </p>
-              </div>
-              <div className="text-right space-y-1">
-                <p
-                  className={`text-base font-bold ${
-                    transaction.type === "credit"
-                      ? "text-success"
-                      : "text-warning"
-                  }`}
-                >
-                  {transaction.type === "credit" ? "+" : "-"}{formatCurrency(transaction.amount, false)}
-                </p>
-                <Badge
-                  variant={
-                    transaction.status === "completed" ? "default" : "secondary"
-                  }
-                  className="text-xs"
-                >
-                  {transaction.status}
-                </Badge>
-              </div>
+                {transaction.type === "credit" ? "+" : "-"}{formatCurrency(transaction.amount, false)}
+              </p>
+              <Badge
+                variant={transaction.status === "completed" ? "default" : "secondary"}
+                className="text-[10px] font-medium capitalize"
+              >
+                {transaction.status}
+              </Badge>
             </div>
-          )) : (
-            <div className="text-center py-12 text-muted-foreground">
-              <Receipt className="h-12 w-12 mx-auto mb-3 opacity-30" />
-              <p className="text-sm font-medium">No transactions yet</p>
-              <p className="text-xs mt-1">Recent wallet transactions will appear here</p>
-            </div>
-          )}
-        </div>
+          </div>
+        )) : (
+          <div className="py-16 text-center text-muted-foreground">
+            <Receipt className="mx-auto mb-3 h-10 w-10 opacity-25" />
+            <p className="text-sm font-medium">No transactions yet</p>
+            <p className="mt-1 text-xs">Recent wallet transactions will appear here</p>
+          </div>
+        )}
       </div>
     </Card>
   );

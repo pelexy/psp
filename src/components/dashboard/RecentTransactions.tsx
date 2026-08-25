@@ -1,4 +1,4 @@
-import { ArrowUpRight, Clock, CheckCircle2, XCircle } from "lucide-react";
+import { ArrowUpRight, Clock, CheckCircle2, XCircle } from "@/lib/icons";
 
 interface Transaction {
   id: string;

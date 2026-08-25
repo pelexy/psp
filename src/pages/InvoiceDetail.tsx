@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/layouts/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, Printer } from "lucide-react";
+import { ArrowLeft, Printer } from "@/lib/icons";
 import { apiService } from "@/services/api";
 import { toast } from "sonner";
 
@@ -94,8 +94,8 @@ const InvoiceDetail = () => {
       <DashboardLayout>
         <div className="p-6">
           <div className="text-center py-12">
-            <h2 className="text-xl font-semibold text-gray-900">Invoice Not Found</h2>
-            <p className="text-gray-500 mt-2">The invoice you're looking for doesn't exist.</p>
+            <h2 className="text-xl font-semibold text-foreground">Invoice Not Found</h2>
+            <p className="text-muted-foreground mt-2">The invoice you're looking for doesn't exist.</p>
             <Button onClick={() => navigate(-1)} className="mt-4">
               Go Back
             </Button>
@@ -117,7 +117,7 @@ const InvoiceDetail = () => {
   return (
     <DashboardLayout>
       {/* Action Bar - Hidden when printing */}
-      <div className="p-4 border-b bg-white print:hidden">
+      <div className="p-4 border-b border-border bg-card print:hidden">
         <div className="flex items-center justify-between">
           <Button variant="ghost" onClick={() => navigate(-1)}>
             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -133,7 +133,7 @@ const InvoiceDetail = () => {
       </div>
 
       {/* Invoice Content - EXACT LAWMA Style */}
-      <div className="p-4 md:p-6 bg-gray-100 min-h-screen print:bg-white print:p-0">
+      <div className="p-4 md:p-6 bg-background min-h-screen print:bg-white print:p-0">
         <div
           ref={printRef}
           data-print-content
@@ -189,7 +189,7 @@ const InvoiceDetail = () => {
               <div style={{ fontWeight: "bold", fontSize: "20px", fontStyle: "italic" }}>Lawma</div>
               <div style={{ fontWeight: "bold", fontSize: "20px", fontStyle: "italic" }}>Lawma</div>
               <div style={{ fontSize: "7px", marginTop: "8px", fontStyle: "italic" }}>
-                "New Trend in Cleaning & Professionalism"
+"New Trend in Cleaning & Professionalism"
               </div>
             </div>
 

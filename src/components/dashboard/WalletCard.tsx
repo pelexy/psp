@@ -1,4 +1,4 @@
-import { Wallet, TrendingUp, TrendingDown, Eye, EyeOff } from "lucide-react";
+import { Wallet, TrendingUp, TrendingDown, Eye, EyeOff } from "@/lib/icons";
 import { useState } from "react";
 
 interface WalletCardProps {

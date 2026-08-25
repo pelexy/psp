@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { SlidersHorizontal, X } from "lucide-react";
+import { SlidersHorizontal, X } from "@/lib/icons";
 
 interface InvoiceFilterPanelProps {
   filters: {
@@ -53,26 +53,6 @@ export function InvoiceFilterPanel({
         </SheetHeader>
 
         <div className="space-y-6 mt-6">
-          {/* Status Filter */}
-          <div className="space-y-2">
-            <Label>Status</Label>
-            <Select
-              value={filters.status || "all"}
-              onValueChange={(value) => handleFilterChange("status", value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="All statuses" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="paid">Paid</SelectItem>
-                <SelectItem value="overdue">Overdue</SelectItem>
-                <SelectItem value="partially_paid">Partially Paid</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
           {/* Sort By */}
           <div className="space-y-2">
             <Label>Sort By</Label>

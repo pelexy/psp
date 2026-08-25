@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Building2, Check, ChevronsUpDown, Plus, Loader2 } from "lucide-react";
+import { Building2, Check, ChevronsUpDown, Plus, Loader2 } from "@/lib/icons";
 import { toast } from "sonner";
 import {
   DropdownMenu,

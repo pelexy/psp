@@ -9,7 +9,7 @@ import {
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar, Info } from "lucide-react";
+import { Calendar, Info } from "@/lib/icons";
 import type { DateRangeType } from "@/utils/dateRanges";
 import { getDateRange } from "@/utils/dateRanges";
 

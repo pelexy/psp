@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Search, Upload as UploadIcon, FileSearch, Eye } from "lucide-react";
+import { Search, Upload as UploadIcon, FileSearch, Eye, Download } from "@/lib/icons";
 import { apiService } from "@/services/api";
 import { useAuth } from "@/contexts/AuthContext";
 import type { Customer } from "@/types";
@@ -25,6 +25,7 @@ const Customers = () => {
   // State
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [totalPages, setTotalPages] = useState(1);
@@ -46,36 +47,28 @@ const Customers = () => {
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
+  // Single source of truth for the filters we send to the API — used by BOTH the
+  // table fetch and the export, so export always respects the active filters.
+  const buildApiFilters = () => {
+    const apiFilters: any = {};
+    if (debouncedSearch?.trim()) apiFilters.searchTerm = debouncedSearch.trim();
+    if (filters.isActive && filters.isActive !== "all") apiFilters.isActive = filters.isActive === "true";
+    if (filters.state?.trim()) apiFilters.state = filters.state.trim();
+    if (filters.lga?.trim()) apiFilters.lga = filters.lga.trim();
+    if (filters.hasOutstanding === "true") apiFilters.hasOutstanding = true;
+    if (filters.paymentBehavior) apiFilters.paymentBehavior = filters.paymentBehavior;
+    if (filters.sortBy?.trim()) apiFilters.sortBy = filters.sortBy.trim();
+    if (filters.sortOrder) apiFilters.sortOrder = filters.sortOrder;
+    return apiFilters;
+  };
+
   // Fetch customers
   const fetchCustomers = async () => {
     if (!accessToken) return;
 
     setLoading(true);
     try {
-      // Build clean filter object - only include defined values
-      const apiFilters: any = {};
-
-      if (debouncedSearch?.trim()) {
-        apiFilters.searchTerm = debouncedSearch.trim();
-      }
-
-      if (filters.isActive && filters.isActive !== "all") {
-        apiFilters.isActive = filters.isActive === "true";
-      }
-
-      if (filters.state?.trim()) {
-        apiFilters.state = filters.state.trim();
-      }
-
-      if (filters.sortBy?.trim()) {
-        apiFilters.sortBy = filters.sortBy.trim();
-      }
-
-      if (filters.sortOrder) {
-        apiFilters.sortOrder = filters.sortOrder;
-      }
-
-      console.log("Fetching customers with filters:", apiFilters);
+      const apiFilters = buildApiFilters();
 
       const response = await apiService.getCustomers(
         accessToken,
@@ -100,6 +93,66 @@ const Customers = () => {
     fetchCustomers();
   }, [currentPage, pageSize, debouncedSearch, filters, accessToken]);
 
+  // Export EVERYTHING that matches the current search/filters — not just this page.
+  const handleExport = async () => {
+    if (!accessToken) return;
+    setExporting(true);
+    try {
+      // Same filters as the table (location, debt, status, sort) — export respects them all.
+      const apiFilters = buildApiFilters();
+
+      toast.info("Preparing export…");
+      const response = await apiService.getCustomers(accessToken, 1, 1000000, apiFilters);
+      const rows: any[] = response.customers || [];
+      if (rows.length === 0) {
+        toast.error("No customers to export");
+        return;
+      }
+
+      const headers = [
+        "Account Number", "Address", "Contact Name", "Contact Phone", "Contact Email",
+        "City", "State", "LGA", "Billed", "Total Paid", "Deficit", "Status", "Created",
+      ];
+      const esc = (v: any) => {
+        const s = v == null ? "" : String(v);
+        return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+      };
+      const lines = rows.map((c) =>
+        [
+          c.accountNumber || c.customerAccountNumber,
+          c.address || c.fullName,
+          c.contactName,
+          c.contactPhone || c.phone,
+          c.contactEmail || c.email,
+          c.city, c.state, c.lga,
+          c.totalDebt || 0,
+          c.totalPaid || 0,
+          c.currentBalance || 0,
+          c.isActive ? "Active" : "Inactive",
+          c.createdAt ? new Date(c.createdAt).toISOString().slice(0, 10) : "",
+        ]
+          .map(esc)
+          .join(",")
+      );
+      const csv = [headers.join(","), ...lines].join("\n");
+
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `customers-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast.success(`Exported ${rows.length.toLocaleString()} customers`);
+    } catch (e: any) {
+      toast.error(e.message || "Export failed");
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const handleClearFilters = () => {
     setFilters({
       isActive: "all",
@@ -112,61 +165,85 @@ const Customers = () => {
   const columns: Column<Customer>[] = useMemo(
     () => [
       {
-        key: "accountNumber",
-        header: "Account Number",
-        accessor: (customer) => (
-          <span className="font-mono text-sm font-medium">{customer.accountNumber || customer.customerAccountNumber || 'N/A'}</span>
-        ),
-      },
-      {
-        key: "name",
-        header: "Name",
+        key: "account",
+        header: "Account",
         accessor: (customer) => (
           <div>
-            <p className="font-medium text-gray-900">{customer.name || customer.fullName || 'N/A'}</p>
-            <p className="text-sm text-gray-500">{customer.email || 'N/A'}</p>
+            <p className="font-mono text-sm font-medium text-foreground">
+              {customer.accountNumber || customer.customerAccountNumber || 'N/A'}
+            </p>
+            <p className="text-sm text-muted-foreground">
+              {customer.address || customer.fullName || '—'}
+            </p>
           </div>
         ),
       },
       {
-        key: "phone",
-        header: "Phone",
-        accessor: (customer) => <span className="text-gray-700">{customer.phone || 'N/A'}</span>,
+        key: "contact",
+        header: "Contact Person",
+        accessor: (customer) => (
+          <div className="text-sm">
+            <p className="font-medium text-foreground">{customer.contactName || 'N/A'}</p>
+            <p className="text-muted-foreground">{customer.contactPhone || customer.phone || 'N/A'}</p>
+            {(customer.contactEmail || customer.email) && (
+              <p className="text-muted-foreground">{customer.contactEmail || customer.email}</p>
+            )}
+          </div>
+        ),
       },
       {
         key: "location",
         header: "Location",
         accessor: (customer) => (
           <div className="text-sm">
-            <p className="text-gray-700">{customer.city || customer.location || 'N/A'}</p>
-            <p className="text-gray-500">{customer.state || ''}</p>
+            <p className="text-foreground">{customer.city || customer.location || 'N/A'}</p>
+            <p className="text-muted-foreground">{customer.state || ''}</p>
           </div>
         ),
       },
       {
-        key: "balance",
-        header: "Balance",
-        accessor: (customer) => {
-          const balance = customer.currentBalance || customer.balance || 0;
-          return (
-            <span
-              className={`font-semibold ${
-                balance > 0 ? "text-red-600" : "text-green-600"
-              }`}
-            >
-              ₦{balance.toLocaleString()}
-            </span>
-          );
-        },
+        key: "created",
+        header: "Created",
+        accessor: (customer) => (
+          <span className="text-sm text-muted-foreground">
+            {customer.createdAt
+              ? new Date(customer.createdAt).toLocaleDateString("en-NG", {
+                  day: "2-digit",
+                  month: "short",
+                  year: "numeric",
+                })
+              : "—"}
+          </span>
+        ),
+      },
+      {
+        key: "billed",
+        header: "Billed",
+        accessor: (customer) => (
+          <span className="font-semibold tabular-nums text-foreground">
+            ₦{(customer.totalDebt || 0).toLocaleString()}
+          </span>
+        ),
       },
       {
         key: "totalPaid",
         header: "Total Paid",
+        accessor: (customer) => (
+          <span className="font-semibold tabular-nums text-success">
+            ₦{(customer.totalPaid || 0).toLocaleString()}
+          </span>
+        ),
+      },
+      {
+        key: "deficit",
+        header: "Deficit",
         accessor: (customer) => {
-          const totalPaid = customer.totalPaid || 0;
+          const deficit = customer.currentBalance || customer.balance || 0;
           return (
-            <span className="text-green-600 font-semibold">
-              ₦{totalPaid.toLocaleString()}
+            <span
+              className={`font-semibold tabular-nums ${deficit > 0 ? "text-destructive" : "text-success"}`}
+            >
+              ₦{deficit.toLocaleString()}
             </span>
           );
         },
@@ -215,19 +292,24 @@ const Customers = () => {
 
   return (
     <DashboardLayout>
-      <div className="p-4 md:p-6 lg:p-8 space-y-6 lg:space-y-8 bg-gradient-to-br from-background via-background to-accent/5 max-w-full overflow-hidden">
+      <div className="p-4 md:p-6 lg:p-8 space-y-6 bg-background max-w-full overflow-hidden">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-in fade-in slide-in-from-top-4 duration-500">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-xl md:text-2xl font-bold text-gray-900">
+            <h1 className="text-xl md:text-2xl font-semibold tracking-tight text-foreground">
               Customers
             </h1>
-            <p className="text-xs md:text-sm text-gray-500 mt-1">
-              Manage your customer accounts and subscriptions • {totalItems} total customers
+            <p className="text-sm text-muted-foreground mt-1">
+              Manage your customer accounts and subscriptions · {totalItems} total customers
             </p>
           </div>
 
           <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" className="gap-2" onClick={handleExport} disabled={exporting}>
+              <Download className="h-4 w-4" />
+              {exporting ? "Exporting…" : "Export"}
+            </Button>
+
             <Sheet>
               <SheetTrigger asChild>
                 <Button variant="outline" size="sm" className="gap-2">
@@ -273,14 +355,14 @@ const Customers = () => {
         </div>
 
         {/* Main Content Card */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 animate-in fade-in slide-in-from-bottom-4 duration-700 max-w-full overflow-hidden">
+        <div className="bg-card rounded-lg shadow-card border border-border max-w-full overflow-hidden">
           {/* Search and Filters */}
-          <div className="p-4 md:p-6 border-b border-gray-200">
+          <div className="p-4 border-b border-border">
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
               <div className="flex-1 w-full relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search by name, email, phone, or account number..."
+                  placeholder="Search by address, contact, phone, email, account number, street, or ward..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-10 h-10"

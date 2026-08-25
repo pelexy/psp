@@ -15,7 +15,7 @@ import {
   Menu,
   X,
   Package,
-} from "lucide-react";
+} from "@/lib/icons";
 import { NavLink, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";

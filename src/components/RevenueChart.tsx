@@ -20,41 +20,41 @@ export function RevenueChart({ revenueData }: RevenueChartProps) {
   const totalCollected = revenueData?.summary.totalCollected || 0;
   const overallEfficiency = revenueData?.summary.overallEfficiency.toFixed(1) || "0.0";
   return (
-    <Card className="p-3 sm:p-4 md:p-6 bg-white border border-gray-200 shadow-sm animate-fade-in min-h-[380px] sm:min-h-[450px] w-full overflow-hidden">
-      <div className="space-y-3 sm:space-y-4 md:space-y-5">
-        <div className="flex flex-col sm:flex-row items-start justify-between gap-2 sm:gap-3">
+    <Card className="min-h-[380px] w-full overflow-hidden p-5 md:p-6">
+      <div className="space-y-4">
+        <div className="flex flex-col sm:flex-row items-start justify-between gap-3">
           <div>
-            <h3 className="text-sm sm:text-base md:text-lg font-semibold text-gray-900">Revenue Performance</h3>
-            <p className="text-xs text-gray-500 mt-0.5">{revenueData?.period || "Loading..."}</p>
+            <h3 className="text-base font-semibold text-foreground">Revenue Performance</h3>
+            <p className="mt-0.5 text-[13px] text-muted-foreground">{revenueData?.period || "Loading..."}</p>
           </div>
-          <div className="flex gap-2 sm:gap-3 md:gap-4 text-xs sm:text-sm">
-            <div className="text-right">
-              <p className="text-xs text-gray-500">Invoiced</p>
-              <p className="text-xs md:text-sm font-bold text-gray-900">{formatCurrency(totalInvoiced)}</p>
+          <div className="flex gap-5">
+            <div>
+              <p className="text-xs text-muted-foreground">Invoiced</p>
+              <p className="text-sm font-semibold tabular-nums text-foreground">{formatCurrency(totalInvoiced)}</p>
             </div>
-            <div className="text-right">
-              <p className="text-xs text-gray-500">Collected</p>
-              <p className="text-xs md:text-sm font-bold text-green-600">{formatCurrency(totalCollected)}</p>
+            <div>
+              <p className="text-xs text-muted-foreground">Collected</p>
+              <p className="text-sm font-semibold tabular-nums text-success">{formatCurrency(totalCollected)}</p>
             </div>
-            <div className="text-right">
-              <p className="text-xs text-gray-500">Efficiency</p>
-              <p className="text-xs md:text-sm font-bold text-gray-900">{overallEfficiency}%</p>
+            <div>
+              <p className="text-xs text-muted-foreground">Efficiency</p>
+              <p className="text-sm font-semibold tabular-nums text-foreground">{overallEfficiency}%</p>
             </div>
           </div>
         </div>
 
-        <div className="h-[220px] sm:h-[250px] md:h-[320px] w-full">
+        <div className="h-[240px] sm:h-[280px] md:h-[320px] w-full">
           {data.length > 0 ? (
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={data} margin={{ top: 10, right: 5, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorInvoiced" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#567E3A" stopOpacity={0.15} />
-                    <stop offset="95%" stopColor="#567E3A" stopOpacity={0} />
+                    <stop offset="5%" stopColor="#64748b" stopOpacity={0.12} />
+                    <stop offset="95%" stopColor="#64748b" stopOpacity={0} />
                   </linearGradient>
                   <linearGradient id="colorCollected" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.15} />
-                    <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                    <stop offset="5%" stopColor="#1f9d57" stopOpacity={0.2} />
+                    <stop offset="95%" stopColor="#1f9d57" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
@@ -90,7 +90,7 @@ export function RevenueChart({ revenueData }: RevenueChartProps) {
                 <Area
                   type="monotone"
                   dataKey="invoicedAmount"
-                  stroke="#567E3A"
+                  stroke="#64748b"
                   strokeWidth={2}
                   fill="url(#colorInvoiced)"
                   name="invoicedAmount"
@@ -98,8 +98,8 @@ export function RevenueChart({ revenueData }: RevenueChartProps) {
                 <Area
                   type="monotone"
                   dataKey="collectedAmount"
-                  stroke="#10b981"
-                  strokeWidth={2}
+                  stroke="#1f9d57"
+                  strokeWidth={2.5}
                   fill="url(#colorCollected)"
                   name="collectedAmount"
                 />
@@ -112,14 +112,14 @@ export function RevenueChart({ revenueData }: RevenueChartProps) {
           )}
         </div>
 
-        <div className="flex items-center justify-center gap-3 sm:gap-4 md:gap-6 text-xs pt-2 sm:pt-3 border-t border-gray-200">
+        <div className="flex items-center justify-center gap-6 border-t border-border pt-3 text-xs">
           <div className="flex items-center gap-2">
-            <div className="h-2.5 w-2.5 rounded-full bg-[#567E3A]" />
-            <span className="text-gray-600">Invoiced Amount</span>
+            <span className="h-2.5 w-2.5 rounded-full bg-[#64748b]" />
+            <span className="text-muted-foreground">Invoiced Amount</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="h-2.5 w-2.5 rounded-full bg-green-500" />
-            <span className="text-gray-600">Collected Amount</span>
+            <span className="h-2.5 w-2.5 rounded-full bg-[#1f9d57]" />
+            <span className="text-muted-foreground">Collected Amount</span>
           </div>
         </div>
       </div>

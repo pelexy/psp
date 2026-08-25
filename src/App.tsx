@@ -11,17 +11,16 @@ import FirstTimePasswordReset from "@/pages/FirstTimePasswordReset";
 import Dashboard from "@/pages/Dashboard";
 import Customers from "@/pages/Customers";
 import CustomerDetails from "@/pages/CustomerDetails";
-import Invoices from "@/pages/Invoices";
+import CustomerLedger from "@/pages/CustomerLedger";
 import Transactions from "@/pages/Transactions";
-import Collections from "@/pages/Collections";
-import CollectionDetails from "@/pages/CollectionDetails";
 import Agents from "@/pages/Agents";
 import AgentDetails from "@/pages/AgentDetails";
 import Pickups from "@/pages/Pickups";
 import Expenses from "@/pages/Expenses";
 import SettingsPage from "@/pages/SettingsPage";
-import CreateInvoice from "@/pages/CreateInvoice";
-import InvoiceDetail from "@/pages/InvoiceDetail";
+import Bills from "@/pages/Bills";
+import GeneratedBills from "@/pages/GeneratedBills";
+import BillRuns from "@/pages/BillRuns";
 import CustomerStatement from "@/pages/CustomerStatement";
 
 // Report pages
@@ -50,23 +49,32 @@ function App() {
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/customers" element={<ProtectedRoute><Customers /></ProtectedRoute>} />
           <Route path="/customers/:accountNumber" element={<ProtectedRoute><CustomerDetails /></ProtectedRoute>} />
+          <Route path="/customers/:accountNumber/ledger" element={<ProtectedRoute><CustomerLedger /></ProtectedRoute>} />
 
           {/* Billing Section */}
-          <Route path="/billing" element={<Navigate to="/billing/plans" replace />} />
-          <Route path="/billing/plans" element={<ProtectedRoute><Collections /></ProtectedRoute>} />
-          <Route path="/billing/plans/:id" element={<ProtectedRoute><CollectionDetails /></ProtectedRoute>} />
-          <Route path="/billing/invoices" element={<ProtectedRoute><Invoices /></ProtectedRoute>} />
-          <Route path="/billing/invoices/create" element={<ProtectedRoute><CreateInvoice /></ProtectedRoute>} />
-          <Route path="/billing/invoices/:invoiceNumber" element={<ProtectedRoute><InvoiceDetail /></ProtectedRoute>} />
+          <Route path="/billing" element={<Navigate to="/billing/bills" replace />} />
+          <Route path="/billing/bills" element={<ProtectedRoute><Bills /></ProtectedRoute>} />
+          <Route path="/billing/generated-bills" element={<ProtectedRoute><GeneratedBills /></ProtectedRoute>} />
+          <Route path="/billing/runs" element={<ProtectedRoute><BillRuns /></ProtectedRoute>} />
+          {/* Collections/Plans retired — billing moved to the per-customer Bill engine. */}
+          <Route path="/billing/plans" element={<Navigate to="/billing/bills" replace />} />
+          <Route path="/billing/plans/:id" element={<Navigate to="/billing/bills" replace />} />
+          {/* Invoices retired — billing moved to the per-customer Bill engine. */}
+          <Route path="/billing/invoices" element={<Navigate to="/billing/bills" replace />} />
+          <Route path="/billing/invoices/create" element={<Navigate to="/billing/bills" replace />} />
+          <Route path="/billing/invoices/:invoiceNumber" element={<Navigate to="/billing/bills" replace />} />
           <Route path="/billing/customer-statement/:customerId" element={<ProtectedRoute><CustomerStatement /></ProtectedRoute>} />
-          <Route path="/billing/payments" element={<ProtectedRoute><Transactions /></ProtectedRoute>} />
+          {/* Transactions module — payments live here now (moved out of Billing). */}
+          <Route path="/transactions/payments" element={<ProtectedRoute><Transactions /></ProtectedRoute>} />
+          <Route path="/billing/payments" element={<Navigate to="/transactions/payments" replace />} />
+          <Route path="/billing/transactions" element={<Navigate to="/transactions/payments" replace />} />
 
           {/* Legacy routes - redirect to new paths */}
-          <Route path="/collections" element={<Navigate to="/billing/plans" replace />} />
-          <Route path="/collections/:id" element={<Navigate to="/billing/plans" replace />} />
-          <Route path="/invoices" element={<Navigate to="/billing/invoices" replace />} />
-          <Route path="/invoices/create" element={<Navigate to="/billing/invoices/create" replace />} />
-          <Route path="/transactions" element={<Navigate to="/billing/payments" replace />} />
+          <Route path="/collections" element={<Navigate to="/billing/bills" replace />} />
+          <Route path="/collections/:id" element={<Navigate to="/billing/bills" replace />} />
+          <Route path="/invoices" element={<Navigate to="/billing/bills" replace />} />
+          <Route path="/invoices/create" element={<Navigate to="/billing/bills" replace />} />
+          <Route path="/transactions" element={<Navigate to="/transactions/payments" replace />} />
 
           {/* Agents Section */}
           <Route path="/agents" element={<ProtectedRoute><Agents /></ProtectedRoute>} />

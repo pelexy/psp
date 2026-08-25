@@ -5,7 +5,8 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
-import { UserPlus, Loader2, Plus, Trash2 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { UserPlus, Loader2, Plus, Trash2 } from "@/lib/icons";
 import { apiService } from "@/services/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -34,6 +35,8 @@ interface PropertyType {
   _id?: string;
   name: string;
   cost: number;
+  isCommercial?: boolean;
+  allowPriceOverride?: boolean;
 }
 
 // Helper functions
@@ -42,7 +45,23 @@ const getId = (item: { id?: string; _id?: string }): string => item.id || item._
 interface PropertyEntry {
   propertyTypeId: string;
   quantity: number;
+  costPerUnit?: number | string; // set only when the type allows a price override
+  occupiedUnits?: number | string; // how many of the units are occupied (optional)
+  billVacant?: boolean; // bill the vacant units too? (default off)
 }
+
+// How many units are actually billed for a property line. Occupancy is optional
+// — a blank occupied count means all units are treated as occupied. Vacant units
+// are billed by default; they're excluded only when "Bill vacant units" is off.
+const billableUnitsFor = (prop: PropertyEntry): number => {
+  const qty = Number(prop.quantity) || 0;
+  const hasOcc =
+    prop.occupiedUnits !== undefined && prop.occupiedUnits !== null && prop.occupiedUnits !== "";
+  let occ = hasOcc ? Number(prop.occupiedUnits) : qty;
+  if (!Number.isFinite(occ) || occ < 0) occ = 0;
+  if (occ > qty) occ = qty;
+  return prop.billVacant !== false ? qty : occ;
+};
 
 const CUSTOMER_TYPES = [
   { value: "standalone", label: "Standalone" },
@@ -60,7 +79,9 @@ export function AddCustomerDialog({ onCustomerAdded }: AddCustomerDialogProps) {
   const [wards, setWards] = useState<Ward[]>([]);
   const [streets, setStreets] = useState<Street[]>([]);
   const [filteredStreets, setFilteredStreets] = useState<Street[]>([]);
+  const [streetSearch, setStreetSearch] = useState("");
   const [propertyTypes, setPropertyTypes] = useState<PropertyType[]>([]);
+  const [billCycles, setBillCycles] = useState<{ id: string; name: string; active: boolean }[]>([]);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -76,6 +97,7 @@ export function AddCustomerDialog({ onCustomerAdded }: AddCustomerDialogProps) {
     wardId: "",
     streetId: "",
     oldAccountNumber: "",
+    billCycleId: "",
   });
 
   const [properties, setProperties] = useState<PropertyEntry[]>([]);
@@ -108,15 +130,17 @@ export function AddCustomerDialog({ onCustomerAdded }: AddCustomerDialogProps) {
 
     setLoadingData(true);
     try {
-      const [wardsRes, streetsRes, propertyTypesRes] = await Promise.all([
+      const [wardsRes, streetsRes, propertyTypesRes, cyclesRes] = await Promise.all([
         apiService.getActiveWards(accessToken),
         apiService.getStreets(accessToken),
         apiService.getActivePropertyTypes(accessToken),
+        apiService.getBillCycles(accessToken).catch(() => ({ data: [] })),
       ]);
 
       setWards(wardsRes?.data || []);
       setStreets(streetsRes?.data || []);
       setPropertyTypes(propertyTypesRes?.data || []);
+      setBillCycles((cyclesRes?.data || []).filter((c: any) => c.active));
     } catch (error) {
       console.error("Failed to load dropdown data:", error);
     } finally {
@@ -139,10 +163,10 @@ export function AddCustomerDialog({ onCustomerAdded }: AddCustomerDialogProps) {
       toast.error("No property types available. Please add property types in Settings first.");
       return;
     }
-    setProperties([...properties, { propertyTypeId: "", quantity: 1 }]);
+    setProperties([...properties, { propertyTypeId: "", quantity: 1, billVacant: true }]);
   };
 
-  const updateProperty = (index: number, field: keyof PropertyEntry, value: string | number) => {
+  const updateProperty = (index: number, field: keyof PropertyEntry, value: string | number | boolean) => {
     const updated = [...properties];
     updated[index] = { ...updated[index], [field]: value };
     setProperties(updated);
@@ -157,7 +181,10 @@ export function AddCustomerDialog({ onCustomerAdded }: AddCustomerDialogProps) {
     return properties.reduce((total, prop) => {
       const propertyType = propertyTypes.find((pt) => getId(pt) === prop.propertyTypeId);
       if (propertyType && prop.quantity > 0) {
-        return total + propertyType.cost * prop.quantity;
+        const overridden =
+          propertyType.allowPriceOverride && prop.costPerUnit !== undefined && prop.costPerUnit !== "";
+        const unit = overridden ? Number(prop.costPerUnit) : propertyType.cost;
+        return total + unit * billableUnitsFor(prop);
       }
       return total;
     }, 0);
@@ -176,9 +203,13 @@ export function AddCustomerDialog({ onCustomerAdded }: AddCustomerDialogProps) {
 
     if (!accessToken) return;
 
-    // Validation
+    // Validation — the address is the account identity; the contact person is who we reach.
+    if (!formData.address.trim()) {
+      toast.error("Address is required — it is the account name");
+      return;
+    }
     if (!formData.fullName || !formData.phone) {
-      toast.error("Name and phone are required");
+      toast.error("Contact name and phone are required");
       return;
     }
 
@@ -191,17 +222,28 @@ export function AddCustomerDialog({ onCustomerAdded }: AddCustomerDialogProps) {
 
     setLoading(true);
     try {
-      // Prepare data with previousDebt as number and normalized phone
+      // The account IS the property: the account name is the ADDRESS, and the
+      // person is stored as the contact (primary property user) — not the account name.
+      const contactPhone = normalizeNigerianPhone(formData.phone);
       const customerData: any = {
-        fullName: formData.fullName,
+        fullName: formData.address.trim(), // account name = the property address
         email: formData.email,
-        phone: normalizeNigerianPhone(formData.phone),
+        phone: contactPhone,
         address: formData.address,
         city: formData.city,
         state: formData.state,
         lga: formData.lga,
         previousDebt: formData.previousDebt ? parseFloat(formData.previousDebt) : 0,
         customerType: formData.customerType,
+        // Contact person for this property (drives WhatsApp/SMS bill delivery)
+        users: [
+          {
+            fullName: formData.fullName.trim(),
+            phone: contactPhone,
+            email: formData.email || undefined,
+            isPrimary: true,
+          },
+        ],
       };
 
       const trimmedOldAcct = formData.oldAccountNumber.trim();
@@ -217,9 +259,27 @@ export function AddCustomerDialog({ onCustomerAdded }: AddCustomerDialogProps) {
         customerData.streetId = formData.streetId;
       }
 
-      // Add properties if any
+      // Add properties if any. Send costPerUnit only when the type allows an
+      // override and a value was entered — otherwise the backend uses the default.
       if (validProperties.length > 0) {
-        customerData.properties = validProperties;
+        customerData.properties = validProperties.map((p) => {
+          const pt = propertyTypes.find((t) => getId(t) === p.propertyTypeId);
+          const out: any = { propertyTypeId: p.propertyTypeId, quantity: p.quantity };
+          if (pt?.allowPriceOverride && p.costPerUnit !== undefined && p.costPerUnit !== "") {
+            out.costPerUnit = Number(p.costPerUnit);
+          }
+          // Occupancy is optional — only send it when the agent entered a count.
+          if (p.occupiedUnits !== undefined && p.occupiedUnits !== null && p.occupiedUnits !== "") {
+            out.occupiedUnits = Number(p.occupiedUnits);
+          }
+          out.billVacant = p.billVacant !== false;
+          return out;
+        });
+      }
+
+      // Assign to a bill cycle if chosen (activates billing on the backend)
+      if (formData.billCycleId) {
+        customerData.billCycleId = formData.billCycleId;
       }
 
       const response = await apiService.makeAuthenticatedRequest(
@@ -258,6 +318,7 @@ export function AddCustomerDialog({ onCustomerAdded }: AddCustomerDialogProps) {
       wardId: "",
       streetId: "",
       oldAccountNumber: "",
+      billCycleId: "",
     });
     setProperties([]);
     setSelectedLGAs([]);
@@ -308,54 +369,30 @@ export function AddCustomerDialog({ onCustomerAdded }: AddCustomerDialogProps) {
               </Select>
             </div>
 
-            {/* Contact Person Information */}
+            {/* Property Address — the property IS the account (BuyPower-style: the account is the address) */}
             <div className="space-y-4">
-              <h3 className="font-medium text-sm text-gray-700">
-                {formData.customerType === "standalone" ? "Customer Information" : "Contact Person Information"}
-              </h3>
-              <div className="grid grid-cols-2 gap-4">
-                {/* Full Name */}
-                <div className="col-span-2 sm:col-span-1">
-                  <Label htmlFor="fullName">Full Name *</Label>
-                  <Input
-                    id="fullName"
-                    value={formData.fullName}
-                    onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                    placeholder="John Doe"
-                    required
-                  />
-                </div>
-
-                {/* Phone */}
-                <div className="col-span-2 sm:col-span-1">
-                  <Label htmlFor="phone">Phone Number *</Label>
-                  <Input
-                    id="phone"
-                    value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    placeholder="08012345678"
-                    required
-                  />
-                </div>
-
-                {/* Email */}
-                <div className="col-span-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    placeholder="john@example.com"
-                  />
-                </div>
+              <div>
+                <h3 className="font-medium text-sm text-gray-700">Property Address</h3>
+                <p className="text-xs text-gray-500">
+                  The property is the account — its address becomes the account name.
+                </p>
               </div>
-            </div>
-
-            {/* Location Information */}
-            <div className="space-y-4">
-              <h3 className="font-medium text-sm text-gray-700">Location Information</h3>
               <div className="grid grid-cols-2 gap-4">
+                {/* Address (this is the account name) */}
+                <div className="col-span-2">
+                  <Label htmlFor="address">Address *</Label>
+                  <Input
+                    id="address"
+                    value={formData.address}
+                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                    placeholder="Flat 5B, Block C, Estate Name"
+                    required
+                  />
+                  <p className="mt-1 text-xs text-gray-500">
+                    This becomes the account name on bills and in the customer list.
+                  </p>
+                </div>
+
                 {/* Ward */}
                 <div>
                   <Label htmlFor="ward">Ward</Label>
@@ -380,29 +417,42 @@ export function AddCustomerDialog({ onCustomerAdded }: AddCustomerDialogProps) {
                     value={formData.streetId}
                     onValueChange={(value) => setFormData({ ...formData, streetId: value })}
                     disabled={!formData.wardId || filteredStreets.length === 0}
+                    onOpenChange={(o) => { if (!o) setStreetSearch(""); }}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select street" />
                     </SelectTrigger>
                     <SelectContent>
-                      {filteredStreets.map((street) => (
-                        <SelectItem key={getId(street)} value={getId(street)}>
-                          {street.name}
-                        </SelectItem>
-                      ))}
+                      <div className="sticky top-0 z-10 -mx-1 -mt-1 mb-1 border-b bg-popover p-1.5">
+                        <Input
+                          autoFocus
+                          placeholder="Search streets…"
+                          value={streetSearch}
+                          onChange={(e) => setStreetSearch(e.target.value)}
+                          onKeyDown={(e) => e.stopPropagation()}
+                          onPointerDown={(e) => e.stopPropagation()}
+                          className="h-8"
+                        />
+                      </div>
+                      {(() => {
+                        const q = streetSearch.trim().toLowerCase();
+                        const visible = q
+                          ? filteredStreets.filter((s) => s.name.toLowerCase().includes(q))
+                          : filteredStreets;
+                        return visible.length > 0 ? (
+                          visible.map((street) => (
+                            <SelectItem key={getId(street)} value={getId(street)}>
+                              {street.name}
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <div className="px-2 py-3 text-center text-sm text-muted-foreground">
+                            No streets found
+                          </div>
+                        );
+                      })()}
                     </SelectContent>
                   </Select>
-                </div>
-
-                {/* Address */}
-                <div className="col-span-2">
-                  <Label htmlFor="address">Address</Label>
-                  <Input
-                    id="address"
-                    value={formData.address}
-                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                    placeholder="Flat 5B, Block C, Estate Name"
-                  />
                 </div>
 
                 {/* State */}
@@ -456,6 +506,53 @@ export function AddCustomerDialog({ onCustomerAdded }: AddCustomerDialogProps) {
               </div>
             </div>
 
+            {/* Contact Person — the person we reach for this property */}
+            <div className="space-y-4">
+              <div>
+                <h3 className="font-medium text-sm text-gray-700">Contact Person</h3>
+                <p className="text-xs text-gray-500">
+                  Who we reach for this property — used to deliver bills via WhatsApp/SMS.
+                </p>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                {/* Contact Name */}
+                <div className="col-span-2 sm:col-span-1">
+                  <Label htmlFor="fullName">Contact Name *</Label>
+                  <Input
+                    id="fullName"
+                    value={formData.fullName}
+                    onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                    placeholder="John Doe"
+                    required
+                  />
+                </div>
+
+                {/* Phone */}
+                <div className="col-span-2 sm:col-span-1">
+                  <Label htmlFor="phone">Phone Number *</Label>
+                  <Input
+                    id="phone"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    placeholder="08012345678"
+                    required
+                  />
+                </div>
+
+                {/* Email */}
+                <div className="col-span-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    placeholder="john@example.com"
+                  />
+                </div>
+              </div>
+            </div>
+
             {/* Property Breakdown */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
@@ -472,52 +569,125 @@ export function AddCustomerDialog({ onCustomerAdded }: AddCustomerDialogProps) {
                 </p>
               ) : (
                 <div className="space-y-3">
-                  {properties.map((prop, index) => (
-                    <div key={index} className="flex items-center gap-3">
-                      <div className="flex-1">
-                        <Select
-                          value={prop.propertyTypeId}
-                          onValueChange={(value) => updateProperty(index, "propertyTypeId", value)}
+                  {properties.map((prop, index) => {
+                    const pt = propertyTypes.find((p) => getId(p) === prop.propertyTypeId);
+                    const canOverride = !!pt?.allowPriceOverride;
+                    const overridden = canOverride && prop.costPerUnit !== undefined && prop.costPerUnit !== "";
+                    const unit = overridden ? Number(prop.costPerUnit) : pt?.cost || 0;
+                    const lineTotal = unit * billableUnitsFor(prop);
+                    const qty = Number(prop.quantity) || 0;
+                    const hasOcc =
+                      prop.occupiedUnits !== undefined && prop.occupiedUnits !== null && prop.occupiedUnits !== "";
+                    const occ = hasOcc ? Math.min(Math.max(Number(prop.occupiedUnits) || 0, 0), qty) : qty;
+                    const vacant = qty - occ;
+                    return (
+                      <div key={index} className="space-y-2 rounded-lg border border-gray-100 bg-gray-50/50 p-2">
+                      <div className="flex items-center gap-3">
+                        <div className="flex-1">
+                          <Select
+                            value={prop.propertyTypeId}
+                            onValueChange={(value) => {
+                              // Prefill the editable price for override-enabled types
+                              const chosen = propertyTypes.find((p) => getId(p) === value);
+                              const updated = [...properties];
+                              updated[index] = {
+                                ...updated[index],
+                                propertyTypeId: value,
+                                costPerUnit: chosen?.allowPriceOverride ? chosen.cost : undefined,
+                              };
+                              setProperties(updated);
+                            }}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select property type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {propertyTypes.map((p) => (
+                                <SelectItem key={getId(p)} value={getId(p)}>
+                                  {p.name}{p.isCommercial ? " (Commercial)" : ""} - {formatCurrency(p.cost)}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="w-16">
+                          <Input
+                            type="number"
+                            min="1"
+                            value={prop.quantity}
+                            onChange={(e) => updateProperty(index, "quantity", parseInt(e.target.value) || 1)}
+                            placeholder="Qty"
+                          />
+                        </div>
+                        <div className="w-32">
+                          {canOverride ? (
+                            <div className="relative">
+                              <span className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-xs text-gray-500">₦</span>
+                              <Input
+                                type="number"
+                                min="0"
+                                className="pl-5"
+                                value={prop.costPerUnit ?? ""}
+                                placeholder={String(pt?.cost ?? 0)}
+                                onChange={(e) =>
+                                  updateProperty(index, "costPerUnit", e.target.value === "" ? "" : parseFloat(e.target.value))
+                                }
+                                title="Custom price per unit"
+                              />
+                            </div>
+                          ) : (
+                            <div className="text-right text-sm text-gray-500">
+                              {pt ? formatCurrency(pt.cost) : ""}
+                            </div>
+                          )}
+                        </div>
+                        <div className="w-24 text-right text-sm font-medium">
+                          {prop.propertyTypeId ? formatCurrency(lineTotal) : ""}
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          onClick={() => removeProperty(index)}
                         >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select property type" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {propertyTypes.map((pt) => (
-                              <SelectItem key={getId(pt)} value={getId(pt)}>
-                                {pt.name} - {formatCurrency(pt.cost)}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
-                      <div className="w-24">
-                        <Input
-                          type="number"
-                          min="1"
-                          value={prop.quantity}
-                          onChange={(e) => updateProperty(index, "quantity", parseInt(e.target.value) || 1)}
-                          placeholder="Qty"
-                        />
+
+                      {/* Occupancy — how many of the units are occupied vs vacant */}
+                      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 pl-1 text-sm">
+                        <div className="flex items-center gap-2">
+                          <Label className="text-xs text-gray-500">Occupied</Label>
+                          <Input
+                            type="number"
+                            min="0"
+                            max={qty || undefined}
+                            className="h-8 w-16"
+                            value={prop.occupiedUnits ?? ""}
+                            placeholder={String(qty)}
+                            onChange={(e) =>
+                              updateProperty(index, "occupiedUnits", e.target.value === "" ? "" : parseInt(e.target.value))
+                            }
+                            title={`Occupied out of ${qty} unit(s)`}
+                          />
+                          <span className="text-xs text-gray-400">of {qty}</span>
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          Vacant: <span className="font-medium text-gray-700">{vacant}</span>
+                        </div>
+                        <label className="flex items-center gap-2 text-xs text-gray-600">
+                          <Switch
+                            checked={prop.billVacant !== false}
+                            onCheckedChange={(checked) => updateProperty(index, "billVacant", checked)}
+                            disabled={vacant === 0}
+                          />
+                          Bill vacant units
+                        </label>
                       </div>
-                      <div className="w-28 text-right text-sm font-medium">
-                        {prop.propertyTypeId && (
-                          formatCurrency(
-                            (propertyTypes.find((pt) => getId(pt) === prop.propertyTypeId)?.cost || 0) * prop.quantity
-                          )
-                        )}
                       </div>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                        onClick={() => removeProperty(index)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
+                    );
+                  })}
 
                   {/* Estimated Bill */}
                   <Card className="bg-green-50 border-green-200">
@@ -562,6 +732,34 @@ export function AddCustomerDialog({ onCustomerAdded }: AddCustomerDialogProps) {
               />
               <p className="text-xs text-gray-500">
                 Any outstanding balance from previous billing periods
+              </p>
+            </div>
+
+            {/* Billing */}
+            <div className="space-y-2 pt-4 border-t">
+              <Label htmlFor="billCycle">Bill Cycle (Optional)</Label>
+              <Select
+                value={formData.billCycleId || "none"}
+                onValueChange={(value) =>
+                  setFormData({ ...formData, billCycleId: value === "none" ? "" : value })
+                }
+              >
+                <SelectTrigger id="billCycle">
+                  <SelectValue placeholder="Not assigned — won't be billed automatically" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Not assigned</SelectItem>
+                  {billCycles.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-gray-500">
+                {billCycles.length === 0
+                  ? "No bill cycles yet — create one under Billing → Bills to bill this customer automatically."
+                  : "Assign to a cycle so bills generate on its schedule. Leave unassigned to bill manually later."}
               </p>
             </div>
 
