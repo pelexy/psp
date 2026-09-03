@@ -300,6 +300,18 @@ const Bills = () => {
     }
   };
 
+  const assignCustomers = async (c: BillCycle) => {
+    if (!accessToken) return;
+    if (!window.confirm(`Assign all customers who aren't on any cycle to "${c.name}"? They will start getting bills on this cycle.`)) return;
+    try {
+      const res = await apiService.assignBillCycleCustomers(accessToken, c.id, { scope: "unassigned" });
+      toast.success(`${res.data?.assigned ?? 0} customer(s) assigned to "${c.name}"`);
+      await loadCycles();
+    } catch (e: any) {
+      toast.error(e.message || "Failed to assign customers");
+    }
+  };
+
   const deleteCycle = async (c: BillCycle) => {
     if (!accessToken) return;
     if (!window.confirm(`Delete bill cycle "${c.name}"? Customers assigned to it will be unassigned.`)) return;
@@ -538,6 +550,9 @@ const Bills = () => {
                     >
                       <RefreshCw className={`h-3.5 w-3.5 ${runningCycleId === c.id ? "animate-spin" : ""}`} />
                       {runningCycleId === c.id ? "Running…" : "Run now"}
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => assignCustomers(c)}>
+                      Assign customers
                     </Button>
                     <Button size="sm" variant="outline" onClick={() => openEdit(c)}>
                       Edit

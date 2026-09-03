@@ -27,7 +27,7 @@ const AppLayout = ({ children }: AppLayoutProps) => {
             <div className="flex items-center gap-3">
               <Recycle className="h-8 w-8 text-primary" />
               <div>
-                <h1 className="text-lg font-bold text-foreground">Collect</h1>
+                <h1 className="text-lg font-bold text-foreground">WasteCollect</h1>
                 <p className="text-xs text-muted-foreground hidden sm:block">by BuyPower</p>
               </div>
             </div>

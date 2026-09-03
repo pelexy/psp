@@ -24,16 +24,11 @@ import {
   TrendingUp,
   Users,
   Truck,
-  Wallet,
   Save,
   Calendar,
   Clock,
   CheckCircle,
   Shield,
-  Smartphone,
-  UserPlus,
-  ScanLine,
-  Receipt,
   Globe,
   Hash,
   IdCard,
@@ -44,6 +39,7 @@ import {
 } from "@/lib/icons";
 import { apiService } from "@/services/api";
 import { useAuth } from "@/contexts/AuthContext";
+import { PERMISSION_GROUPS } from "@/lib/permissions";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
@@ -63,49 +59,17 @@ interface Street {
 const getId = (item: { id?: string; _id?: string }): string =>
   item.id || item._id || "";
 
+// Full ERP-standard permission set — single source of truth in src/lib/permissions.
+// Flattened here (with a generic icon) so the existing view/edit grids render
+// every module permission without further changes.
 const PERMISSION_DEFS: {
   key: string;
   label: string;
   hint: string;
   icon: LucideIcon;
-}[] = [
-  {
-    key: "canUseMobileApp",
-    label: "Mobile app access",
-    hint: "Master switch — can sign in to the field-agent app",
-    icon: Smartphone,
-  },
-  {
-    key: "canManageCustomers",
-    label: "View customers",
-    hint: "See customer details, debt and history",
-    icon: Users,
-  },
-  {
-    key: "canEnumerateCustomers",
-    label: "Enumerate customers",
-    hint: "Add new households or businesses",
-    icon: UserPlus,
-  },
-  {
-    key: "canScanBarcodes",
-    label: "Scan barcodes",
-    hint: "Use camera to look up customers",
-    icon: ScanLine,
-  },
-  {
-    key: "canViewInvoices",
-    label: "View invoices & debt",
-    hint: "See pending invoices and outstanding amounts",
-    icon: Receipt,
-  },
-  {
-    key: "canRecordPayments",
-    label: "Record payments",
-    hint: "Mark payments collected in the field",
-    icon: Wallet,
-  },
-];
+}[] = PERMISSION_GROUPS.flatMap((g) =>
+  g.items.map((i) => ({ key: i.key, label: i.label, hint: i.hint, icon: Shield })),
+);
 
 const formatCurrency = (amount: number) =>
   new Intl.NumberFormat("en-NG", {

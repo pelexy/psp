@@ -3,6 +3,10 @@ import type { ReactNode } from 'react';
 import { apiService } from '@/services/api';
 import type { PSPDashboardResponse, CompanyOption } from '@/services/api';
 
+// ERP-standard RBAC — keys defined in src/lib/permissions.ts. Kept as a broad
+// map here so any module permission works without re-typing this file.
+export type StaffPermissions = Record<string, boolean>;
+
 interface User {
   _id: string;
   email: string;
@@ -10,6 +14,9 @@ interface User {
   isActive: boolean;
   firstName?: string;
   lastName?: string;
+  // Present for staff/psp_agent accounts — drives dashboard RBAC.
+  permissions?: StaffPermissions;
+  pspId?: string;
 }
 
 interface PSP {
@@ -47,6 +54,9 @@ interface AuthContextType {
   updateTokens: (accessToken: string, refreshToken: string) => void;
   switchCompany: (pspId: string) => Promise<void>;
   fetchDashboardData: () => Promise<void>;
+  // RBAC: is the caller a full owner ('psp'), and does a staff member hold a permission.
+  isOwner: boolean;
+  hasPermission: (key: string) => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -240,6 +250,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const isAuthenticated = !!user && !!accessToken;
 
+  // RBAC helpers. The PSP owner ('psp') has full access; staff/psp_agent are
+  // limited to the flags granted on their account (carried in the login payload).
+  const isOwner = user?.role === 'psp' || user?.role === 'super-admin';
+  const hasPermission = (key: string): boolean => {
+    if (isOwner) return true;
+    return Boolean(user?.permissions?.[key]);
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -257,6 +275,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         updateTokens,
         switchCompany,
         fetchDashboardData,
+        isOwner,
+        hasPermission,
       }}
     >
       {children}

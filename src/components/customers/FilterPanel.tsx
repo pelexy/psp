@@ -117,6 +117,23 @@ export function FilterPanel({ filters, onFiltersChange, onClearFilters }: Filter
             </Select>
           </div>
 
+          {/* Customer Type */}
+          <div className="space-y-2">
+            <Label className="text-sm font-semibold text-gray-900">Customer Type</Label>
+            <Select value={filters.customerType || "all"} onValueChange={(v: any) => updateFilter("customerType", v)}>
+              <SelectTrigger>
+                <SelectValue placeholder="All types" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All types</SelectItem>
+                <SelectItem value="standalone">Standalone</SelectItem>
+                <SelectItem value="compound">Compound</SelectItem>
+                <SelectItem value="estate">Estate</SelectItem>
+                <SelectItem value="commercial">Commercial</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
           {/* Debt / payment section */}
           <div className="border-t pt-6 space-y-4">
             <h3 className="text-sm font-semibold text-gray-900">Debt & Payment</h3>

@@ -139,9 +139,9 @@ const Agents = () => {
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-xl md:text-2xl font-semibold tracking-tight text-foreground">Field Agents</h1>
+            <h1 className="text-xl md:text-2xl font-semibold tracking-tight text-foreground">Staff</h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Manage field staff • {agents.length} total agents
+              Manage your staff and their access • {agents.length} total
             </p>
           </div>
 
@@ -155,7 +155,7 @@ const Agents = () => {
             columns={columns}
             data={agents}
             loading={loading}
-            emptyMessage="No agents found. Create your first agent to get started."
+            emptyMessage="No staff found. Create your first staff member to get started."
             onRowClick={(agent) => handleViewAgent(agent.id)}
           />
         </div>

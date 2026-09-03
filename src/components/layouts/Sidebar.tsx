@@ -27,14 +27,19 @@ interface NavItem {
   path?: string;
   icon: React.ElementType;
   children?: NavChild[];
+  // RBAC gate: 'ownerOnly' shows only to the PSP owner; a permission key shows
+  // to the owner + any staff member holding that permission. Undefined = always.
+  ownerOnly?: boolean;
+  permission?: string;
 }
 
 const navItems: NavItem[] = [
   { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
-  { name: "Customers", path: "/customers", icon: Users },
+  { name: "Customers", path: "/customers", icon: Users, permission: "canManageCustomers" },
   {
     name: "Billing",
     icon: Receipt,
+    permission: "canViewInvoices",
     children: [
       { name: "Bills", path: "/billing/bills" },
       { name: "Generated Bills", path: "/billing/generated-bills" },
@@ -43,21 +48,25 @@ const navItems: NavItem[] = [
   {
     name: "Transactions",
     icon: ArrowsClockwise,
+    permission: "canRecordPayments",
     children: [
       { name: "Payments", path: "/transactions/payments" },
     ],
   },
   {
-    name: "Agents",
+    // Renamed from "Agents" — these are the PSP's Staff.
+    name: "Staff",
     icon: UserCog,
+    ownerOnly: true,
     children: [
-      { name: "All Agents", path: "/agents" },
+      { name: "All Staff", path: "/agents" },
       { name: "Pickups", path: "/agents/pickups" },
     ],
   },
   {
     name: "Reports",
     icon: BarChart3,
+    permission: "canViewInvoices",
     children: [
       { name: "Debt Aging", path: "/reports/debt-aging" },
       { name: "Outstanding", path: "/reports/outstanding" },
@@ -66,13 +75,21 @@ const navItems: NavItem[] = [
       { name: "Map Analysis", path: "/reports/map-analysis" },
     ],
   },
-  { name: "Settings", path: "/settings", icon: Settings },
+  { name: "Settings", path: "/settings", icon: Settings, ownerOnly: true },
 ];
 
 export const Sidebar = () => {
   const location = useLocation();
-  const { logout } = useAuth();
+  const { logout, isOwner, hasPermission } = useAuth();
   const navigate = useNavigate();
+
+  // RBAC: the owner sees everything; a staff member only sees items they're
+  // permitted to (owner-only items are hidden from staff entirely).
+  const visibleNavItems = navItems.filter((item) => {
+    if (item.ownerOnly) return isOwner;
+    if (item.permission) return hasPermission(item.permission as any);
+    return true;
+  });
   const [collapsed, setCollapsed] = useState(false);
   const [expandedSections, setExpandedSections] = useState<string[]>(["Billing", "Transactions", "Agents", "Reports"]);
 
@@ -142,7 +159,7 @@ export const Sidebar = () => {
 
       {/* Navigation */}
       <nav className="flex-1 px-3 py-6 space-y-1 overflow-y-auto">
-        {navItems.map((item) => {
+        {visibleNavItems.map((item) => {
           const Icon = item.icon;
           const isActive = isSectionActive(item);
           const isExpanded = expandedSections.includes(item.name);

@@ -57,6 +57,7 @@ const Customers = () => {
     if (filters.lga?.trim()) apiFilters.lga = filters.lga.trim();
     if (filters.hasOutstanding === "true") apiFilters.hasOutstanding = true;
     if (filters.paymentBehavior) apiFilters.paymentBehavior = filters.paymentBehavior;
+    if (filters.customerType && filters.customerType !== "all") apiFilters.customerType = filters.customerType;
     if (filters.sortBy?.trim()) apiFilters.sortBy = filters.sortBy.trim();
     if (filters.sortOrder) apiFilters.sortOrder = filters.sortOrder;
     return apiFilters;
@@ -110,7 +111,7 @@ const Customers = () => {
       }
 
       const headers = [
-        "Account Number", "Address", "Contact Name", "Contact Phone", "Contact Email",
+        "Account Number", "Address", "Street", "Ward", "Contact Name", "Contact Phone", "Contact Email",
         "City", "State", "LGA", "Billed", "Total Paid", "Deficit", "Status", "Created",
       ];
       const esc = (v: any) => {
@@ -121,6 +122,8 @@ const Customers = () => {
         [
           c.accountNumber || c.customerAccountNumber,
           c.address || c.fullName,
+          c.streetName,
+          c.wardName,
           c.contactName,
           c.contactPhone || c.phone,
           c.contactEmail || c.email,

@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { PERMISSION_GROUPS, DEFAULT_STAFF_PERMISSIONS, type PermissionKey } from "@/lib/permissions";
 import {
   Plus,
   Loader2,
@@ -21,12 +22,6 @@ import {
   MapPin,
   ChevronDown,
   ChevronRight,
-  Users,
-  UserPlus,
-  ScanLine,
-  Receipt,
-  Wallet,
-  type LucideIcon,
 } from "@/lib/icons";
 import { apiService } from "@/services/api";
 import { useAuth } from "@/contexts/AuthContext";
@@ -49,63 +44,11 @@ interface Street {
   wardId: string | { id?: string; _id?: string; name: string };
 }
 
-interface Permission {
-  key: PermissionKey;
-  label: string;
-  hint: string;
-  icon: LucideIcon;
-}
-
-const PERMISSIONS: Permission[] = [
-  {
-    key: "canManageCustomers",
-    label: "View customers",
-    hint: "See customer details, debt and history",
-    icon: Users,
-  },
-  {
-    key: "canEnumerateCustomers",
-    label: "Enumerate",
-    hint: "Add new customers in the field",
-    icon: UserPlus,
-  },
-  {
-    key: "canScanBarcodes",
-    label: "Scan barcodes",
-    hint: "Look up customers by barcode",
-    icon: ScanLine,
-  },
-  {
-    key: "canViewInvoices",
-    label: "View invoices",
-    hint: "See pending invoices and debt",
-    icon: Receipt,
-  },
-  {
-    key: "canRecordPayments",
-    label: "Record payments",
-    hint: "Mark payments collected in the field",
-    icon: Wallet,
-  },
-];
-
-type PermissionKey =
-  | "canManageCustomers"
-  | "canEnumerateCustomers"
-  | "canScanBarcodes"
-  | "canViewInvoices"
-  | "canRecordPayments";
-
 const getId = (item: { id?: string; _id?: string }) =>
   item.id || item._id || "";
 
-const initialPermissions: Record<PermissionKey, boolean> = {
-  canManageCustomers: true,
-  canEnumerateCustomers: true,
-  canScanBarcodes: true,
-  canViewInvoices: false,
-  canRecordPayments: false,
-};
+// Full ERP-standard permission set (single source of truth in src/lib/permissions).
+const initialPermissions: Record<string, boolean> = { ...DEFAULT_STAFF_PERMISSIONS };
 
 export function CreateAgentDialog({ onAgentCreated }: CreateAgentDialogProps) {
   const { accessToken } = useAuth();
@@ -133,7 +76,7 @@ export function CreateAgentDialog({ onAgentCreated }: CreateAgentDialogProps) {
   const [selectedStreetIds, setSelectedStreetIds] = useState<string[]>([]);
   const [expandedWardIds, setExpandedWardIds] = useState<string[]>([]);
   const [permissions, setPermissions] =
-    useState<Record<PermissionKey, boolean>>(initialPermissions);
+    useState<Record<string, boolean>>(initialPermissions);
 
   useEffect(() => {
     if (!open || !accessToken) return;
@@ -215,7 +158,7 @@ export function CreateAgentDialog({ onAgentCreated }: CreateAgentDialogProps) {
   };
 
   const togglePermission = (key: PermissionKey) => {
-    setPermissions((prev) => ({ ...prev, [key]: !prev[key] }));
+    setPermissions((prev: Record<string, boolean>) => ({ ...prev, [key]: !prev[key] }));
   };
 
   const resetForm = () => {
@@ -494,55 +437,51 @@ export function CreateAgentDialog({ onAgentCreated }: CreateAgentDialogProps) {
                         Permissions
                       </h3>
                       <p className="text-xs text-muted-foreground">
-                        Tap to enable each capability for this agent
+                        Tap to enable each capability for this staff member
                       </p>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {PERMISSIONS.map((p) => {
-                      const active = permissions[p.key];
-                      const Icon = p.icon;
-                      return (
-                        <button
-                          type="button"
-                          key={p.key}
-                          onClick={() => togglePermission(p.key)}
-                          disabled={loading}
-                          className={
-                            "text-left rounded-lg border p-3 transition relative " +
-                            (active
-                              ? "border-primary bg-primary/10 ring-1 ring-primary/40"
-                              : "border-border bg-muted/40 hover:bg-muted/70")
-                          }
-                        >
-                          <div className="flex items-start gap-2">
-                            <Icon
+                  {PERMISSION_GROUPS.map((grp) => (
+                    <div key={grp.group} className="space-y-2">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        {grp.group}
+                      </p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {grp.items.map((p) => {
+                          const active = permissions[p.key];
+                          return (
+                            <button
+                              type="button"
+                              key={p.key}
+                              onClick={() => togglePermission(p.key)}
+                              disabled={loading}
                               className={
-                                "h-4 w-4 mt-0.5 shrink-0 " +
+                                "text-left rounded-lg border p-3 transition relative " +
                                 (active
-                                  ? "text-primary"
-                                  : "text-muted-foreground")
+                                  ? "border-primary bg-primary/10 ring-1 ring-primary/40"
+                                  : "border-border bg-muted/40 hover:bg-muted/70")
                               }
-                            />
-                            <div className="min-w-0">
-                              <p
-                                className={
-                                  "text-sm font-medium " +
-                                  (active ? "text-primary" : "text-foreground")
-                                }
-                              >
-                                {p.label}
-                              </p>
-                              <p className="text-xs text-muted-foreground mt-0.5">
-                                {p.hint}
-                              </p>
-                            </div>
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
+                            >
+                              <div className="min-w-0">
+                                <p
+                                  className={
+                                    "text-sm font-medium " +
+                                    (active ? "text-primary" : "text-foreground")
+                                  }
+                                >
+                                  {p.label}
+                                </p>
+                                <p className="text-xs text-muted-foreground mt-0.5">
+                                  {p.hint}
+                                </p>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
                 </section>
 
                 <hr className="border-border" />

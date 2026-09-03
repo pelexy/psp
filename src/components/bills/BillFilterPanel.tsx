@@ -11,6 +11,7 @@ export type BillFilters = {
   streetId: string;
   status: string;
   billCycleId: string;
+  delivery: string;
   dateFrom: string;
   dateTo: string;
 };
@@ -36,6 +37,7 @@ export function BillFilterPanel({ filters, onFiltersChange, onClear, wards, stre
     filters.streetId,
     filters.status,
     filters.billCycleId,
+    filters.delivery,
     filters.dateFrom,
     filters.dateTo,
   ].filter(Boolean).length;
@@ -97,6 +99,23 @@ export function BillFilterPanel({ filters, onFiltersChange, onClear, wards, stre
                   <SelectItem value="pending">Pending</SelectItem>
                   <SelectItem value="unpaid">Unpaid</SelectItem>
                   <SelectItem value="overdue">Overdue</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm text-gray-700">Delivery</Label>
+              <Select value={filters.delivery || "all"} onValueChange={(v) => set({ delivery: v === "all" ? "" : v })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="All" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All bills</SelectItem>
+                  <SelectItem value="unsent">Not sent yet</SelectItem>
+                  <SelectItem value="sent">Sent</SelectItem>
+                  <SelectItem value="no_whatsapp">Missing WhatsApp</SelectItem>
+                  <SelectItem value="no_email">Missing Email</SelectItem>
+                  <SelectItem value="no_sms">Missing SMS</SelectItem>
                 </SelectContent>
               </Select>
             </div>

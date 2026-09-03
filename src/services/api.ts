@@ -529,6 +529,7 @@ class ApiService {
       lga?: string;
       hasOutstanding?: boolean;
       paymentBehavior?: string;
+      customerType?: string;
       sortBy?: string;
       sortOrder?: "asc" | "desc";
     },
@@ -545,6 +546,7 @@ class ApiService {
       if (filters.lga) params.append("lga", filters.lga);
       if (filters.hasOutstanding) params.append("hasOutstanding", "true");
       if (filters.paymentBehavior) params.append("paymentBehavior", filters.paymentBehavior);
+      if (filters.customerType) params.append("customerType", filters.customerType);
       if (filters.sortBy) params.append("sortBy", filters.sortBy);
       if (filters.sortOrder) params.append("sortOrder", filters.sortOrder);
     }
@@ -1809,6 +1811,18 @@ class ApiService {
     return this.makeAuthenticatedRequest<any>("/psp/bills/summary", {}, accessToken);
   }
 
+  async getBillDeliverySummary(
+    accessToken: string,
+    dateFrom?: string,
+    dateTo?: string,
+  ): Promise<any> {
+    const q = new URLSearchParams();
+    if (dateFrom) q.append("dateFrom", dateFrom);
+    if (dateTo) q.append("dateTo", dateTo);
+    const qs = q.toString();
+    return this.makeAuthenticatedRequest<any>(`/psp/bills/delivery-summary${qs ? `?${qs}` : ""}`, {}, accessToken);
+  }
+
   async getBillConfig(accessToken: string): Promise<any> {
     return this.makeAuthenticatedRequest<any>("/psp/bills/config", {}, accessToken);
   }
@@ -1845,6 +1859,7 @@ class ApiService {
       status?: string;
       billType?: string;
       billCycleId?: string;
+      delivery?: string;
       dateFrom?: string;
       dateTo?: string;
       dueFrom?: string;
@@ -1860,6 +1875,7 @@ class ApiService {
       if (filters.status) q.append("status", filters.status);
       if (filters.billType) q.append("billType", filters.billType);
       if (filters.billCycleId) q.append("billCycleId", filters.billCycleId);
+      if (filters.delivery) q.append("delivery", filters.delivery);
       if (filters.dateFrom) q.append("dateFrom", filters.dateFrom);
       if (filters.dateTo) q.append("dateTo", filters.dateTo);
       if (filters.dueFrom) q.append("dueFrom", filters.dueFrom);
@@ -1922,6 +1938,18 @@ class ApiService {
 
   async runBillCycle(accessToken: string, id: string): Promise<any> {
     return this.makeAuthenticatedRequest<any>(`/psp/bill-cycles/${id}/run`, { method: "POST" }, accessToken);
+  }
+
+  async assignBillCycleCustomers(
+    accessToken: string,
+    id: string,
+    body: { scope?: "all" | "unassigned"; customerType?: string },
+  ): Promise<any> {
+    return this.makeAuthenticatedRequest<any>(
+      `/psp/bill-cycles/${id}/assign`,
+      { method: "POST", body: JSON.stringify(body) },
+      accessToken,
+    );
   }
 }
 

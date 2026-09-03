@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { DollarSign, Hash } from "@/lib/icons";
+import { Hash } from "@/lib/icons";
 
 interface WithdrawDialogProps {
   open: boolean;
@@ -69,7 +69,7 @@ export function WithdrawDialog({
           <div className="space-y-2">
             <Label htmlFor="amount">Amount</Label>
             <div className="relative">
-              <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">₦</span>
               <Input
                 id="amount"
                 type="number"

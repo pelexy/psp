@@ -36,6 +36,8 @@ type GeneratedBill = {
   amountPaid: number;
   remaining: number;
   status: string;
+  deliveredAt?: string | null;
+  deliveredChannels?: string[];
   customerId: string;
   accountNumber: string;
   customerName: string;
@@ -63,6 +65,12 @@ const GeneratedBills = () => {
   const [genPage, setGenPage] = useState(1);
   const [genTotalPages, setGenTotalPages] = useState(1);
   const [genTotal, setGenTotal] = useState(0);
+  const [delivery, setDelivery] = useState<{
+    generated: number;
+    delivered: number;
+    notDelivered: number;
+    channels: { whatsapp: number; email: number; sms: number };
+  } | null>(null);
   const [wards, setWards] = useState<any[]>([]);
   const [streets, setStreets] = useState<any[]>([]);
   const [genSearch, setGenSearch] = useState("");
@@ -73,6 +81,7 @@ const GeneratedBills = () => {
     streetId: "",
     status: "",
     billCycleId: "",
+    delivery: "",
     dateFrom: "",
     dateTo: "",
   });
@@ -112,9 +121,21 @@ const GeneratedBills = () => {
     }
   };
 
+  // Today's delivery summary (bills sent + per-channel counts). Non-fatal.
+  const loadDeliverySummary = async () => {
+    if (!accessToken) return;
+    try {
+      const res = await apiService.getBillDeliverySummary(accessToken);
+      setDelivery(res?.data || null);
+    } catch {
+      /* non-fatal — the summary strip just hides */
+    }
+  };
+
   const loadGeneratedBills = async () => {
     if (!accessToken) return;
     setGenLoading(true);
+    void loadDeliverySummary();
     try {
       const res = await apiService.getBills(accessToken, genPage, 20, {
         search: genDebouncedSearch.trim() || undefined,
@@ -122,6 +143,7 @@ const GeneratedBills = () => {
         streetId: genFilters.streetId || undefined,
         status: genFilters.status || undefined,
         billCycleId: genFilters.billCycleId || undefined,
+        delivery: genFilters.delivery || undefined,
         dateFrom: genFilters.dateFrom || undefined,
         dateTo: genFilters.dateTo || undefined,
       });
@@ -137,7 +159,7 @@ const GeneratedBills = () => {
 
   const clearGenFilters = () => {
     setGenSearch("");
-    setGenFilters({ wardId: "", streetId: "", status: "", billCycleId: "", dateFrom: "", dateTo: "" });
+    setGenFilters({ wardId: "", streetId: "", status: "", billCycleId: "", delivery: "", dateFrom: "", dateTo: "" });
   };
 
   const hasGenFilters =
@@ -254,6 +276,34 @@ const GeneratedBills = () => {
           </Badge>
         ),
       },
+      {
+        key: "delivery",
+        header: "Sent via",
+        accessor: (b) => {
+          const ch = b.deliveredChannels || [];
+          if (ch.length === 0) {
+            return <span className="text-xs text-muted-foreground">Not sent</span>;
+          }
+          const chip = (label: string, on: boolean) => (
+            <span
+              className={
+                "rounded px-1.5 py-0.5 text-[10px] font-semibold " +
+                (on ? "bg-success/10 text-success" : "bg-muted text-muted-foreground line-through")
+              }
+              title={on ? `${label} sent${b.deliveredAt ? ` ${new Date(b.deliveredAt).toLocaleString()}` : ""}` : `${label} not sent`}
+            >
+              {label}
+            </span>
+          );
+          return (
+            <div className="flex flex-wrap gap-1">
+              {chip("WhatsApp", ch.includes("whatsapp"))}
+              {chip("Email", ch.includes("email"))}
+              {chip("SMS", ch.includes("sms"))}
+            </div>
+          );
+        },
+      },
     ],
     []
   );
@@ -268,6 +318,30 @@ const GeneratedBills = () => {
             Every bill statement produced by the runs · {genTotal.toLocaleString()} total
           </p>
         </div>
+
+        {/* Today's delivery summary — bills sent + per-channel counts. */}
+        {delivery && (
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+            {[
+              { label: "Bills today", value: delivery.generated, tone: "text-foreground" },
+              { label: "Sent", value: delivery.delivered, tone: "text-success" },
+              { label: "WhatsApp", value: delivery.channels.whatsapp, tone: "text-success" },
+              { label: "Email", value: delivery.channels.email, tone: "text-success" },
+              { label: "SMS", value: delivery.channels.sms, tone: "text-success" },
+            ].map((s) => (
+              <div key={s.label} className="rounded-xl bg-card p-3 shadow-card">
+                <div className="text-[11px] uppercase tracking-wide text-muted-foreground">{s.label}</div>
+                <div className={`text-xl font-semibold tabular-nums ${s.tone}`}>{s.value.toLocaleString()}</div>
+              </div>
+            ))}
+          </div>
+        )}
+        {delivery && delivery.notDelivered > 0 && (
+          <p className="-mt-1 text-xs text-muted-foreground">
+            {delivery.notDelivered.toLocaleString()} of today's bills not sent yet (scheduled runs send ~1h after generating).
+            "Sent" = accepted by the provider; handset/inbox delivery receipts are not tracked yet.
+          </p>
+        )}
 
         {/* Generated Bills — every bill produced, with a full filter bar */}
         <div className="overflow-hidden rounded-xl bg-card shadow-card">

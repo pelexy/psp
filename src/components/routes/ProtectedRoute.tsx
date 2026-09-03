@@ -6,7 +6,7 @@ interface ProtectedRouteProps {
   allowedRoles?: string[];
 }
 
-export const ProtectedRoute = ({ children, allowedRoles = ['psp'] }: ProtectedRouteProps) => {
+export const ProtectedRoute = ({ children, allowedRoles = ['psp', 'psp_agent', 'staff'] }: ProtectedRouteProps) => {
   const { isAuthenticated, isTemporaryPassword, isLoading, user, logout } = useAuth();
 
   console.log('[ProtectedRoute] State:', { isLoading, isAuthenticated, isTemporaryPassword, userRole: user?.role });

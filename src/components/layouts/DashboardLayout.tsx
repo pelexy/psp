@@ -48,14 +48,21 @@ interface NavItem {
   href?: string;
   icon: React.ElementType;
   children?: NavChild[];
+  // Staff RBAC gate: 'ownerOnly' shows only to the PSP owner; a permission key
+  // shows to the owner + any staff member holding that permission. Undefined = always.
+  ownerOnly?: boolean;
+  permission?: string;
 }
 
 const navigation: NavItem[] = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { name: "Customers", href: "/customers", icon: Users },
+  { name: "Customers", href: "/customers", icon: Users, permission: "canManageCustomers" },
   {
+    // v1: billing stays owner-only on web (backend enforcement for staff is a
+    // follow-up). The canViewInvoices flag still gates the mobile app.
     name: "Billing",
     icon: Receipt,
+    ownerOnly: true,
     children: [
       { name: "Bills", href: "/billing/bills" },
       { name: "Generated Bills", href: "/billing/generated-bills" },
@@ -65,22 +72,26 @@ const navigation: NavItem[] = [
   {
     name: "Transactions",
     icon: ArrowsClockwise,
+    ownerOnly: true,
     children: [
       { name: "Payments", href: "/transactions/payments" },
     ],
   },
   {
-    name: "Agents",
+    // Renamed from "Agents" — these are the PSP's Staff.
+    name: "Staff",
     icon: UserCog,
+    ownerOnly: true,
     children: [
-      { name: "All Agents", href: "/agents" },
+      { name: "All Staff", href: "/agents" },
       { name: "Pickups", href: "/agents/pickups" },
     ],
   },
-  { name: "Expenses", href: "/expenses", icon: Wallet },
+  { name: "Expenses", href: "/expenses", icon: Wallet, ownerOnly: true },
   {
     name: "Reports",
     icon: BarChart3,
+    ownerOnly: true,
     children: [
       { name: "Debt Aging", href: "/reports/debt-aging" },
       { name: "Outstanding", href: "/reports/outstanding" },
@@ -89,16 +100,24 @@ const navigation: NavItem[] = [
       { name: "Map Analysis", href: "/reports/map-analysis" },
     ],
   },
-  { name: "Settings", href: "/settings", icon: Settings },
+  { name: "Settings", href: "/settings", icon: Settings, ownerOnly: true },
 ];
 
 export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [expandedSections, setExpandedSections] = useState<string[]>(["Billing", "Transactions", "Agents", "Reports"]);
-  const { logout, user } = useAuth();
+  const { logout, user, isOwner, hasPermission } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Staff RBAC: the owner sees everything; staff only see items they're permitted
+  // to (owner-only items hidden from staff entirely).
+  const visibleNavigation = navigation.filter((item) => {
+    if (item.ownerOnly) return isOwner;
+    if (item.permission) return hasPermission(item.permission as any);
+    return true;
+  });
 
   const handleLogout = () => {
     logout();
@@ -187,7 +206,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
 
         {/* Navigation */}
         <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-          {navigation.map((item) => {
+          {visibleNavigation.map((item) => {
             const Icon = item.icon;
             const isActive = isSectionActive(item);
             const isExpanded = expandedSections.includes(item.name);

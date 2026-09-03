@@ -30,7 +30,7 @@ const AuthLayout = ({ children }: AuthLayoutProps) => {
           <div className="flex items-center gap-3 mb-12">
             <Recycle className="h-10 w-10" />
             <div>
-              <h1 className="text-2xl font-bold">Collect</h1>
+              <h1 className="text-2xl font-bold">WasteCollect</h1>
               <p className="text-sm text-white/80">by BuyPower</p>
             </div>
           </div>
@@ -91,7 +91,7 @@ const AuthLayout = ({ children }: AuthLayoutProps) => {
           <div className="lg:hidden flex items-center gap-3 mb-10">
             <Recycle className="h-8 w-8 text-primary" />
             <div>
-              <h1 className="text-xl font-semibold tracking-tight text-foreground">Collect</h1>
+              <h1 className="text-xl font-semibold tracking-tight text-foreground">WasteCollect</h1>
               <p className="text-xs text-muted-foreground">by BuyPower</p>
             </div>
           </div>
