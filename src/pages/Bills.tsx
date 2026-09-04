@@ -622,13 +622,8 @@ const Bills = () => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="daily">Daily</SelectItem>
-                    <SelectItem value="weekly">Weekly</SelectItem>
-                    <SelectItem value="biweekly">Every 2 weeks</SelectItem>
                     <SelectItem value="monthly">Monthly</SelectItem>
-                    <SelectItem value="bimonthly">Every 2 months (bi-monthly)</SelectItem>
-                    <SelectItem value="trimonthly">Every 3 months (tri-monthly)</SelectItem>
-                    <SelectItem value="custom">Custom (every N days)</SelectItem>
+                    <SelectItem value="bimonthly">Every 2 months</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
