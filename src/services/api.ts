@@ -1628,6 +1628,35 @@ class ApiService {
     );
   }
 
+  // PSP-scoped payments register — every payment received by this PSP.
+  // Returns the app envelope { success, message, data: { data, page, pageSize,
+  // total, totalPages, totals } }; the caller unwraps `.data` as usual.
+  async getPspPayments(
+    accessToken: string,
+    filters?: {
+      search?: string;
+      status?: string;
+      dateFrom?: string;
+      dateTo?: string;
+      page?: number;
+      pageSize?: number;
+    },
+  ): Promise<any> {
+    const q = new URLSearchParams();
+    if (filters?.search) q.append("search", filters.search);
+    if (filters?.status) q.append("status", filters.status);
+    if (filters?.dateFrom) q.append("dateFrom", filters.dateFrom);
+    if (filters?.dateTo) q.append("dateTo", filters.dateTo);
+    if (filters?.page) q.append("page", String(filters.page));
+    if (filters?.pageSize) q.append("pageSize", String(filters.pageSize));
+    const qs = q.toString();
+    return this.makeAuthenticatedRequest<any>(
+      `/psp/payments${qs ? `?${qs}` : ""}`,
+      {},
+      accessToken,
+    );
+  }
+
   // ============ EXPENSE CATEGORIES ============
 
   async getExpenseCategories(accessToken: string): Promise<any> {

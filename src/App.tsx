@@ -13,6 +13,7 @@ import Customers from "@/pages/Customers";
 import CustomerDetails from "@/pages/CustomerDetails";
 import CustomerLedger from "@/pages/CustomerLedger";
 import Transactions from "@/pages/Transactions";
+import Payments from "@/pages/Payments";
 import Agents from "@/pages/Agents";
 import AgentDetails from "@/pages/AgentDetails";
 import Pickups from "@/pages/Pickups";
@@ -64,6 +65,8 @@ function App() {
           <Route path="/billing/invoices/create" element={<Navigate to="/billing/bills" replace />} />
           <Route path="/billing/invoices/:invoiceNumber" element={<Navigate to="/billing/bills" replace />} />
           <Route path="/billing/customer-statement/:customerId" element={<ProtectedRoute><CustomerStatement /></ProtectedRoute>} />
+          {/* Payments register — every payment received by this PSP. */}
+          <Route path="/payments" element={<ProtectedRoute><Payments /></ProtectedRoute>} />
           {/* Transactions module — payments live here now (moved out of Billing). */}
           <Route path="/transactions/payments" element={<ProtectedRoute><Transactions /></ProtectedRoute>} />
           <Route path="/billing/payments" element={<Navigate to="/transactions/payments" replace />} />
