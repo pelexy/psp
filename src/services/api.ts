@@ -1917,6 +1917,23 @@ class ApiService {
     return this.makeAuthenticatedRequest<any>(`/psp/bills/${id}`, {}, accessToken);
   }
 
+  // Bill Analytics — performance & compliance for this PSP. Returns the app
+  // envelope { success, message, data: AnalyticsResult }; caller unwraps `.data`.
+  async getBillAnalytics(
+    accessToken: string,
+    filters?: { dateFrom?: string; dateTo?: string },
+  ): Promise<any> {
+    const q = new URLSearchParams();
+    if (filters?.dateFrom) q.append("dateFrom", filters.dateFrom);
+    if (filters?.dateTo) q.append("dateTo", filters.dateTo);
+    const qs = q.toString();
+    return this.makeAuthenticatedRequest<any>(
+      `/psp/bills/analytics${qs ? `?${qs}` : ""}`,
+      {},
+      accessToken,
+    );
+  }
+
   async sendBill(accessToken: string, id: string): Promise<any> {
     return this.makeAuthenticatedRequest<any>(`/psp/bills/${id}/send`, { method: "POST" }, accessToken);
   }

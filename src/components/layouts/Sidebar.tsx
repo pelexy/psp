@@ -13,6 +13,7 @@ import {
   Receipt,
   ArrowsClockwise,
   CreditCard,
+  ChartLineUp,
 } from "@/lib/icons";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -46,6 +47,7 @@ const navItems: NavItem[] = [
       { name: "Generated Bills", path: "/billing/generated-bills" },
     ],
   },
+  { name: "Bill Analytics", path: "/analytics", icon: ChartLineUp, permission: "canViewInvoices" },
   { name: "Payments", path: "/payments", icon: CreditCard, permission: "canRecordPayments" },
   {
     name: "Transactions",

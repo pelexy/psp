@@ -23,6 +23,8 @@ import Bills from "@/pages/Bills";
 import GeneratedBills from "@/pages/GeneratedBills";
 import BillRuns from "@/pages/BillRuns";
 import CustomerStatement from "@/pages/CustomerStatement";
+import AnalyticsPage from "@/pages/analytics/AnalyticsPage";
+import AnalyticsDetailPage from "@/pages/analytics/AnalyticsDetailPage";
 
 // Report pages
 import DebtAgingReport from "@/pages/reports/DebtAgingReport";
@@ -97,6 +99,10 @@ function App() {
           <Route path="/reports/collection-rate" element={<ProtectedRoute><CollectionRateReport /></ProtectedRoute>} />
           <Route path="/reports/problem-areas" element={<ProtectedRoute><ProblemAreasReport /></ProtectedRoute>} />
           <Route path="/reports/map-analysis" element={<ProtectedRoute><MapAnalysisReport /></ProtectedRoute>} />
+
+          {/* Bill Analytics */}
+          <Route path="/analytics" element={<ProtectedRoute><AnalyticsPage /></ProtectedRoute>} />
+          <Route path="/analytics/:dimension" element={<ProtectedRoute><AnalyticsDetailPage /></ProtectedRoute>} />
 
           {/* Settings */}
           <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />

@@ -18,6 +18,7 @@ export {
   ArrowUpRight,
   Money as Banknote,
   ChartBar as BarChart3,
+  ChartLineUp,
   Bell,
   Buildings as Building2,
   CalendarBlank as Calendar,
