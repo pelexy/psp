@@ -49,14 +49,7 @@ const navItems: NavItem[] = [
   },
   { name: "Bill Analytics", path: "/analytics", icon: ChartLineUp, permission: "canViewInvoices" },
   { name: "Payments", path: "/payments", icon: CreditCard, permission: "canRecordPayments" },
-  {
-    name: "Transactions",
-    icon: ArrowsClockwise,
-    permission: "canRecordPayments",
-    children: [
-      { name: "Payments", path: "/transactions/payments" },
-    ],
-  },
+  { name: "Transactions", path: "/transactions/payments", icon: ArrowsClockwise, permission: "canRecordPayments" },
   {
     // Renamed from "Agents" — these are the PSP's Staff.
     name: "Staff",
