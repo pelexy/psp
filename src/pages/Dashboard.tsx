@@ -15,11 +15,15 @@ import { apiService } from "@/services/api";
 import type { DateRangeType } from "@/utils/dateRanges";
 import { getDateRangeParams } from "@/utils/dateRanges";
 import { formatCurrency } from "@/utils/formatCurrency";
+import { format } from "date-fns";
+import type { AnalyticsResult } from "@/pages/analytics/analytics";
 import {
   Users,
   Trash2,
   CheckCircle2,
   HandCoins,
+  Percent,
+  ArrowsClockwise,
 } from "@/lib/icons";
 
 const Dashboard = () => {
@@ -36,6 +40,7 @@ const Dashboard = () => {
   const [collectionServices, setCollectionServices] = useState<any>(null);
   const [topCustomers, setTopCustomers] = useState<any>(null);
   const [recentTransactions, setRecentTransactions] = useState<any>(null);
+  const [billAnalytics, setBillAnalytics] = useState<AnalyticsResult | null>(null);
 
   // Get the current date range parameters for API calls
   const dateParams = getDateRangeParams(dateRange);
@@ -55,6 +60,7 @@ const Dashboard = () => {
           services,
           customers,
           transactions,
+          analytics,
         ] = await Promise.all([
           apiService.getComprehensiveDashboard(accessToken, dateParams.startDate, dateParams.endDate),
           apiService.getPerformanceMetrics(accessToken, selectedYear),
@@ -63,6 +69,10 @@ const Dashboard = () => {
           apiService.getCollectionServicesDashboard(accessToken, 3),
           apiService.getTopCustomersDashboard(accessToken, 5),
           apiService.getRecentTransactionsPSP(accessToken, 5),
+          apiService.getBillAnalytics(accessToken, {
+            dateFrom: dateParams.startDate,
+            dateTo: dateParams.endDate,
+          }),
         ]);
 
         setComprehensiveData(comprehensive.data);
@@ -72,6 +82,7 @@ const Dashboard = () => {
         setCollectionServices(services.data);
         setTopCustomers(customers.data);
         setRecentTransactions(transactions.data);
+        setBillAnalytics((analytics?.data as AnalyticsResult) ?? null);
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
       } finally {
@@ -159,6 +170,54 @@ const Dashboard = () => {
             changeType="neutral"
             icon={HandCoins}
             iconColor="warning"
+          />
+        </div>
+
+        {/* Billing performance — from bill analytics */}
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+          <MetricCard
+            title="Collected"
+            subtitle="Payments received"
+            value={formatCurrency(billAnalytics?.kpis?.collected || 0)}
+            change={`Billed ${formatCurrency(billAnalytics?.kpis?.billed || 0)}`}
+            changeType="neutral"
+            icon={HandCoins}
+            iconColor="success"
+          />
+          <MetricCard
+            title="Collection Rate"
+            subtitle="Collected ÷ Billed"
+            value={`${Math.round(billAnalytics?.kpis?.collectionRate || 0)}%`}
+            change={`${(billAnalytics?.kpis?.paid || 0).toLocaleString()} bills paid`}
+            changeType={(billAnalytics?.kpis?.collectionRate || 0) >= 50 ? "positive" : "negative"}
+            icon={Percent}
+            iconColor="primary"
+          />
+          <MetricCard
+            title="Outstanding"
+            subtitle="Owed on bills"
+            value={formatCurrency(billAnalytics?.kpis?.outstanding || 0)}
+            change={`${(billAnalytics?.kpis?.unpaid || 0).toLocaleString()} unpaid`}
+            changeType="neutral"
+            icon={HandCoins}
+            iconColor="warning"
+          />
+          <MetricCard
+            title="Cycle Runs"
+            subtitle={
+              billAnalytics?.runs?.lastRunAt
+                ? `Last run: ${format(new Date(billAnalytics.runs.lastRunAt), "MMM dd, yyyy")}`
+                : "No runs yet"
+            }
+            value={(billAnalytics?.runs?.total || 0).toLocaleString()}
+            change={
+              billAnalytics?.delivery
+                ? `Read on WhatsApp: ${(billAnalytics.delivery.read || 0).toLocaleString()}`
+                : undefined
+            }
+            changeType="neutral"
+            icon={ArrowsClockwise}
+            iconColor="primary"
           />
         </div>
 

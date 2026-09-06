@@ -38,6 +38,8 @@ type GeneratedBill = {
   status: string;
   deliveredAt?: string | null;
   deliveredChannels?: string[];
+  waStatus?: "sent" | "delivered" | "read" | "failed" | null;
+  waStatusAt?: string | null;
   customerId: string;
   accountNumber: string;
   customerName: string;
@@ -302,6 +304,53 @@ const GeneratedBills = () => {
               {chip("SMS", ch.includes("sms"))}
             </div>
           );
+        },
+      },
+      {
+        key: "waStatus",
+        header: "WhatsApp",
+        accessor: (b) => {
+          const at = b.waStatusAt ? new Date(b.waStatusAt).toLocaleString() : "";
+          switch (b.waStatus) {
+            case "read":
+              return (
+                <span
+                  className="rounded px-1.5 py-0.5 text-[10px] font-semibold bg-success/10 text-success"
+                  title={at ? `Read ${at}` : "Read"}
+                >
+                  Read ✓✓
+                </span>
+              );
+            case "delivered":
+              return (
+                <span
+                  className="rounded px-1.5 py-0.5 text-[10px] font-semibold bg-muted text-muted-foreground"
+                  title={at ? `Delivered ${at}` : "Delivered"}
+                >
+                  Delivered
+                </span>
+              );
+            case "sent":
+              return (
+                <span
+                  className="rounded px-1.5 py-0.5 text-[10px] font-semibold bg-muted text-muted-foreground"
+                  title={at ? `Sent ${at}` : "Sent"}
+                >
+                  Sent
+                </span>
+              );
+            case "failed":
+              return (
+                <span
+                  className="rounded px-1.5 py-0.5 text-[10px] font-semibold bg-destructive/10 text-destructive"
+                  title={at ? `Failed ${at}` : "Failed"}
+                >
+                  WA failed
+                </span>
+              );
+            default:
+              return <span className="text-xs text-muted-foreground">Not sent</span>;
+          }
         },
       },
     ],

@@ -41,6 +41,17 @@ export interface Defaulter {
   outstanding: number;
 }
 
+export interface AnalyticsRuns {
+  total: number;
+  lastRunAt: string | null;
+}
+
+export interface AnalyticsDelivery {
+  delivered: number;
+  read: number;
+  failed: number;
+}
+
 export interface AnalyticsResult {
   kpis: AnalyticsKpis;
   trend: TrendPoint[];
@@ -48,6 +59,8 @@ export interface AnalyticsResult {
   byWard: DimensionRow[];
   byCycle: DimensionRow[];
   topDefaulters: Defaulter[];
+  runs?: AnalyticsRuns;
+  delivery?: AnalyticsDelivery;
 }
 
 export type Dimension = "street" | "ward" | "cycle";
