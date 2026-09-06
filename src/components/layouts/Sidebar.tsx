@@ -14,6 +14,7 @@ import {
   ArrowsClockwise,
   CreditCard,
   ChartLineUp,
+  Percent,
 } from "@/lib/icons";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -49,6 +50,7 @@ const navItems: NavItem[] = [
   },
   { name: "Bill Analytics", path: "/analytics", icon: ChartLineUp, permission: "canViewInvoices" },
   { name: "Payments", path: "/payments", icon: CreditCard, permission: "canRecordPayments" },
+  { name: "Commission", path: "/commission", icon: Percent, permission: "canRecordPayments" },
   { name: "Transactions", path: "/transactions/payments", icon: ArrowsClockwise, permission: "canRecordPayments" },
   {
     // Renamed from "Agents" — these are the PSP's Staff.

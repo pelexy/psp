@@ -253,6 +253,44 @@ export interface BestPayingCustomersResponse {
   }>;
 }
 
+// Commission register — a single payment on which BuyPower earned commission.
+export interface PspCommissionEntry {
+  id: string;
+  reference: string;
+  grossAmount: number;
+  commissionAmount: number;
+  netToPsp: number;
+  commissionRate: number;
+  commissionType: string;
+  commissionPayer: "customer" | "psp";
+  source: string;
+  createdAt: string;
+  pspId: string;
+  pspName: string;
+  customerId: string;
+  customerName: string;
+}
+
+export interface PspCommissionResponse {
+  success: boolean;
+  message: string;
+  data: {
+    data: PspCommissionEntry[];
+    totals: {
+      commission: number;
+      gross: number;
+      net: number;
+      count: number;
+    };
+    pagination: {
+      page: number;
+      pageSize: number;
+      total: number;
+      totalPages: number;
+    };
+  };
+}
+
 export class ApiError extends Error {
   statusCode: number;
   error?: string;
@@ -1686,6 +1724,35 @@ class ApiService {
     const qs = q.toString();
     return this.makeAuthenticatedRequest<any>(
       `/psp/payments${qs ? `?${qs}` : ""}`,
+      {},
+      accessToken,
+    );
+  }
+
+  // PSP-scoped commission register — what this PSP has paid BuyPower.
+  // Returns the app envelope { success, message, data: { data, totals,
+  // pagination } }; the caller unwraps `.data` as usual.
+  async getPspCommission(
+    accessToken: string,
+    filters?: {
+      search?: string;
+      payer?: string;
+      dateFrom?: string;
+      dateTo?: string;
+      page?: number;
+      pageSize?: number;
+    },
+  ): Promise<PspCommissionResponse> {
+    const q = new URLSearchParams();
+    if (filters?.search) q.append("search", filters.search);
+    if (filters?.payer) q.append("payer", filters.payer);
+    if (filters?.dateFrom) q.append("dateFrom", filters.dateFrom);
+    if (filters?.dateTo) q.append("dateTo", filters.dateTo);
+    if (filters?.page) q.append("page", String(filters.page));
+    if (filters?.pageSize) q.append("pageSize", String(filters.pageSize));
+    const qs = q.toString();
+    return this.makeAuthenticatedRequest<PspCommissionResponse>(
+      `/psp/commission${qs ? `?${qs}` : ""}`,
       {},
       accessToken,
     );

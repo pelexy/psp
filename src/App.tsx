@@ -14,6 +14,7 @@ import CustomerDetails from "@/pages/CustomerDetails";
 import CustomerLedger from "@/pages/CustomerLedger";
 import Transactions from "@/pages/Transactions";
 import Payments from "@/pages/Payments";
+import Commission from "@/pages/Commission";
 import Agents from "@/pages/Agents";
 import AgentDetails from "@/pages/AgentDetails";
 import Pickups from "@/pages/Pickups";
@@ -69,6 +70,8 @@ function App() {
           <Route path="/billing/customer-statement/:customerId" element={<ProtectedRoute><CustomerStatement /></ProtectedRoute>} />
           {/* Payments register — every payment received by this PSP. */}
           <Route path="/payments" element={<ProtectedRoute><Payments /></ProtectedRoute>} />
+          {/* Commission — what this PSP has paid BuyPower. */}
+          <Route path="/commission" element={<ProtectedRoute><Commission /></ProtectedRoute>} />
           {/* Transactions module — payments live here now (moved out of Billing). */}
           <Route path="/transactions/payments" element={<ProtectedRoute><Transactions /></ProtectedRoute>} />
           <Route path="/billing/payments" element={<Navigate to="/transactions/payments" replace />} />
