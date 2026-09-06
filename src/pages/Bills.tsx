@@ -38,16 +38,25 @@ type BillCycle = {
   frequency: Frequency;
   anchorDayOfWeek: number | null;
   anchorDayOfMonth: number | null;
+  anchorHour: number | null;
   customIntervalDays: number | null;
   startDate: string;
   dueDays: number;
   prorateFirstBill: boolean;
   nextBillDate: string | null;
   active: boolean;
+  isDefault: boolean;
   customerCount: number;
 };
 
 const WEEKDAYS_PLURAL = ["Sundays", "Mondays", "Tuesdays", "Wednesdays", "Thursdays", "Fridays", "Saturdays"];
+
+// 0–23 → "12:00 AM" … "11:00 PM"
+const hourLabel = (h: number): string => {
+  const period = h < 12 ? "AM" : "PM";
+  const display = h % 12 === 0 ? 12 : h % 12;
+  return `${display}:00 ${period}`;
+};
 
 const cadenceLabel = (c: BillCycle): string => {
   const base: Record<Frequency, string> = {
@@ -67,6 +76,9 @@ const cadenceLabel = (c: BillCycle): string => {
     c.anchorDayOfMonth != null
   ) {
     label += ` · day ${c.anchorDayOfMonth}`;
+  }
+  if (c.anchorHour != null) {
+    label += ` · ${hourLabel(c.anchorHour)}`;
   }
   return label;
 };
@@ -132,11 +144,13 @@ type CycleForm = {
   frequency: Frequency;
   anchorDayOfWeek: number;
   anchorDayOfMonth: string;
+  anchorHour: number | null;
   customIntervalDays: string;
   startDate: string;
   dueDays: string;
   prorateFirstBill: boolean;
   active: boolean;
+  isDefault: boolean;
 };
 
 const emptyForm = (): CycleForm => ({
@@ -144,11 +158,13 @@ const emptyForm = (): CycleForm => ({
   frequency: "monthly",
   anchorDayOfWeek: 6,
   anchorDayOfMonth: "1",
+  anchorHour: null,
   customIntervalDays: "30",
   startDate: format(new Date(), "yyyy-MM-dd"),
   dueDays: "21",
   prorateFirstBill: true,
   active: true,
+  isDefault: false,
 });
 
 const statusVariant: Record<string, "default" | "secondary" | "destructive"> = {
@@ -234,11 +250,13 @@ const Bills = () => {
       frequency: c.frequency,
       anchorDayOfWeek: c.anchorDayOfWeek ?? 6,
       anchorDayOfMonth: c.anchorDayOfMonth != null ? String(c.anchorDayOfMonth) : "1",
+      anchorHour: c.anchorHour ?? null,
       customIntervalDays: c.customIntervalDays != null ? String(c.customIntervalDays) : "30",
       startDate: c.startDate ? format(new Date(c.startDate), "yyyy-MM-dd") : format(new Date(), "yyyy-MM-dd"),
       dueDays: String(c.dueDays ?? 14),
       prorateFirstBill: c.prorateFirstBill,
       active: c.active,
+      isDefault: c.isDefault ?? false,
     });
     setDialogOpen(true);
   };
@@ -265,8 +283,13 @@ const Bills = () => {
         form.frequency === "custom" ? Math.max(Number(form.customIntervalDays) || 0, 1) : null,
       startDate: start.toISOString(),
       dueDays: Math.min(Math.max(Number(form.dueDays) || 0, 0), DUE_DAYS[form.frequency].max),
+      anchorHour:
+        form.frequency === "monthly" || form.frequency === "bimonthly" || form.frequency === "trimonthly"
+          ? form.anchorHour
+          : null,
       prorateFirstBill: form.prorateFirstBill,
       active: form.active,
+      isDefault: form.isDefault,
     };
     setSavingCycle(true);
     try {
@@ -309,6 +332,17 @@ const Bills = () => {
       await loadCycles();
     } catch (e: any) {
       toast.error(e.message || "Failed to assign customers");
+    }
+  };
+
+  const setDefaultCycle = async (c: BillCycle) => {
+    if (!accessToken) return;
+    try {
+      await apiService.setBillCycleDefault(accessToken, c.id);
+      toast.success(`"${c.name}" is now the default cycle — new customers will be assigned to it`);
+      await loadCycles();
+    } catch (e: any) {
+      toast.error(e.message || "Failed to set default cycle");
     }
   };
 
@@ -528,6 +562,11 @@ const Bills = () => {
                       <Badge variant={c.active ? "default" : "secondary"} className="text-[10px]">
                         {c.active ? "Active" : "Inactive"}
                       </Badge>
+                      {c.isDefault && (
+                        <Badge variant="outline" className="border-primary/40 text-[10px] text-primary">
+                          Default
+                        </Badge>
+                      )}
                     </div>
                     <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-muted-foreground">
                       <span>{cadenceLabel(c)}</span>
@@ -535,7 +574,7 @@ const Bills = () => {
                       <span>
                         Next run:{" "}
                         <span className="tabular-nums text-foreground">
-                          {c.nextBillDate ? format(new Date(c.nextBillDate), "MMM dd, yyyy") : "—"}
+                          {c.nextBillDate ? format(new Date(c.nextBillDate), "MMM dd, yyyy · hh:mm a") : "—"}
                         </span>
                       </span>
                     </div>
@@ -554,6 +593,11 @@ const Bills = () => {
                     <Button size="sm" variant="outline" onClick={() => assignCustomers(c)}>
                       Assign customers
                     </Button>
+                    {!c.isDefault && (
+                      <Button size="sm" variant="outline" onClick={() => setDefaultCycle(c)}>
+                        Set as default
+                      </Button>
+                    )}
                     <Button size="sm" variant="outline" onClick={() => openEdit(c)}>
                       Edit
                     </Button>
@@ -660,6 +704,15 @@ const Bills = () => {
                     value={form.startDate}
                     onChange={(e) => setForm((f) => ({ ...f, startDate: e.target.value }))}
                   />
+                  {(form.frequency === "monthly" ||
+                    form.frequency === "bimonthly" ||
+                    form.frequency === "trimonthly") &&
+                    form.startDate &&
+                    !isNaN(new Date(form.startDate).getTime()) && (
+                      <p className="mt-1 text-[10px] text-muted-foreground">
+                        Bill runs on day {Math.min(new Date(form.startDate).getDate(), 28)} of the month (1–28)
+                      </p>
+                    )}
                 </div>
                 <div>
                   <p className="mb-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
@@ -682,11 +735,54 @@ const Bills = () => {
                 </div>
               </div>
 
+              {(form.frequency === "monthly" ||
+                form.frequency === "bimonthly" ||
+                form.frequency === "trimonthly") && (
+                <div>
+                  <p className="mb-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                    Run time
+                  </p>
+                  <Select
+                    value={form.anchorHour == null ? "default" : String(form.anchorHour)}
+                    onValueChange={(v) =>
+                      setForm((f) => ({ ...f, anchorHour: v === "default" ? null : Number(v) }))
+                    }
+                  >
+                    <SelectTrigger className="h-9">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="default">Default (—)</SelectItem>
+                      {Array.from({ length: 24 }, (_, h) => (
+                        <SelectItem key={h} value={String(h)}>
+                          {hourLabel(h)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="mt-1 text-[10px] text-muted-foreground">
+                    The bill goes out on this day/time. If a run is missed, the system still runs it later that
+                    month automatically.
+                  </p>
+                </div>
+              )}
+
               {form.startDate && (
                 <p className="rounded-lg bg-primary/5 px-3 py-2 text-[12px] text-foreground">
                   {scheduleHint(form.frequency, form.startDate, form.dueDays, form.customIntervalDays)}
                 </p>
               )}
+
+              <div className="flex items-center justify-between border-t border-border pt-3">
+                <div>
+                  <p className="text-[13px] font-medium text-foreground">Default cycle</p>
+                  <p className="text-[11px] text-muted-foreground">New customers are auto-assigned to this cycle</p>
+                </div>
+                <Switch
+                  checked={form.isDefault}
+                  onCheckedChange={(v) => setForm((f) => ({ ...f, isDefault: v }))}
+                />
+              </div>
 
               <div className="flex items-center justify-between border-t border-border pt-3">
                 <div>

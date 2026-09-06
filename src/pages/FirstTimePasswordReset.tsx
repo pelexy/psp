@@ -60,7 +60,7 @@ const FirstTimePasswordReset = () => {
     setError(null);
 
     try {
-      await apiService.resetPassword(token, newPassword);
+      await apiService.resetPasswordWithToken(token, newPassword);
 
       // Clear session storage
       sessionStorage.removeItem('changePasswordToken');

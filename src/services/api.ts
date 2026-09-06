@@ -382,7 +382,8 @@ class ApiService {
     return this.handleResponse<ForgotPasswordResponse>(response);
   }
 
-  async resetPassword(
+  // Legacy token-based reset (used by the first-time password reset flow).
+  async resetPasswordWithToken(
     token: string,
     newPassword: string,
   ): Promise<ChangePasswordResponse> {
@@ -395,6 +396,39 @@ class ApiService {
     });
 
     return this.handleResponse<ChangePasswordResponse>(response);
+  }
+
+  // Forgot-password OTP flow: verify the 6-digit code emailed to the user.
+  async verifyOtp(
+    email: string,
+    otp: string,
+  ): Promise<{ valid: boolean }> {
+    const response = await fetch(`${this.baseUrl}/auth/verify-otp`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email, otp }),
+    });
+
+    return this.handleResponse<{ valid: boolean }>(response);
+  }
+
+  // Forgot-password OTP flow: set a new password using a verified OTP.
+  async resetPassword(
+    email: string,
+    otp: string,
+    newPassword: string,
+  ): Promise<ForgotPasswordResponse> {
+    const response = await fetch(`${this.baseUrl}/auth/reset-password`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email, otp, newPassword }),
+    });
+
+    return this.handleResponse<ForgotPasswordResponse>(response);
   }
 
   // Method to make authenticated requests
@@ -1984,6 +2018,10 @@ class ApiService {
 
   async runBillCycle(accessToken: string, id: string): Promise<any> {
     return this.makeAuthenticatedRequest<any>(`/psp/bill-cycles/${id}/run`, { method: "POST" }, accessToken);
+  }
+
+  async setBillCycleDefault(accessToken: string, id: string): Promise<any> {
+    return this.makeAuthenticatedRequest<any>(`/psp/bill-cycles/${id}/default`, { method: "POST" }, accessToken);
   }
 
   async assignBillCycleCustomers(
