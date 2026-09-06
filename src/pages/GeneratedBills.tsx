@@ -255,7 +255,15 @@ const GeneratedBills = () => {
         key: "totalDue",
         header: "Total Due",
         className: "text-right",
-        accessor: (b) => <span className="font-semibold tabular-nums text-foreground">{money(b.totalDue)}</span>,
+        accessor: (b) =>
+          (Number(b.totalDue) || 0) < 0 ? (
+            <div className="text-right">
+              <span className="font-semibold tabular-nums text-foreground">{money(0)}</span>
+              <div className="text-[11px] font-medium text-success">Credit {money(Math.abs(Number(b.totalDue) || 0))}</div>
+            </div>
+          ) : (
+            <span className="font-semibold tabular-nums text-foreground">{money(b.totalDue)}</span>
+          ),
       },
       {
         key: "remaining",
