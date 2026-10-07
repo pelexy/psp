@@ -36,13 +36,20 @@ export function FinancialOverview({ comprehensiveData }: FinancialOverviewProps)
   const { accessToken } = useAuth();
   const [showBalance, setShowBalance] = useState(true);
   const [withdrawOpen, setWithdrawOpen] = useState(false);
+  const [withdrawStep, setWithdrawStep] = useState<"details" | "accounts">("details");
   const [lockDialogOpen, setLockDialogOpen] = useState(false);
   const [walletData, setWalletData] = useState({
     balance: 0,
     monthlyWithdrawals: 0,
     monthlyInflows: 0,
     isWalletLocked: false,
+    walletLockedBy: null as string | null,
+    walletLockReason: null as string | null,
+    pendingWithdrawals: 0,
+    withdrawalsPaused: false,
   });
+  // A WasteCollect (super-admin) lock can't be lifted from here.
+  const lockedByAdmin = walletData.isWalletLocked && walletData.walletLockedBy === "admin";
   useEffect(() => {
     if (!accessToken) return;
     const refresh = () => {
@@ -69,7 +76,7 @@ export function FinancialOverview({ comprehensiveData }: FinancialOverviewProps)
 
     try {
       const response = await apiService.getWalletBalance(accessToken);
-      setWalletData(response.data);
+      setWalletData((prev) => ({ ...prev, ...response.data }));
     } catch (error: any) {
       console.error("Error fetching wallet balance:", error);
       toast.error(error.message || "Failed to load wallet balance");
@@ -126,8 +133,11 @@ export function FinancialOverview({ comprehensiveData }: FinancialOverviewProps)
             <div className="mt-4 grid grid-cols-2 gap-3">
               <Button
                 className="h-10"
-                onClick={() => setWithdrawOpen(true)}
-                disabled={walletData.isWalletLocked}
+                onClick={() => {
+                  setWithdrawStep("details");
+                  setWithdrawOpen(true);
+                }}
+                disabled={walletData.isWalletLocked || walletData.withdrawalsPaused}
               >
                 <ArrowUpFromLine className="h-4 w-4" />
                 Withdraw
@@ -136,11 +146,44 @@ export function FinancialOverview({ comprehensiveData }: FinancialOverviewProps)
                 variant="outline"
                 className="h-10"
                 onClick={handleToggleLock}
+                disabled={lockedByAdmin}
               >
                 {walletData.isWalletLocked ? <Unlock className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
                 {walletData.isWalletLocked ? "Unlock" : "Lock"}
               </Button>
             </div>
+
+            <button
+              type="button"
+              className="mt-3 text-xs font-medium text-primary hover:underline"
+              onClick={() => {
+                setWithdrawStep("accounts");
+                setWithdrawOpen(true);
+              }}
+            >
+              Manage bank accounts
+            </button>
+
+            {lockedByAdmin ? (
+              <p className="mt-3 text-xs text-destructive">
+                Your wallet has been locked by WasteCollect
+                {walletData.walletLockReason ? ` (${walletData.walletLockReason})` : ""}. Please contact support to
+                have it unlocked.
+              </p>
+            ) : walletData.isWalletLocked && walletData.walletLockedBy === "system" ? (
+              <p className="mt-3 text-xs text-destructive">
+                Locked for your safety after too many wrong withdrawal codes. Unlock it with a code sent to your email.
+              </p>
+            ) : walletData.withdrawalsPaused ? (
+              <p className="mt-3 text-xs text-muted-foreground">
+                Withdrawals are temporarily paused. Please try again later.
+              </p>
+            ) : walletData.pendingWithdrawals > 0 ? (
+              <p className="mt-3 text-xs text-muted-foreground">
+                {formatCurrencyFull(walletData.pendingWithdrawals)} is on its way to your bank. If the bank rejects it,
+                it comes back to your wallet automatically.
+              </p>
+            ) : null}
 
             {/* Inflow / Withdrawal tiles */}
             <div className="mt-5 grid grid-cols-2 gap-3">
@@ -287,6 +330,8 @@ export function FinancialOverview({ comprehensiveData }: FinancialOverviewProps)
         open={withdrawOpen}
         onOpenChange={setWithdrawOpen}
         availableBalance={walletData.balance}
+        initialStep={withdrawStep}
+        onComplete={fetchWalletBalance}
       />
 
       <WalletLockDialog

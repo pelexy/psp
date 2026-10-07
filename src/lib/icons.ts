@@ -8,6 +8,7 @@
  */
 export {
   Pulse as Activity,
+  PaperPlaneTilt as Send,
   WarningCircle as AlertCircle,
   Warning as AlertTriangle,
   ArrowDownLeft,

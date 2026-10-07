@@ -74,11 +74,8 @@ const FirstTimePasswordReset = () => {
       }, 1500);
     } catch (err) {
       if (err instanceof ApiError) {
-        if (err.statusCode === 400) {
-          setError("Invalid or expired reset token. Please login again to get a new token.");
-        } else {
-          setError(err.message);
-        }
+        // Show the server's reason (expired session vs bad link vs validation) instead of one generic line.
+        setError(err.message || "Your password change session has expired. Please log in again with your temporary password.");
       } else {
         setError("Failed to reset password. Please try again.");
       }

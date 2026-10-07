@@ -10,16 +10,27 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ArrowLeft, Printer } from "@/lib/icons";
+import { ArrowLeft, Printer, Plus, XCircle } from "@/lib/icons";
 import { apiService } from "@/services/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import {
+  LedgerEntryDialog,
+  type LedgerEntryAction,
+  type LedgerEntryTarget,
+} from "@/components/customers/LedgerEntryDialog";
 
 interface LedgerRow {
-  date: Date;
+  id: string; // ledger entry id — needed to void a line
+  date: Date; // transaction date (when it happened) — orders the statement
+  entryDate?: Date; // posting date (when it was recorded), if different
   description: string;
   reference?: string;
   kind: "charge" | "payment";
+  source?: string; // 'reversal' lines can't themselves be voided
+  category?: string; // e.g. 'cutover_arrears' — recognised as arrears
+  voided?: boolean; // this original line has been reversed (struck through)
+  voidReason?: string; // why it was voided (shown under the struck-through line)
   charge: number; // debit — money the customer owes (invoice / bill)
   payment: number; // credit — money received
   balance: number; // running balance owed after this row
@@ -47,6 +58,13 @@ const CustomerLedger = () => {
   const [rows, setRows] = useState<LedgerRow[]>([]);
   const [totals, setTotals] = useState({ charges: 0, payments: 0, balance: 0 });
   const [yearFilter, setYearFilter] = useState<string>("all");
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  // OTP-gated ledger-line corrections (PSP owner). Backend enforces @Roles('psp').
+  const [ledgerAction, setLedgerAction] = useState<{
+    action: LedgerEntryAction;
+    entry?: LedgerEntryTarget;
+  } | null>(null);
 
   useEffect(() => {
     const load = async () => {
@@ -66,28 +84,53 @@ const CustomerLedger = () => {
           : null;
         const entries: any[] = stmtRes?.data?.entries || [];
 
-        const events: Omit<LedgerRow, "balance">[] = entries.map((e) => {
+        const allEvents: (Omit<LedgerRow, "balance"> & { reversesEntryId?: string })[] = entries.map((e) => {
           const amt = Number(e.amount) || 0;
           const isCredit = String(e.type || "").toLowerCase() === "credit";
           return {
-            date: new Date(e.createdAt),
+            id: e.id,
+            // A manual/void correction can carry an explicit transaction date (the
+            // date shown on the bill); it wins over posting time. Existing rows have
+            // none, so are unaffected.
+            date: new Date(e.metadata?.effectiveDate || e.createdAt),
+            // System-stamped posting date (createdAt). Shown as subtext only when it
+            // differs from the transaction date (i.e. a back-dated correction).
+            entryDate: new Date(e.createdAt),
             description: e.description || (isCredit ? "Payment received" : "Charge"),
             reference: e.reference,
             kind: isCredit ? "payment" : "charge",
+            source: e.source,
+            category: e.metadata?.category,
+            voided: !!e.metadata?.voided,
+            voidReason: e.metadata?.voidReason,
+            reversesEntryId:
+              e.metadata?.reversesEntryId ||
+              (String(e.reference || "").startsWith("REVLED-") ? String(e.reference).slice(7) : undefined),
             charge: isCredit ? 0 : amt,
             payment: isCredit ? amt : 0,
           };
         });
 
+        // A void is an original line + an equal-and-opposite reversal line. They
+        // cancel out, so show them as ONE struck-through line (the original) and
+        // drop the reversal — it is not a payment and must never read as one.
+        const voidedIds = new Set(allEvents.filter((e) => e.voided).map((e) => e.id));
+        const events = allEvents.filter(
+          (e) => !(String(e.source || "").toLowerCase() === "reversal" && e.reversesEntryId && voidedIds.has(e.reversesEntryId)),
+        );
         events.sort((a, b) => a.date.getTime() - b.date.getTime());
 
+        // Charged = net debits (credits that aren't money received — write-offs,
+        // corrections — reduce what was charged). Paid = real money received only.
+        // So Charged − Paid always equals the balance.
         let balance = 0;
         let charges = 0;
         let payments = 0;
         const built: LedgerRow[] = events.map((e) => {
+          if (e.voided) return { ...e, balance }; // cancelled — moves nothing
           balance += e.charge - e.payment;
-          charges += e.charge;
-          payments += e.payment;
+          if (e.payment > 0 && String(e.source || "").toLowerCase() === "payment") payments += e.payment;
+          else charges += e.charge - e.payment;
           return { ...e, balance };
         });
 
@@ -101,7 +144,7 @@ const CustomerLedger = () => {
       }
     };
     load();
-  }, [accountNumber, accessToken]);
+  }, [accountNumber, accessToken, refreshKey]);
 
   // Years present, newest first.
   const years = useMemo(
@@ -127,8 +170,14 @@ const CustomerLedger = () => {
     return {
       rows: filtered,
       opening,
-      periodCharges: filtered.reduce((s, r) => s + r.charge, 0),
-      periodPayments: filtered.reduce((s, r) => s + r.payment, 0),
+      periodCharges: filtered.reduce(
+        (s, r) => (r.voided || (r.payment > 0 && String(r.source || "").toLowerCase() === "payment") ? s : s + r.charge - r.payment),
+        0,
+      ),
+      periodPayments: filtered.reduce(
+        (s, r) => (!r.voided && String(r.source || "").toLowerCase() === "payment" ? s + r.payment : s),
+        0,
+      ),
     };
   }, [rows, yearFilter, totals]);
 
@@ -192,6 +241,13 @@ const CustomerLedger = () => {
                 ))}
               </SelectContent>
             </Select>
+            <Button
+              onClick={() => setLedgerAction({ action: "add-entry" })}
+              variant="outline"
+              size="sm"
+            >
+              <Plus className="mr-2 h-4 w-4" /> Add entry
+            </Button>
             <Button onClick={() => window.print()} variant="outline" size="sm">
               <Printer className="mr-2 h-4 w-4" /> Print
             </Button>
@@ -212,14 +268,14 @@ const CustomerLedger = () => {
               Charged{yearFilter !== "all" ? ` · ${yearFilter}` : ""}
             </p>
             <p className="mt-1 text-xl font-semibold tabular-nums text-foreground">{money(view.periodCharges)}</p>
-            <p className="mt-1 text-[11px] text-muted-foreground">Debits (bills)</p>
+            <p className="mt-1 text-[11px] text-muted-foreground">Bills &amp; charges (voids excluded)</p>
           </div>
           <div className="rounded-xl bg-card p-3.5 shadow-card">
             <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
               Paid{yearFilter !== "all" ? ` · ${yearFilter}` : ""}
             </p>
             <p className="mt-1 text-xl font-semibold tabular-nums text-success">{money(view.periodPayments)}</p>
-            <p className="mt-1 text-[11px] text-muted-foreground">Credits</p>
+            <p className="mt-1 text-[11px] text-muted-foreground">Money received</p>
           </div>
           <div className="rounded-xl bg-card p-3.5 shadow-card">
             <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Entries</p>
@@ -262,6 +318,7 @@ const CustomerLedger = () => {
                   <th className="whitespace-nowrap px-4 py-2.5 text-right font-medium">Charge</th>
                   <th className="whitespace-nowrap px-4 py-2.5 text-right font-medium">Payment</th>
                   <th className="whitespace-nowrap px-4 py-2.5 text-right font-medium">Balance</th>
+                  <th className="no-print whitespace-nowrap px-4 py-2.5 text-right font-medium"></th>
                 </tr>
               </thead>
               <tbody>
@@ -276,19 +333,41 @@ const CustomerLedger = () => {
                     <td className="px-4 py-2 text-right font-medium tabular-nums text-muted-foreground">
                       {money(Math.abs(view.opening))} {drCr(view.opening)}
                     </td>
+                    <td className="no-print px-4 py-2" />
                   </tr>
                 )}
 
                 {view.rows.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-4 py-12 text-center text-muted-foreground">
+                    <td colSpan={6} className="px-4 py-12 text-center text-muted-foreground">
                       No account activity{yearFilter !== "all" ? ` in ${yearFilter}` : " yet"}
                     </td>
                   </tr>
                 ) : (
-                  view.rows.map((r, i) => (
-                    <tr key={i} className="border-b border-border last:border-0 hover:bg-muted/40">
-                      <td className="whitespace-nowrap px-4 py-2.5 text-muted-foreground">{shortDate(r.date)}</td>
+                  view.rows.map((r, i) => {
+                    const src = String(r.source || "").toLowerCase();
+                    const isReversal = src === "reversal";
+                    // Real money-in (electronic payments) and platform fees are NOT
+                    // voidable from the ledger — voiding would misstate collections and
+                    // never refunds the payer. Only charges / arrears / backlog /
+                    // manual adjustments (and non-voided originals) can be voided.
+                    const isElectronicPayment = src === "payment" || src === "fee";
+                    const canVoid = !r.voided && !isReversal && !isElectronicPayment;
+                    // Cut-over arrears = balances brought over from the old system at
+                    // go-live: entries explicitly tagged cutover_arrears or the
+                    // LEGACY-ARREARS migration seed. (The generic "opening bills owed"
+                    // debit is NOT counted here — it is ordinary account balance.)
+                    const ref = String(r.reference || "").toUpperCase();
+                    const isCutover =
+                      r.category === "cutover_arrears" || ref.startsWith("LEGACY-ARREARS");
+                    return (
+                    <tr key={r.id || i} className={`border-b border-border last:border-0 hover:bg-muted/40 ${r.voided ? "no-print opacity-60" : ""}`}>
+                      <td className="whitespace-nowrap px-4 py-2.5 text-muted-foreground">
+                        {shortDate(r.date)}
+                        {r.entryDate && shortDate(r.entryDate) !== shortDate(r.date) && (
+                          <span className="block text-[10px] text-muted-foreground/70">entered {shortDate(r.entryDate)}</span>
+                        )}
+                      </td>
                       <td className="px-4 py-2.5 text-foreground">
                         <span className="inline-flex items-center gap-2">
                           <span
@@ -296,21 +375,60 @@ const CustomerLedger = () => {
                               r.kind === "charge" ? "bg-muted-foreground/50" : "bg-success"
                             }`}
                           />
-                          {r.description}
-                          {r.reference && <span className="font-mono text-xs text-muted-foreground">#{r.reference}</span>}
+                          <span className={r.voided ? "line-through" : ""}>{r.description}</span>
+                          {isCutover && (
+                            <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-amber-800 no-underline">
+                              Cut-over arrears
+                            </span>
+                          )}
+                          {r.voided && (
+                            <span className="rounded bg-destructive/10 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-destructive no-underline">
+                              Voided
+                            </span>
+                          )}
                         </span>
+                        {r.voided && (
+                          <span className="mt-0.5 block text-[11px] text-muted-foreground" style={{ textDecoration: "none" }}>
+                            Cancelled — not owed{r.voidReason ? ` · ${r.voidReason}` : ""}
+                          </span>
+                        )}
                       </td>
-                      <td className="whitespace-nowrap px-4 py-2.5 text-right text-foreground tabular-nums">
+                      <td className={`whitespace-nowrap px-4 py-2.5 text-right text-foreground tabular-nums ${r.voided ? "line-through" : ""}`}>
                         {r.charge > 0 ? money(r.charge) : "—"}
                       </td>
-                      <td className="whitespace-nowrap px-4 py-2.5 text-right text-success tabular-nums">
+                      <td className={`whitespace-nowrap px-4 py-2.5 text-right text-success tabular-nums ${r.voided ? "line-through" : ""}`}>
                         {r.payment > 0 ? money(r.payment) : "—"}
                       </td>
                       <td className="whitespace-nowrap px-4 py-2.5 text-right font-medium tabular-nums text-foreground">
                         {money(Math.abs(r.balance))} <span className="text-xs text-muted-foreground">{drCr(r.balance)}</span>
                       </td>
+                      <td className="no-print whitespace-nowrap px-4 py-2.5 text-right">
+                        {canVoid && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 px-2 text-[11px] text-destructive hover:text-destructive"
+                            title="Void this entry (posts a reversing line)"
+                            onClick={() =>
+                              setLedgerAction({
+                                action: "void-entry",
+                                entry: {
+                                  id: r.id,
+                                  description: r.description,
+                                  reference: r.reference,
+                                  kind: r.kind,
+                                  amount: r.charge > 0 ? r.charge : r.payment,
+                                },
+                              })
+                            }
+                          >
+                            <XCircle className="mr-1 h-3.5 w-3.5" /> Void
+                          </Button>
+                        )}
+                      </td>
                     </tr>
-                  ))
+                    );
+                  })
                 )}
               </tbody>
             </table>
@@ -341,6 +459,21 @@ const CustomerLedger = () => {
 
         <p className="no-print text-center text-xs text-muted-foreground">This is a computer-generated account statement.</p>
       </div>
+
+      {ledgerAction && details?.customerId && (
+        <LedgerEntryDialog
+          open={!!ledgerAction}
+          action={ledgerAction.action}
+          entry={ledgerAction.entry}
+          customerId={details.customerId}
+          customerName={details?.fullName}
+          onClose={() => setLedgerAction(null)}
+          onDone={() => {
+            setLedgerAction(null);
+            setRefreshKey((k) => k + 1);
+          }}
+        />
+      )}
     </DashboardLayout>
   );
 };

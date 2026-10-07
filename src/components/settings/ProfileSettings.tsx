@@ -10,7 +10,37 @@ import { apiService } from "@/services/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
-const IMAGE_UPLOAD_URL = "https://test-service.buypowerpass.africa/api/v1/uploadImage";
+// A logo is printed small on bills, so shrink it in the browser first: uploads stay
+// quick on a slow connection and the bill PDF stays light.
+const LOGO_MAX_SIDE = 600;
+
+async function shrinkLogo(file: File): Promise<{ blob: Blob; name: string }> {
+  const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+    const el = new Image();
+    el.onload = () => resolve(el);
+    el.onerror = () => reject(new Error("This file could not be read as an image"));
+    el.src = URL.createObjectURL(file);
+  });
+  const scale = Math.min(1, LOGO_MAX_SIDE / Math.max(img.naturalWidth, img.naturalHeight));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.max(1, Math.round(img.naturalWidth * scale));
+  canvas.height = Math.max(1, Math.round(img.naturalHeight * scale));
+  canvas.getContext("2d")!.drawImage(img, 0, 0, canvas.width, canvas.height);
+  URL.revokeObjectURL(img.src);
+  // PNG keeps a transparent background.
+  const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png"));
+  if (!blob) throw new Error("This image could not be prepared for upload");
+  if (blob.size <= 800 * 1024) return { blob, name: "logo.png" };
+
+  // A photo-like logo is still heavy as PNG — send it as JPEG on a white background instead.
+  const ctx = canvas.getContext("2d")!;
+  ctx.globalCompositeOperation = "destination-over";
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  const jpeg = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.85));
+  if (!jpeg) throw new Error("This image could not be prepared for upload");
+  return { blob: jpeg, name: "logo.jpg" };
+}
 
 interface ProfileData {
   companyName: string;
@@ -87,40 +117,22 @@ export function ProfileSettings() {
       return;
     }
 
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("Image size must be less than 5MB");
+    // Validate file size (max 10MB — it is shrunk before upload anyway)
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("Image size must be less than 10MB");
       return;
     }
 
     setUploadingLogo(true);
     try {
-      const formData = new FormData();
-      formData.append("image", file);
-
-      const response = await fetch(IMAGE_UPLOAD_URL, {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to upload image");
-      }
-
-      const data = await response.json();
-
-      // Assuming the API returns the image URL
-      const imageUrl = data.url || data.data?.url || data.imageUrl || data.data?.imageUrl;
-
+      const { blob, name } = await shrinkLogo(file);
+      // Uploads to our own API, which stores the file and saves it on the profile.
+      const data = await apiService.uploadMyLogo(accessToken!, blob, name);
+      const imageUrl = data?.url || data?.data?.url;
       if (!imageUrl) {
         throw new Error("No image URL returned from server");
       }
-
-      // Update profile with new logo URL
       setProfile(prev => ({ ...prev, logo: imageUrl }));
-
-      // Save the logo to backend
-      await apiService.updateMyProfile(accessToken!, { logo: imageUrl });
 
       toast.success("Logo uploaded successfully");
     } catch (error: any) {

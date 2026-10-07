@@ -47,6 +47,44 @@ type BillCycle = {
   active: boolean;
   isDefault: boolean;
   customerCount: number;
+  vatEnabled?: boolean;
+  vatRate?: number | string;
+  vatMode?: TaxMode;
+  stampDutyEnabled?: boolean;
+  stampDutyAmount?: number | string;
+  stampDutyMode?: TaxMode;
+};
+
+// VAT / stamp duty: "additional" = added on top of the charge; "inclusive" =
+// already inside the charge (shown separately on the bill, total unchanged).
+type TaxMode = "additional" | "inclusive";
+
+const taxSummary = (c: BillCycle): string[] => {
+  const out: string[] = [];
+  if (c.vatEnabled) out.push(`VAT ${Number(c.vatRate)}% ${c.vatMode === "inclusive" ? "inclusive" : "added"}`);
+  if (c.stampDutyEnabled)
+    out.push(`Stamp duty ${money(Number(c.stampDutyAmount))} ${c.stampDutyMode === "inclusive" ? "inclusive" : "added"}`);
+  return out;
+};
+
+// Mirrors payservice bill-tax.util.ts so the form can preview the bill.
+const previewTaxes = (charge: number, f: CycleForm) => {
+  const r2 = (n: number) => Math.round(n * 100) / 100;
+  const rate = Number(f.vatRate) || 0;
+  const stamp = Number(f.stampDutyAmount) || 0;
+  const vatOn = f.vatEnabled && rate > 0;
+  const stampOn = f.stampDutyEnabled && stamp > 0;
+  const stampAmt = stampOn ? (f.stampDutyMode === "inclusive" ? Math.min(stamp, charge) : stamp) : 0;
+  const base = r2(charge - (stampOn && f.stampDutyMode === "inclusive" ? stampAmt : 0));
+  let vat = 0;
+  let service = base;
+  if (vatOn) {
+    if (f.vatMode === "inclusive") {
+      vat = r2((base * rate) / (100 + rate));
+      service = r2(base - vat);
+    } else vat = r2((base * rate) / 100);
+  }
+  return { service, vat, stamp: stampAmt, total: r2(service + vat + stampAmt), vatOn, stampOn };
 };
 
 const WEEKDAYS_PLURAL = ["Sundays", "Mondays", "Tuesdays", "Wednesdays", "Thursdays", "Fridays", "Saturdays"];
@@ -151,6 +189,12 @@ type CycleForm = {
   prorateFirstBill: boolean;
   active: boolean;
   isDefault: boolean;
+  vatEnabled: boolean;
+  vatRate: string;
+  vatMode: TaxMode;
+  stampDutyEnabled: boolean;
+  stampDutyAmount: string;
+  stampDutyMode: TaxMode;
 };
 
 const emptyForm = (): CycleForm => ({
@@ -165,6 +209,12 @@ const emptyForm = (): CycleForm => ({
   prorateFirstBill: true,
   active: true,
   isDefault: false,
+  vatEnabled: false,
+  vatRate: "7.5",
+  vatMode: "additional",
+  stampDutyEnabled: false,
+  stampDutyAmount: "50",
+  stampDutyMode: "additional",
 });
 
 const statusVariant: Record<string, "default" | "secondary" | "destructive"> = {
@@ -257,6 +307,12 @@ const Bills = () => {
       prorateFirstBill: c.prorateFirstBill,
       active: c.active,
       isDefault: c.isDefault ?? false,
+      vatEnabled: !!c.vatEnabled,
+      vatRate: c.vatRate != null ? String(Number(c.vatRate)) : "7.5",
+      vatMode: c.vatMode === "inclusive" ? "inclusive" : "additional",
+      stampDutyEnabled: !!c.stampDutyEnabled,
+      stampDutyAmount: c.stampDutyAmount != null ? String(Number(c.stampDutyAmount)) : "50",
+      stampDutyMode: c.stampDutyMode === "inclusive" ? "inclusive" : "additional",
     });
     setDialogOpen(true);
   };
@@ -265,6 +321,16 @@ const Bills = () => {
     if (!accessToken) return;
     if (!form.name.trim()) {
       toast.error("Name is required");
+      return;
+    }
+    const vatRate = Number(form.vatRate);
+    if (form.vatEnabled && !(vatRate > 0 && vatRate <= 100)) {
+      toast.error("Enter a VAT percentage between 0 and 100");
+      return;
+    }
+    const stampAmount = Number(form.stampDutyAmount);
+    if (form.stampDutyEnabled && !(stampAmount > 0)) {
+      toast.error("Enter a stamp duty amount");
       return;
     }
     const start = new Date(form.startDate);
@@ -290,6 +356,12 @@ const Bills = () => {
       prorateFirstBill: form.prorateFirstBill,
       active: form.active,
       isDefault: form.isDefault,
+      vatEnabled: form.vatEnabled,
+      vatRate: form.vatEnabled ? vatRate : undefined,
+      vatMode: form.vatMode,
+      stampDutyEnabled: form.stampDutyEnabled,
+      stampDutyAmount: form.stampDutyEnabled ? stampAmount : undefined,
+      stampDutyMode: form.stampDutyMode,
     };
     setSavingCycle(true);
     try {
@@ -571,6 +643,9 @@ const Bills = () => {
                     <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-muted-foreground">
                       <span>{cadenceLabel(c)}</span>
                       <span className="tabular-nums">{(c.customerCount ?? 0).toLocaleString()} customers</span>
+                      {taxSummary(c).map((t) => (
+                        <span key={t}>{t}</span>
+                      ))}
                       <span>
                         Next run:{" "}
                         <span className="tabular-nums text-foreground">
@@ -635,7 +710,7 @@ const Bills = () => {
 
         {/* Create / Edit cycle dialog */}
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogContent className="sm:max-w-md">
+          <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-md">
             <DialogHeader>
               <DialogTitle>{editingId ? "Edit bill cycle" : "New bill cycle"}</DialogTitle>
               <DialogDescription>Named schedule that customers can be assigned to.</DialogDescription>
@@ -794,6 +869,139 @@ const Bills = () => {
                   onCheckedChange={(v) => setForm((f) => ({ ...f, prorateFirstBill: v }))}
                 />
               </div>
+
+              <div className="space-y-3 border-t border-border pt-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-[13px] font-medium text-foreground">VAT</p>
+                    <p className="text-[11px] text-muted-foreground">Show VAT on every bill in this cycle</p>
+                  </div>
+                  <Switch
+                    checked={form.vatEnabled}
+                    onCheckedChange={(v) => setForm((f) => ({ ...f, vatEnabled: v }))}
+                  />
+                </div>
+                {form.vatEnabled && (
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <p className="mb-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                        Rate (%)
+                      </p>
+                      <Input
+                        type="number"
+                        min={0}
+                        max={100}
+                        step="0.01"
+                        className="h-9"
+                        value={form.vatRate}
+                        onChange={(e) => setForm((f) => ({ ...f, vatRate: e.target.value }))}
+                      />
+                    </div>
+                    <div>
+                      <p className="mb-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                        Applied as
+                      </p>
+                      <Select
+                        value={form.vatMode}
+                        onValueChange={(v) => setForm((f) => ({ ...f, vatMode: v as TaxMode }))}
+                      >
+                        <SelectTrigger className="h-9">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="additional">Additional (added on top)</SelectItem>
+                          <SelectItem value="inclusive">Inclusive (already in the charge)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-3 border-t border-border pt-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-[13px] font-medium text-foreground">Stamp duty</p>
+                    <p className="text-[11px] text-muted-foreground">A fixed amount on every bill in this cycle</p>
+                  </div>
+                  <Switch
+                    checked={form.stampDutyEnabled}
+                    onCheckedChange={(v) => setForm((f) => ({ ...f, stampDutyEnabled: v }))}
+                  />
+                </div>
+                {form.stampDutyEnabled && (
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <p className="mb-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                        Amount (₦)
+                      </p>
+                      <Input
+                        type="number"
+                        min={0}
+                        className="h-9"
+                        value={form.stampDutyAmount}
+                        onChange={(e) => setForm((f) => ({ ...f, stampDutyAmount: e.target.value }))}
+                      />
+                    </div>
+                    <div>
+                      <p className="mb-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                        Applied as
+                      </p>
+                      <Select
+                        value={form.stampDutyMode}
+                        onValueChange={(v) => setForm((f) => ({ ...f, stampDutyMode: v as TaxMode }))}
+                      >
+                        <SelectTrigger className="h-9">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="additional">Additional (added on top)</SelectItem>
+                          <SelectItem value="inclusive">Inclusive (already in the charge)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {(form.vatEnabled || form.stampDutyEnabled) &&
+                (() => {
+                  const ex = previewTaxes(10000, form);
+                  return (
+                    <div className="rounded-lg bg-primary/5 px-3 py-2 text-[12px] text-foreground">
+                      <p className="mb-1 font-medium">Example on a {money(10000)} charge</p>
+                      <div className="space-y-0.5 tabular-nums">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Waste collection</span>
+                          <span>{money(ex.service)}</span>
+                        </div>
+                        {ex.vatOn && (
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">
+                              VAT ({Number(form.vatRate)}%{form.vatMode === "inclusive" ? ", included" : ""})
+                            </span>
+                            <span>{money(ex.vat)}</span>
+                          </div>
+                        )}
+                        {ex.stampOn && (
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">
+                              Stamp duty{form.stampDutyMode === "inclusive" ? " (included)" : ""}
+                            </span>
+                            <span>{money(ex.stamp)}</span>
+                          </div>
+                        )}
+                        <div className="flex justify-between border-t border-border pt-1 font-semibold">
+                          <span>Customer pays</span>
+                          <span>{money(ex.total)}</span>
+                        </div>
+                      </div>
+                      <p className="mt-1 text-[10px] text-muted-foreground">
+                        Applies to new bills only — bills already issued keep their amounts.
+                      </p>
+                    </div>
+                  );
+                })()}
 
               <div className="flex items-center justify-between border-t border-border pt-3">
                 <div>

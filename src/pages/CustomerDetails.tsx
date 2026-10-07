@@ -41,6 +41,8 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { TrashSealPreview } from "@/components/customers/TrashSealPreview";
 import { EditCustomerDialog } from "@/components/customers/EditCustomerDialog";
+import { BillActionDialog, type BillActionKind } from "@/components/customers/BillActionDialog";
+import { BillPreviewDialog } from "@/components/customers/BillPreviewDialog";
 import { QRCodeSVG } from "qrcode.react";
 
 /* ── Small presentational helpers — dense billing-console style ───────────── */
@@ -120,7 +122,9 @@ const CustomerDetails = () => {
   const [statsInvoices, setStatsInvoices] = useState<any[]>([]);
   const [statsTxns, setStatsTxns] = useState<any[]>([]);
   const [ledgerEntries, setLedgerEntries] = useState<any[]>([]);
+  const [ledgerBalance, setLedgerBalance] = useState<number | null>(null);
   const [bills, setBills] = useState<any[]>([]);
+  const [billAction, setBillAction] = useState<{ action: BillActionKind; bill?: any } | null>(null);
   const [billing, setBilling] = useState<any>(null);
   const [savingBilling, setSavingBilling] = useState(false);
   const [cycles, setCycles] = useState<any[]>([]);
@@ -130,6 +134,7 @@ const CustomerDetails = () => {
   const [transactionTotalPages, setTransactionTotalPages] = useState(1);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [togglingService, setTogglingService] = useState<string | null>(null);
 
@@ -194,7 +199,8 @@ const CustomerDetails = () => {
   }, [accountNumber, accessToken]);
 
   // Bills for this customer (to show the active bill + rolled-over history).
-  useEffect(() => {
+  // Also re-run after an OTP-gated bill correction so the table + ledger refresh.
+  const reloadCustomerBills = () => {
     const custId = customer?.customerDetails?.customerId;
     if (!accessToken || !custId) return;
     apiService
@@ -208,8 +214,17 @@ const CustomerDetails = () => {
     // Ledger statement — source of truth for charges, payments and platform fees.
     apiService
       .getCustomerLedgerStatement(accessToken, custId, 1, 500)
-      .then((res) => setLedgerEntries(res?.data?.entries || []))
+      .then((res) => {
+        setLedgerEntries(res?.data?.entries || []);
+        // Authoritative running balance (credit − debit), pagination-proof.
+        const bal = res?.data?.balance;
+        setLedgerBalance(bal != null ? Number(bal) : null);
+      })
       .catch(() => {});
+  };
+  useEffect(() => {
+    reloadCustomerBills();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [accessToken, customer]);
 
   // PSP bill cycles (assignable schedules).
@@ -312,12 +327,22 @@ const CustomerDetails = () => {
         const type = String(e.type || "").toLowerCase();
         const source = String(e.source || "").toLowerCase();
         if (type === "credit") {
-          totalCollected += amt;
-          creditEntries.push({ amount: amt, date: d });
-          if (buckets.has(k)) buckets.get(k)!.collected += amt;
+          if (source === "adjustment" || source === "reversal") {
+            // Write-off / voided charge — reduces what was billed, not a payment.
+            totalBilled -= amt;
+            if (buckets.has(k)) buckets.get(k)!.billed -= amt;
+          } else {
+            totalCollected += amt;
+            creditEntries.push({ amount: amt, date: d });
+            if (buckets.has(k)) buckets.get(k)!.collected += amt;
+          }
         } else if (type === "debit") {
           if (source === "fee") {
             totalFees += amt;
+          } else if (source === "reversal") {
+            // Voided payment — takes the money back out of "collected".
+            totalCollected -= amt;
+            if (buckets.has(k)) buckets.get(k)!.collected -= amt;
           } else {
             totalBilled += amt;
             if (buckets.has(k)) buckets.get(k)!.billed += amt;
@@ -355,6 +380,8 @@ const CustomerDetails = () => {
       monthly: [...buckets.values()],
       collectionRate: totalBilled > 0 ? Math.min(100, Math.round((totalCollected / totalBilled) * 100)) : 0,
       totalFees,
+      totalBilled: Math.max(0, totalBilled),
+      totalCollected: Math.max(0, totalCollected),
       paymentsCount,
       avgPayment: paymentsCount ? Math.round(totalCollected / paymentsCount) : 0,
       lastPayment: payments[0] ? { amount: payments[0].amount, date: payments[0].date } : null,
@@ -395,14 +422,45 @@ const CustomerDetails = () => {
   // NB: the API returns money as strings (numeric/decimal columns) — coerce to
   // numbers before ANY arithmetic, or `+` concatenates ("2152.38" + "4147.62").
   const balance = Number(financial.currentBalance) || 0;
+  // Arrears brought forward (the "Legacy Arrears" seeded from migration).
+  const arrears = Number(financial.backlogAmount) || 0;
   const activeBill = bills.find((b: any) => b.status === "active");
   const rolledBills = bills.filter((b: any) => b.status !== "active");
 
+  // TRUE amount owed from the LEDGER (source of truth) — supersedes the stale
+  // currentBalance/backlogAmount cache. A voided line nets out via its reversal.
+  // On the next bill this whole figure rolls into "arrears brought forward".
+  // Prefer the authoritative running balance (credit − debit; owed = −balance),
+  // fall back to summing loaded entries, then the legacy cache.
+  const ledgerOwed =
+    ledgerBalance != null
+      ? Math.round(-ledgerBalance * 100) / 100
+      : ledgerEntries.length
+      ? Math.round(
+          ledgerEntries.reduce(
+            (s: number, e: any) =>
+              s + (String(e.type).toLowerCase() === "debit" ? Number(e.amount || 0) : -Number(e.amount || 0)),
+            0,
+          ) * 100,
+        ) / 100
+      : balance;
+  const monthlyRate = Number(details.expectedBill) || 0;
+  const freq = String(billing?.billCycleFrequency || "").toLowerCase();
+  const cycleMonths = freq === "bimonthly" ? 2 : freq === "trimonthly" ? 3 : 1;
+  const currentCharge = Math.round(monthlyRate * cycleMonths * 100) / 100;
+  const nextBillTotal = Math.round((ledgerOwed + currentCharge) * 100) / 100;
+
   // Money truth: everything ever charged = what's been paid + what's still owed.
-  const paidToDate = Number(financial.totalPaid) || 0;
-  const billedToDate = paidToDate + balance;
-  // Collection rate = collected ÷ total obligation (paid + owed), not the ledger-debit total
-  // (which is 0 until bills generate). This is what the PSP actually recovered.
+  // Owed comes from the LEDGER (not the stale currentBalance cache).
+  // Paid / billed come from the SAME ledger lines as the chart + payment stats, so the
+  // cards can never disagree with them. financial.totalPaid is a stale cache — only a
+  // fallback when the ledger hasn't loaded.
+  const hasLedger = ledgerEntries.length > 0;
+  const paidToDate = hasLedger ? stats.totalCollected : Number(financial.totalPaid) || 0;
+  const billedToDate = hasLedger
+    ? Math.max(stats.totalBilled, paidToDate + Math.max(0, ledgerOwed))
+    : paidToDate + Math.max(0, ledgerOwed);
+  // Collection rate = collected ÷ total charged.
   const collectionRate =
     billedToDate > 0 ? Math.min(100, Math.round((paidToDate / billedToDate) * 100)) : 0;
 
@@ -481,6 +539,23 @@ const CustomerDetails = () => {
           onOpenChange={setShowEditDialog}
           onCustomerUpdated={fetchCustomerDetails}
         />
+        <BillPreviewDialog
+          open={showPreview}
+          onOpenChange={setShowPreview}
+          customerId={customer?.customerDetails?.customerId}
+        />
+        {billAction && (
+          <BillActionDialog
+            open={!!billAction}
+            action={billAction.action}
+            bill={billAction.bill}
+            customerId={customer?.customerDetails?.customerId}
+            customerName={details.fullName}
+            currentArrears={arrears}
+            onClose={() => setBillAction(null)}
+            onDone={() => { setBillAction(null); reloadCustomerBills(); fetchCustomerDetails(); }}
+          />
+        )}
         <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
           <AlertDialogContent>
             <AlertDialogHeader>
@@ -504,12 +579,18 @@ const CustomerDetails = () => {
         </AlertDialog>
 
         {/* Financial stat band */}
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
           <FinTile
             label="Account Balance"
-            value={`₦${balance.toLocaleString()}`}
-            sub={balance > 0 ? "Outstanding" : "No balance due"}
-            tone={balance > 0 ? "bad" : "neutral"}
+            value={`₦${Math.abs(ledgerOwed).toLocaleString()}`}
+            sub={ledgerOwed > 0 ? "Outstanding (owed)" : ledgerOwed < 0 ? "In credit (overpaid)" : "No balance due"}
+            tone={ledgerOwed > 0 ? "bad" : "neutral"}
+          />
+          <FinTile
+            label="Est. Next Bill"
+            value={`₦${nextBillTotal.toLocaleString()}`}
+            sub="Arrears + this period"
+            tone={nextBillTotal > 0 ? "bad" : "neutral"}
           />
           <FinTile
             label="Paid to Date"
@@ -529,7 +610,7 @@ const CustomerDetails = () => {
           />
           <FinTile
             label={estBillLabel}
-            value={`₦${(details.expectedBill || 0).toLocaleString()}`}
+            value={`₦${monthlyRate.toLocaleString()}`}
             sub={estBillSub}
           />
         </div>
@@ -635,7 +716,7 @@ const CustomerDetails = () => {
                 <div className="grid flex-1 gap-x-8 gap-y-4 sm:grid-cols-2 xl:grid-cols-3">
                   <Detail label="Account Number" value={<span className="font-mono">{details.accountNumber || "N/A"}</span>} />
                   <Detail
-                    label="Old Account Number"
+                    label="Property Code"
                     value={
                       details.oldAccountNumber ? (
                         <span className="font-mono">{details.oldAccountNumber}</span>
@@ -862,7 +943,22 @@ const CustomerDetails = () => {
             )}
 
             {/* Bills — the statements generated for this customer */}
-            <Panel title="Bills" subtitle="Statements generated on the customer's cycle" bodyClassName="p-0">
+            <Panel
+              title="Bills"
+              subtitle="Statements generated on the customer's cycle"
+              bodyClassName="p-0"
+              right={
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-xs"
+                  onClick={() => setBillAction({ action: "regenerate" })}
+                  title="Void the active bill and regenerate it from the ledger"
+                >
+                  Regenerate active bill
+                </Button>
+              }
+            >
               {bills.length > 0 ? (
                 <table className="w-full text-[13px]">
                   <thead className="bg-muted/40">
@@ -872,28 +968,41 @@ const CustomerDetails = () => {
                       <th className="px-4 py-2.5 text-right font-medium">Total Due</th>
                       <th className="px-4 py-2.5 text-right font-medium">Paid</th>
                       <th className="px-4 py-2.5 text-right font-medium">Status</th>
+                      <th className="px-4 py-2.5 text-right font-medium">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
-                    {bills.map((b: any) => (
-                      <tr key={b.id} className="hover:bg-muted/40">
-                        <td className="px-4 py-2.5 font-mono text-xs text-foreground">{b.billNumber}</td>
-                        <td className="px-4 py-2.5 text-muted-foreground">
-                          {b.periodEnd ? format(new Date(b.periodEnd), "MMM dd, yyyy") : "—"}
-                        </td>
-                        <td className="px-4 py-2.5 text-right font-semibold tabular-nums text-foreground">
-                          ₦{(Number(b.totalDue) || 0).toLocaleString()}
-                        </td>
-                        <td className="px-4 py-2.5 text-right tabular-nums text-success">
-                          ₦{(Number(b.amountPaid) || 0).toLocaleString()}
-                        </td>
-                        <td className="px-4 py-2.5 text-right">
-                          <Badge variant={b.status === "active" ? "default" : "secondary"} className="text-[10px] capitalize">
-                            {String(b.status).replace("_", " ")}
-                          </Badge>
-                        </td>
-                      </tr>
-                    ))}
+                    {bills.map((b: any) => {
+                      const isVoid = String(b.status).toLowerCase() === "void";
+                      return (
+                        <tr key={b.id} className="hover:bg-muted/40">
+                          <td className="px-4 py-2.5 font-mono text-xs text-foreground">{b.billNumber}</td>
+                          <td className="px-4 py-2.5 text-muted-foreground">
+                            {b.periodEnd ? format(new Date(b.periodEnd), "MMM dd, yyyy") : "—"}
+                          </td>
+                          <td className="px-4 py-2.5 text-right font-semibold tabular-nums text-foreground">
+                            ₦{(Number(b.totalDue) || 0).toLocaleString()}
+                          </td>
+                          <td className="px-4 py-2.5 text-right tabular-nums text-success">
+                            ₦{(Number(b.amountPaid) || 0).toLocaleString()}
+                          </td>
+                          <td className="px-4 py-2.5 text-right">
+                            <Badge variant={b.status === "active" ? "default" : isVoid ? "destructive" : "secondary"} className="text-[10px] capitalize">
+                              {String(b.status).replace("_", " ")}
+                            </Badge>
+                          </td>
+                          <td className="px-4 py-2.5 text-right whitespace-nowrap">
+                            {isVoid ? (
+                              <span className="text-xs text-muted-foreground">—</span>
+                            ) : (
+                              <Button variant="outline" size="sm" className="h-6 px-2 text-[11px] text-destructive hover:text-destructive" onClick={() => setBillAction({ action: "void", bill: b })}>
+                                Void
+                              </Button>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               ) : (
@@ -992,7 +1101,7 @@ const CustomerDetails = () => {
                       </div>
                       <div className="mt-3 space-y-2 text-[12px]">
                         <div className="flex justify-between">
-                          <span className="text-muted-foreground">Brought forward</span>
+                          <span className="text-muted-foreground">Brought forward (arrears)</span>
                           <span className="font-medium tabular-nums text-foreground">₦{(Number(activeBill.openingBalance) || 0).toLocaleString()}</span>
                         </div>
                         <div className="flex justify-between">
@@ -1021,19 +1130,65 @@ const CustomerDetails = () => {
                         Due {activeBill.dueDate ? format(new Date(activeBill.dueDate), "MMM dd, yyyy") : "—"}
                         {rolledBills.length > 0 && ` · ${rolledBills.length} rolled over`}
                       </p>
+
+                      {/* Owner corrections — OTP-gated. While a bill is active you can only
+                          VOID (recall) it. Generation is blocked until there is no active bill. */}
+                      <div className="mt-3 flex gap-2 border-t border-border pt-3">
+                        <Button variant="outline" size="sm" className="flex-1 h-7 text-xs text-destructive hover:text-destructive"
+                          onClick={() => setBillAction({ action: "void", bill: activeBill })}>
+                          Void (recall)
+                        </Button>
+                      </div>
+                      <p className="mt-1.5 text-[10px] text-muted-foreground">
+                        Void marks this bill no longer active — the money stays owed as arrears. You can then
+                        Generate a fresh bill (you can’t generate while a bill is active). Sends a code to your email.
+                      </p>
                     </div>
                   );
                 })()
               ) : (
-                <p className="text-[12px] text-muted-foreground">
-                  This customer has no active bill yet. Bills are generated on the PSP's cycle from the estimated amount.
-                </p>
+                <div className="space-y-3">
+                  <p className="text-[13px] font-medium text-foreground">No active bill</p>
+                  <p className="text-[12px] text-muted-foreground">
+                    This customer has no active bill right now. It is created on the PSP's cycle, or you can generate one now.
+                  </p>
+                  <div className="space-y-2 rounded-md bg-muted/40 px-3 py-2.5 text-[12px]">
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground">Arrears (brought forward)</span>
+                      <span className={`font-medium tabular-nums ${ledgerOwed > 0 ? "text-destructive" : "text-foreground"}`}>₦{ledgerOwed.toLocaleString()}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground">This period's charge</span>
+                      <span className="font-medium tabular-nums text-foreground">₦{currentCharge.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between border-t border-border pt-2">
+                      <span className="text-muted-foreground">Total on next bill</span>
+                      <span className={`font-semibold tabular-nums ${nextBillTotal > 0 ? "text-destructive" : "text-foreground"}`}>₦{nextBillTotal.toLocaleString()}</span>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline" className="flex-1" onClick={() => setShowPreview(true)}>
+                      Preview bill
+                    </Button>
+                    <Button size="sm" className="flex-1" onClick={() => setBillAction({ action: "regenerate" })}>
+                      Generate bill now
+                    </Button>
+                  </div>
+                </div>
               )}
             </Panel>
 
             {/* Billing actions */}
             <Panel title="Billing" bodyClassName="p-3">
               <div className="space-y-2">
+                <Button
+                  variant="outline"
+                  className="w-full justify-start gap-2"
+                  onClick={() => setShowPreview(true)}
+                >
+                  <Receipt className="h-4 w-4" />
+                  Preview bill
+                </Button>
                 <Button
                   variant="outline"
                   className="w-full justify-start gap-2"

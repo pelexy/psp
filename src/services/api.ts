@@ -1047,6 +1047,64 @@ class ApiService {
     );
   }
 
+  // Withdrawals (bank transfer out of the PSP wallet, OTP-gated)
+  async getBanks(accessToken: string): Promise<any> {
+    return this.makeAuthenticatedRequest<any>("/buypower/banks", {}, accessToken);
+  }
+
+  async resolveBankAccount(
+    accessToken: string,
+    bankCode: string,
+    accountNumber: string,
+  ): Promise<any> {
+    const params = new URLSearchParams({ bankCode, accountNumber });
+    return this.makeAuthenticatedRequest<any>(
+      `/buypower/resolve-account?${params.toString()}`,
+      {},
+      accessToken,
+    );
+  }
+
+  // Bank accounts a PSP may withdraw to (each must be approved by WasteCollect)
+  async getBankAccounts(accessToken: string): Promise<any> {
+    return this.makeAuthenticatedRequest<any>("/psp/wallet/bank-accounts", {}, accessToken);
+  }
+
+  async addBankAccount(accessToken: string, bankCode: string, accountNumber: string): Promise<any> {
+    return this.makeAuthenticatedRequest<any>(
+      "/psp/wallet/bank-accounts",
+      { method: "POST", body: JSON.stringify({ bankCode, accountNumber }) },
+      accessToken,
+    );
+  }
+
+  async removeBankAccount(accessToken: string, id: string): Promise<any> {
+    return this.makeAuthenticatedRequest<any>(
+      `/psp/wallet/bank-accounts/${id}`,
+      { method: "DELETE" },
+      accessToken,
+    );
+  }
+
+  async initiateWithdrawal(
+    accessToken: string,
+    details: { bankAccountId: string; amount: number; narration?: string },
+  ): Promise<any> {
+    return this.makeAuthenticatedRequest<any>(
+      "/psp/wallet/transfer/initiate",
+      { method: "POST", body: JSON.stringify(details) },
+      accessToken,
+    );
+  }
+
+  async confirmWithdrawal(accessToken: string, otpCode: string): Promise<any> {
+    return this.makeAuthenticatedRequest<any>(
+      "/psp/wallet/transfer/confirm",
+      { method: "POST", body: JSON.stringify({ otpCode }) },
+      accessToken,
+    );
+  }
+
   async lockWallet(accessToken: string): Promise<any> {
     const response = await fetch(`${this.baseUrl}/psp/wallet/lock`, {
       method: "POST",
@@ -1313,6 +1371,19 @@ class ApiService {
       {},
       accessToken,
     );
+  }
+
+  /** Upload the company logo to our own API; it is saved on the profile and the new URL returned. */
+  async uploadMyLogo(accessToken: string, image: Blob, filename: string): Promise<any> {
+    const formData = new FormData();
+    formData.append("image", image, filename);
+    // No Content-Type header: the browser must set the multipart boundary itself.
+    const response = await fetch(`${this.baseUrl}/psp/me/logo`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${accessToken}` },
+      body: formData,
+    });
+    return this.handleResponse<any>(response);
   }
 
   async updateMyProfile(accessToken: string, profileData: any): Promise<any> {
@@ -2039,6 +2110,24 @@ class ApiService {
     return this.makeAuthenticatedRequest<any>(`/psp/bills/${id}/send`, { method: "POST" }, accessToken);
   }
 
+  // Resend a bill to its customer on chosen channels (email / sms / whatsapp).
+  async resendBill(
+    accessToken: string,
+    id: string,
+    channels: { whatsapp?: boolean; email?: boolean; sms?: boolean },
+  ): Promise<any> {
+    return this.makeAuthenticatedRequest<any>(
+      `/psp/bills/${id}/resend`,
+      { method: "POST", body: JSON.stringify(channels) },
+      accessToken,
+    );
+  }
+
+  // Public, no-auth URL to the bill's rendered PDF (for download / open in tab).
+  billPdfUrl(billId: string): string {
+    return `${API_BASE_URL}/public/bills/${billId}/Waste-Bill.pdf`;
+  }
+
   async getCustomerBilling(accessToken: string, customerId: string): Promise<any> {
     return this.makeAuthenticatedRequest<any>(`/psp/bills/customer/${customerId}`, {}, accessToken);
   }
@@ -2062,6 +2151,111 @@ class ApiService {
     return this.makeAuthenticatedRequest<any>(
       `/psp/bills/customer/${customerId}`,
       { method: "PUT", body: JSON.stringify(body) },
+      accessToken,
+    );
+  }
+
+  // ── OTP-gated bill corrections (owner) — edit arrears/charge, void, regenerate ──
+  // Step 1: email a 6-digit code to the acting owner for one action + target.
+  async requestBillActionOtp(
+    accessToken: string,
+    body: {
+      action: "adjust" | "void" | "regenerate" | "arrears" | "void-entry" | "add-entry";
+      billId?: string;
+      customerId?: string;
+      entryId?: string;
+    },
+  ): Promise<any> {
+    return this.makeAuthenticatedRequest<any>(
+      "/psp/bills/admin/bill-actions/request-otp",
+      { method: "POST", body: JSON.stringify(body) },
+      accessToken,
+    );
+  }
+
+  // Step 2a: edit a bill's arrears and/or current charge (absolute new amounts).
+  async adjustBill(
+    accessToken: string,
+    billId: string,
+    body: { openingBalance?: number; newCharges?: number; reason: string; otpCode: string },
+  ): Promise<any> {
+    return this.makeAuthenticatedRequest<any>(
+      `/psp/bills/admin/bill/${billId}/adjust`,
+      { method: "POST", body: JSON.stringify(body) },
+      accessToken,
+    );
+  }
+
+  // Step 2b: void (recall) a bill — mark it no longer active; money stays owed.
+  async voidBill(
+    accessToken: string,
+    billId: string,
+    body: { reason: string; otpCode: string; notifyCustomer?: boolean },
+  ): Promise<any> {
+    return this.makeAuthenticatedRequest<any>(
+      `/psp/bills/admin/bill/${billId}/void`,
+      { method: "POST", body: JSON.stringify(body) },
+      accessToken,
+    );
+  }
+
+  // Step 2c: void the customer's active bill and regenerate it from ledger truth.
+  async regenerateCustomerBill(
+    accessToken: string,
+    customerId: string,
+    body: { reason: string; otpCode: string },
+  ): Promise<any> {
+    return this.makeAuthenticatedRequest<any>(
+      `/psp/bills/admin/customer/${customerId}/regenerate`,
+      { method: "POST", body: JSON.stringify(body) },
+      accessToken,
+    );
+  }
+
+  // Step 2d: set the customer's legacy / brought-forward arrears to a new value.
+  async setCustomerArrears(
+    accessToken: string,
+    customerId: string,
+    body: { newArrears: number; reason: string; otpCode: string },
+  ): Promise<any> {
+    return this.makeAuthenticatedRequest<any>(
+      `/psp/bills/admin/customer/${customerId}/arrears`,
+      { method: "POST", body: JSON.stringify(body) },
+      accessToken,
+    );
+  }
+
+  // Step 2e: void a single ledger line — posts a reversal contra-entry.
+  async voidLedgerEntry(
+    accessToken: string,
+    entryId: string,
+    body: { reason: string; otpCode: string; transactionDate?: string },
+  ): Promise<any> {
+    return this.makeAuthenticatedRequest<any>(
+      `/psp/bills/admin/ledger-entry/${entryId}/void`,
+      { method: "POST", body: JSON.stringify(body) },
+      accessToken,
+    );
+  }
+
+  // Step 2f: post a manual ledger line (debit = charge owed, credit = in favour).
+  async addLedgerEntry(
+    accessToken: string,
+    customerId: string,
+    body: { type: "debit" | "credit"; category?: string; amount: number; description: string; reason: string; otpCode: string; transactionDate?: string },
+  ): Promise<any> {
+    return this.makeAuthenticatedRequest<any>(
+      `/psp/bills/admin/customer/${customerId}/ledger-entry`,
+      { method: "POST", body: JSON.stringify(body) },
+      accessToken,
+    );
+  }
+
+  // Read-only preview of the bill Generate/Regenerate would create from the live ledger.
+  async getBillPreview(accessToken: string, customerId: string): Promise<any> {
+    return this.makeAuthenticatedRequest<any>(
+      `/psp/bills/admin/customer/${customerId}/bill-preview`,
+      {},
       accessToken,
     );
   }

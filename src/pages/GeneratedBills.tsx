@@ -7,9 +7,9 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Search, X, FileText } from "@/lib/icons";
 import { BillFilterPanel } from "@/components/bills/BillFilterPanel";
+import { BillDetailDialog, type BillRow } from "@/components/customers/BillDetailDialog";
 import { apiService } from "@/services/api";
 import { useAuth } from "@/contexts/AuthContext";
-import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
@@ -60,8 +60,8 @@ const extractArray = (res: any, ...keys: string[]): any[] => {
 
 const GeneratedBills = () => {
   const { accessToken } = useAuth();
-  const navigate = useNavigate();
 
+  const [viewBill, setViewBill] = useState<BillRow | null>(null);
   const [genBills, setGenBills] = useState<GeneratedBill[]>([]);
   const [genLoading, setGenLoading] = useState(true);
   const [genPage, setGenPage] = useState(1);
@@ -446,14 +446,14 @@ const GeneratedBills = () => {
             data={genBills}
             pagination={{ currentPage: genPage, totalPages: genTotalPages, totalItems: genTotal, itemsPerPage: 20 }}
             onPageChange={setGenPage}
-            onRowClick={(b) => {
-              if (b.accountNumber) navigate(`/customers/${b.accountNumber}`);
-            }}
+            onRowClick={(b) => setViewBill(b as unknown as BillRow)}
             loading={genLoading}
             emptyMessage="No bills found. Adjust the filters or run a bill cycle to generate bills."
           />
         </div>
       </div>
+
+      <BillDetailDialog open={!!viewBill} bill={viewBill} onClose={() => setViewBill(null)} />
     </DashboardLayout>
   );
 };

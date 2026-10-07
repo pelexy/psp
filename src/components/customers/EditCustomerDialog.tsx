@@ -410,7 +410,7 @@ export function EditCustomerDialog({ customer, open, onOpenChange, onCustomerUpd
                 </div>
 
                 <div className="col-span-2">
-                  <Label htmlFor="oldAccountNumber">Old Account Number (Optional)</Label>
+                  <Label htmlFor="oldAccountNumber">Property Code (Optional)</Label>
                   <Input
                     id="oldAccountNumber"
                     value={formData.oldAccountNumber}
@@ -420,7 +420,7 @@ export function EditCustomerDialog({ customer, open, onOpenChange, onCustomerUpd
                     placeholder="e.g. LEG-12345"
                   />
                   <p className="text-xs text-gray-500 mt-1">
-                    Reference to the customer's account number from a previous/legacy system.
+                    The customer's property code / account number from a previous or legacy system.
                   </p>
                 </div>
               </div>
