@@ -1,3 +1,4 @@
+import { saveFolioToken } from "@/lib/folioSession";
 // In dev, hit the local API via Vite's /api proxy (see vite.config.ts).
 // In prod, talk to the deployed API directly.
 const API_BASE_URL = import.meta.env.DEV
@@ -2173,17 +2174,25 @@ class ApiService {
     );
   }
 
+  // Every correction response carries a renewed folio session for that customer;
+  // remember it so the owner is not asked for a new code on the next correction.
+  private async keepFolio<T>(request: Promise<T>): Promise<T> {
+    const res: any = await request;
+    saveFolioToken(res?.data?.folioToken);
+    return res;
+  }
+
   // Step 2a: edit a bill's arrears and/or current charge (absolute new amounts).
   async adjustBill(
     accessToken: string,
     billId: string,
     body: { openingBalance?: number; newCharges?: number; reason: string; otpCode: string },
   ): Promise<any> {
-    return this.makeAuthenticatedRequest<any>(
+    return this.keepFolio(this.makeAuthenticatedRequest<any>(
       `/psp/bills/admin/bill/${billId}/adjust`,
       { method: "POST", body: JSON.stringify(body) },
       accessToken,
-    );
+    ));
   }
 
   // Step 2b: void (recall) a bill — mark it no longer active; money stays owed.
@@ -2192,11 +2201,11 @@ class ApiService {
     billId: string,
     body: { reason: string; otpCode: string; notifyCustomer?: boolean },
   ): Promise<any> {
-    return this.makeAuthenticatedRequest<any>(
+    return this.keepFolio(this.makeAuthenticatedRequest<any>(
       `/psp/bills/admin/bill/${billId}/void`,
       { method: "POST", body: JSON.stringify(body) },
       accessToken,
-    );
+    ));
   }
 
   // Step 2c: void the customer's active bill and regenerate it from ledger truth.
@@ -2205,11 +2214,11 @@ class ApiService {
     customerId: string,
     body: { reason: string; otpCode: string },
   ): Promise<any> {
-    return this.makeAuthenticatedRequest<any>(
+    return this.keepFolio(this.makeAuthenticatedRequest<any>(
       `/psp/bills/admin/customer/${customerId}/regenerate`,
       { method: "POST", body: JSON.stringify(body) },
       accessToken,
-    );
+    ));
   }
 
   // Step 2d: set the customer's legacy / brought-forward arrears to a new value.
@@ -2218,11 +2227,11 @@ class ApiService {
     customerId: string,
     body: { newArrears: number; reason: string; otpCode: string },
   ): Promise<any> {
-    return this.makeAuthenticatedRequest<any>(
+    return this.keepFolio(this.makeAuthenticatedRequest<any>(
       `/psp/bills/admin/customer/${customerId}/arrears`,
       { method: "POST", body: JSON.stringify(body) },
       accessToken,
-    );
+    ));
   }
 
   // Step 2e: void a single ledger line — posts a reversal contra-entry.
@@ -2231,11 +2240,11 @@ class ApiService {
     entryId: string,
     body: { reason: string; otpCode: string; transactionDate?: string },
   ): Promise<any> {
-    return this.makeAuthenticatedRequest<any>(
+    return this.keepFolio(this.makeAuthenticatedRequest<any>(
       `/psp/bills/admin/ledger-entry/${entryId}/void`,
       { method: "POST", body: JSON.stringify(body) },
       accessToken,
-    );
+    ));
   }
 
   // Step 2f: post a manual ledger line (debit = charge owed, credit = in favour).
@@ -2244,11 +2253,11 @@ class ApiService {
     customerId: string,
     body: { type: "debit" | "credit"; category?: string; amount: number; description: string; reason: string; otpCode: string; transactionDate?: string },
   ): Promise<any> {
-    return this.makeAuthenticatedRequest<any>(
+    return this.keepFolio(this.makeAuthenticatedRequest<any>(
       `/psp/bills/admin/customer/${customerId}/ledger-entry`,
       { method: "POST", body: JSON.stringify(body) },
       accessToken,
-    );
+    ));
   }
 
   // Read-only preview of the bill Generate/Regenerate would create from the live ledger.

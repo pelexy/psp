@@ -21,6 +21,7 @@ import { Loader2, KeyRound } from "@/lib/icons";
 import { apiService } from "@/services/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { getFolioToken, clearFolioToken, folioMinutesLeft } from "@/lib/folioSession";
 
 export type LedgerEntryAction = "void-entry" | "add-entry";
 
@@ -104,6 +105,10 @@ export function LedgerEntryDialog({
     const v = validate();
     if (v) { toast.error(v); return; }
     if (!accessToken) { toast.error("Session expired — please log in again."); return; }
+    // This customer's folio is already open (a code was confirmed a moment ago):
+    // apply the change straight away, no new code.
+    const folio = getFolioToken(customerId);
+    if (folio) { await confirm(folio); return; }
     setBusy(true);
     try {
       const res = await apiService.requestBillActionOtp(accessToken, {
@@ -121,15 +126,16 @@ export function LedgerEntryDialog({
     }
   }
 
-  async function confirm() {
-    if (otpCode.length < 6) { toast.error("Enter the 6-digit code sent to your email."); return; }
+  async function confirm(folio?: string) {
+    if (!folio && otpCode.length < 6) { toast.error("Enter the 6-digit code sent to your email."); return; }
+    const auth = folio ?? otpCode.trim();
     if (!accessToken) { toast.error("Session expired — please log in again."); return; }
     setBusy(true);
     try {
       if (isVoid && entry) {
         const res: any = await apiService.voidLedgerEntry(accessToken, entry.id, {
           reason: reason.trim(),
-          otpCode: otpCode.trim(),
+          otpCode: auth,
           transactionDate,
         });
         const ab = res?.data?.activeBill ?? res?.activeBill;
@@ -145,7 +151,7 @@ export function LedgerEntryDialog({
           amount: Number(amount),
           description: description.trim(),
           reason: reason.trim(),
-          otpCode: otpCode.trim(),
+          otpCode: auth,
           transactionDate,
         });
         const d = res?.data;
@@ -156,11 +162,22 @@ export function LedgerEntryDialog({
       reset();
       onDone();
     } catch (e: any) {
+      if (folio && /editing session/i.test(e?.message ?? "")) {
+        // The folio session ran out — fall back to a fresh code, keeping what was typed.
+        clearFolioToken(customerId);
+        setBusy(false);
+        toast.info("Your editing session for this customer ended. We are sending a new code.");
+        await sendCode();
+        return;
+      }
       toast.error(e?.message ?? "Action failed");
     } finally {
       setBusy(false);
     }
   }
+
+  // Re-read on every render so the dialog reflects a session opened by an earlier correction.
+  const folioOpen = open && !!getFolioToken(customerId);
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) close(); }}>
@@ -168,8 +185,8 @@ export function LedgerEntryDialog({
         <DialogHeader>
           <DialogTitle>{isVoid ? "Void ledger entry" : "Add ledger entry"}</DialogTitle>
           <DialogDescription>
-            Customer <span className="font-medium">{customerName}</span>. This is a sensitive
-            change and requires a one-time code sent to your email.
+            Customer <span className="font-medium">{customerName}</span>. This is a sensitive change.{" "}
+            {folioOpen ? "This customer's folio is already open, so no new code is needed." : "It requires a one-time code sent to your email."}
           </DialogDescription>
         </DialogHeader>
 
@@ -259,9 +276,16 @@ export function LedgerEntryDialog({
             <div className="flex gap-3">
               <Button variant="outline" className="flex-1" onClick={close} disabled={busy}>Cancel</Button>
               <Button className="flex-1" onClick={sendCode} disabled={busy}>
-                {busy ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Sending…</> : "Send verification code"}
+                {busy
+                  ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{folioOpen ? "Working…" : "Sending…"}</>
+                  : folioOpen ? "Apply change" : "Send verification code"}
               </Button>
             </div>
+            <p className="text-[11px] text-muted-foreground">
+              {folioOpen
+                ? `No code needed — this customer's folio is open for editing for about ${folioMinutesLeft(customerId)} more minute(s).`
+                : "One code opens this customer's folio: further corrections on this customer need no new code for 30 minutes."}
+            </p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -291,7 +315,7 @@ export function LedgerEntryDialog({
               <Button
                 className="flex-1"
                 variant={isVoid ? "destructive" : "default"}
-                onClick={confirm}
+                onClick={() => confirm()}
                 disabled={busy || otpCode.length < 6}
               >
                 {busy ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Working…</> : isVoid ? "Void entry" : "Post entry"}
